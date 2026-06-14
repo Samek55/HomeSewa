@@ -70,14 +70,16 @@ export default function SingleScreen() {
   const otherServices = useMemo(() => {
     if (!service) return [];
 
-    const excludedIds = [8.1, 8.2];
+    const related = (service as any).relatedServices as number[] | undefined;
+    if (related && related.length > 0) {
+      return related
+        .slice(0, 2)
+        .map(rid => servicesData2.find(item => item.id === rid))
+        .filter(Boolean) as typeof servicesData2;
+    }
 
     return servicesData2
-      .filter(
-        item =>
-          item.id !== service.id &&
-          !excludedIds.includes(item.id)
-      )
+      .filter(item => item.id !== service.id)
       .sort(() => Math.random() - 0.5)
       .slice(0, 2);
   }, [service]);

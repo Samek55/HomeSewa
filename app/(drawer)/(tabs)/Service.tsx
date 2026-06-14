@@ -11,8 +11,9 @@ import ServicesCards from '../../../components/services/ServicesCards';
 import ServicesDisplaycard from '../../../components/services/ServicesDisplaycard';
 import SliderCard from '../../../components/services/SliderCard';
 
-import { topServices } from '../../../src/data/TopServicesData';
 import { servicesData2 } from '../../../src/data/ServiceData';
+
+const topServices = servicesData2.filter(item => item.id === 1 || item.id === 4);
 
 import {
   widthPercentageToDP as wp,
@@ -23,36 +24,60 @@ import Header1 from '@/components/Header1';
 import { router } from 'expo-router';
 
 export default function ServiceScreen() {
-  const numberOfItemsBeforeFooter = 6;
-
-  // ✅ filter only once
   const data = useMemo(() => {
     return servicesData2.filter(
       (item) => item.id !== 1 && item.id !== 4
     );
   }, []);
 
-  // ✅ memoized renderItem (FIX)
   const renderItem = useCallback(
-    ({ item, index }: { item: any; index: number }) => {
-      if (index === numberOfItemsBeforeFooter) {
-        return (
-          <View style={styles.sliderCardContainer}>
-            <SliderCard
-              name="Interior Designing"
-              image={require('../../../assets/services/banner4.jpg')}
-            />
-          </View>
-        );
-      }
+    ({ item }: { item: any }) => (
+      <View style={styles.serviceItemContainer}>
+        <ServicesDisplaycard
+          id={item.id}
+          name={item.name}
+          words={item.words}
+          image={item.image}
+          onPress={() =>
+            router.push({
+              pathname: '/service/ServiceDetail',
+              params: { id: item.id.toString() },
+            })
+          }
+        />
+      </View>
+    ),
+    []
+  );
 
-      return (
-        <View style={styles.serviceItemContainer}>
-          <ServicesDisplaycard
-            id={item.id}
+  const ListHeader = useCallback(() => (
+    <View style={styles.headerContainer}>
+      <Header1 />
+
+      <ImageBackground
+        source={require('../../../assets/services/bannerServices.jpg')}
+        resizeMode="cover"
+        style={styles.headerBackground}
+      >
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>Our Services</Text>
+          <Text style={styles.headerSubtitle}>
+            On Demand Home Service in Nepal
+          </Text>
+        </View>
+      </ImageBackground>
+
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle1}>Top Services</Text>
+
+        {topServices.map((item) => (
+          <ServicesCards
+            key={item.id}
             name={item.name}
-            words={item.words}
+            description={item.description}
             image={item.image}
+            question={item.question}
+            answer={item.answer}
             onPress={() =>
               router.push({
                 pathname: '/service/ServiceDetail',
@@ -60,56 +85,19 @@ export default function ServiceScreen() {
               })
             }
           />
+        ))}
+
+        <View style={styles.sliderCardContainer}>
+          <SliderCard
+            name="Interior Designing"
+            image={require('../../../assets/services/banner4.jpg')}
+          />
         </View>
-      );
-    },
-    []
-  );
 
-  // ✅ memoized header (IMPORTANT FIX)
-  const ListHeader = useCallback(() => {
-    return (
-      <View style={styles.headerContainer}>
-        <Header1 />
-
-        <ImageBackground
-          source={require('../../../assets/services/bannerServices.jpg')}
-          resizeMode="cover"
-          style={styles.headerBackground}
-        >
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Our Services</Text>
-            <Text style={styles.headerSubtitle}>
-              On Demand Home Service in Nepal
-            </Text>
-          </View>
-        </ImageBackground>
-
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle1}>Top Services</Text>
-
-          {topServices.map((item) => (
-            <ServicesCards
-              key={item.id}
-              name={item.name}
-              description={item.description}
-              image={item.image}
-              question={item.question}
-              answer={item.answer}
-              onPress={() =>
-                router.push({
-                  pathname: '/service/ServiceDetail',
-                  params: { id: item.id.toString() },
-                })
-              }
-            />
-          ))}
-
-          <Text style={styles.sectionTitle2}>More Services</Text>
-        </View>
+        <Text style={styles.sectionTitle2}>More Services</Text>
       </View>
-    );
-  }, []);
+    </View>
+  ), []);
 
   return (
     <View style={{ flex: 1 }}>
@@ -118,16 +106,15 @@ export default function ServiceScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
         ListHeaderComponent={ListHeader}
-
-        // ✅ PERFORMANCE FIXES
         initialNumToRender={6}
         maxToRenderPerBatch={10}
         windowSize={5}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews
-
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
@@ -143,13 +130,6 @@ const styles = StyleSheet.create({
     height: hp('30%'),
     justifyContent: 'space-between',
     boxShadow: '0px 0px 2px #7cbc7a',
-  },
-
-  headerPadding: {
-    marginTop: hp('2%'),
-    paddingHorizontal: 15.7,
-    position: 'absolute',
-    zIndex: 9999,
   },
 
   headerTextContainer: {
@@ -178,9 +158,8 @@ const styles = StyleSheet.create({
   },
 
   sectionContainer: {
-    paddingHorizontal: wp('5%'),
+    paddingHorizontal: wp('4%'),
     paddingTop: hp('4%'),
-    width: wp('95%'),
   },
 
   sectionTitle1: {
@@ -196,17 +175,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#064E3B',
     marginBottom: hp('2%'),
-    marginTop: hp(-1),
-  },
-
-  serviceItemContainer: {
-    paddingLeft: wp('5%'),
-    marginBottom: hp('3%'),
-    width: wp('48%'),
+    marginTop: hp('2%'),
   },
 
   sliderCardContainer: {
-    paddingHorizontal: wp('5%'),
+    marginTop: hp('2%'),
+  },
+
+  columnWrapper: {
+    paddingHorizontal: wp('4%'),
+    justifyContent: 'space-between',
+  },
+
+  serviceItemContainer: {
+    width: wp('44%'),
     marginBottom: hp('3%'),
+  },
+
+  listContent: {
+    paddingBottom: hp('4%'),
   },
 });
