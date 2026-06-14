@@ -1,200 +1,203 @@
 import React, { useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  Linking,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-
-
-import Email from '../../../assets/icons/contact/email_1.png';
-import Location from '../../../assets/icons/contact/location-pin.png';
-import Website from '../../../assets/icons/contact/globe.png';
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
+import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header2 from '@/components/Header2';
 
-const ICON_SIZE = hp('3.3%');
-
 export default function ContactScreen() {
-
-  const openWebsite = useCallback(() => {
-    Linking.openURL('https://homesewa.app');
-  }, []);
-
-  const handleEmailPress = useCallback(() => {
-    Linking.openURL('mailto:help@homesewa.app');
-  }, []);
+  const openWebsite = useCallback(() => { Linking.openURL('https://homesewa.app'); }, []);
+  const handleEmailPress = useCallback(() => { Linking.openURL('mailto:homesewa@sriyog.com'); }, []);
+  const handlePhonePress = useCallback(() => { Linking.openURL('tel:+97798520 24365'); }, []);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.screen}>
       <Header2 />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        <View style={styles.container}>
-          <Text style={styles.title}>Contact Us</Text>
-          <Text style={styles.subtitle}> We&apos;re always here to help you out.</Text>
+        {/* HERO */}
+        <View style={styles.hero}>
+          <Text style={styles.heroTitle}>Contact Us</Text>
+          <Text style={styles.heroSub}>We are always here to help you out.</Text>
+        </View>
 
-          {/* MAP */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={require('../../../assets/images/chennai.jpg')}
-              style={styles.mapImage}
-              resizeMode="cover"
-            />
-          </View>
-
-          {/* COMPANY */}
-          <Text style={styles.companyName}>HomeSewa | SuperFast Service</Text>
-          <Text style={styles.companySubtitle}>
-           On Demand Home Service in Nepal
-          </Text>
-
-          {/* CARDS */}
-          <View style={styles.GridBox}>
-
-            {/* LOCATION */}
-            <View style={styles.card}>
-              <Image source={Location} style={styles.icon} />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Visit us</Text>
-                <Text style={styles.cardSubtitle}>
-                  Kathmandu, Bagmati Province, Nepal.
-                </Text>
-              </View>
+        {/* MAP IMAGE */}
+        <View style={styles.mapWrapper}>
+          <Image
+            source={require('../../../assets/images/chennai.jpg')}
+            style={styles.mapImage}
+            resizeMode="cover"
+          />
+          <View style={styles.mapOverlay}>
+            <View style={styles.mapBadge}>
+              <Ionicons name="location" size={14} color="#295C59" />
+              <Text style={styles.mapBadgeText}>Kathmandu, Nepal</Text>
             </View>
-
-            {/* EMAIL */}
-            <View style={styles.card}>
-              <Image source={Email} style={styles.icon} />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Email us</Text>
-                <TouchableOpacity onPress={handleEmailPress}>
-                  <Text style={styles.cardSubtitle}>
-                    help@homesewa.app
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* WEBSITE */}
-            <View style={styles.card}>
-              <Image source={Website} style={styles.icon} />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Website</Text>
-                <TouchableOpacity onPress={openWebsite}>
-                  <Text style={styles.cardSubtitle}>
-                     https://homesewa.app
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
           </View>
         </View>
+
+        {/* BRAND BLOCK */}
+        <View style={styles.brandBlock}>
+          <Text style={styles.brandName}>HomeSewa</Text>
+          <Text style={styles.brandTag}>Express Home Service · Nepal</Text>
+        </View>
+
+        {/* CONTACT CARDS */}
+        <View style={styles.cards}>
+          <ContactCard
+            icon="location-outline"
+            title="Visit Us"
+            value="Rem.Work, Kamalpokhari, Kathmandu, Nepal"
+          />
+          <ContactCard
+            icon="call-outline"
+            title="Call / WhatsApp"
+            value="+977-98520 24 365"
+            onPress={handlePhonePress}
+            tappable
+          />
+          <ContactCard
+            icon="mail-outline"
+            title="Email Us"
+            value="homesewa@sriyog.com"
+            onPress={handleEmailPress}
+            tappable
+          />
+          <ContactCard
+            icon="globe-outline"
+            title="Website"
+            value="homesewa.app"
+            onPress={openWebsite}
+            tappable
+          />
+        </View>
+
+        {/* HOURS */}
+        <View style={styles.hoursCard}>
+          <View style={styles.hoursHeader}>
+            <Ionicons name="time-outline" size={18} color="#295C59" />
+            <Text style={styles.hoursTitle}>Working Hours (NST)</Text>
+          </View>
+          <Text style={styles.hoursValue}>7:00 AM – 9:00 PM · 7 days a week</Text>
+          <Text style={styles.hoursNote}>Nepal Standard Time (UTC+5:45)</Text>
+        </View>
+
       </ScrollView>
     </View>
   );
-};
+}
+
+function ContactCard({ icon, title, value, onPress, tappable }: any) {
+  const Inner = (
+    <View style={styles.card}>
+      <View style={styles.iconBox}>
+        <Ionicons name={icon} size={20} color="#295C59" />
+      </View>
+      <View style={styles.cardText}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={[styles.cardValue, tappable && styles.cardValueLink]}>{value}</Text>
+      </View>
+      {tappable && <Ionicons name="chevron-forward" size={16} color="#C0D4D2" />}
+    </View>
+  );
+  return tappable
+    ? <TouchableOpacity onPress={onPress} activeOpacity={0.75}>{Inner}</TouchableOpacity>
+    : Inner;
+}
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: '1%',
+  screen: { flex: 1, backgroundColor: '#F5F9F8' },
+  scrollContent: { paddingBottom: hp('5%') },
+
+  hero: {
+    backgroundColor: '#295C59',
+    paddingHorizontal: wp('6%'),
+    paddingTop: hp('3%'),
+    paddingBottom: hp('3.5%'),
   },
+  heroTitle: { fontSize: wp('7%'), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
+  heroSub: { fontSize: wp('3.5%'), color: 'rgba(255,255,255,0.75)', marginTop: 6 },
 
-
-  container: {
-    paddingHorizontal: wp('4%'),
-    paddingTop: hp('2%'),
-  },
-
-  title: {
-    fontSize: wp('5.8%'),
-    fontWeight: '700',
-    color: '#064E3B',
-  },
-
-  subtitle: {
-    fontSize: wp('3.8%'),
-    marginTop: 4,
-    marginBottom: hp('2%'),
-  },
-
-  imageContainer: {
-    width: '100%',
-    height: 230,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#eee',
-  },
-
-  mapImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  companyName: {
-    fontSize: wp('4.8%'),
-    fontWeight: '600',
+  mapWrapper: {
+    marginHorizontal: wp('4%'),
     marginTop: hp('2.5%'),
-    color: '#064E3B',
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: 200,
+    position: 'relative',
   },
-
-  companySubtitle: {
-    fontSize: wp('3.6%'),
-    marginBottom: hp('2%'),
-    marginTop: 4,
+  mapImage: { width: '100%', height: '100%' },
+  mapOverlay: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
   },
-
-  GridBox: {
+  mapBadge: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
+  mapBadgeText: { fontSize: wp('3%'), fontWeight: '700', color: '#295C59' },
 
+  brandBlock: {
+    paddingHorizontal: wp('5%'),
+    paddingTop: hp('2%'),
+    paddingBottom: hp('0.5%'),
+  },
+  brandName: { fontSize: wp('5%'), fontWeight: '800', color: '#1C2B2A' },
+  brandTag: { fontSize: wp('3.3%'), color: '#5A7270', marginTop: 2 },
+
+  cards: {
+    paddingHorizontal: wp('4%'),
+    paddingTop: hp('1.5%'),
+    gap: 10,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    height: hp('10%'),
-    marginBottom: hp('2%'),
-    borderRadius: 15,
     backgroundColor: '#fff',
-    elevation: 2,
-    overflow: 'hidden',
-    boxShadow: '0px 0px 2px #000',
-    justifyContent: 'space-around',
-    paddingLeft: 10,
+    borderRadius: 14,
+    padding: 14,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: '#E0ECEB',
+    elevation: 1,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
   },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#E8F4F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  cardText: { flex: 1 },
+  cardTitle: { fontSize: wp('3.2%'), fontWeight: '600', color: '#5A7270', marginBottom: 2 },
+  cardValue: { fontSize: wp('3.7%'), fontWeight: '600', color: '#1C2B2A' },
+  cardValueLink: { color: '#295C59', textDecorationLine: 'underline' },
 
-  icon: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    resizeMode: 'contain',
+  hoursCard: {
+    marginHorizontal: wp('4%'),
+    marginTop: hp('1.5%'),
+    backgroundColor: '#E8F4F3',
+    borderRadius: 14,
+    padding: 16,
   },
-
-  cardContent: {
-    width: '75%',
-  },
-
-  cardTitle: {
-    fontSize: wp('4%'),
-    fontWeight: '500',
-    color: '#166534',
-  },
-
-  cardSubtitle: {
-    fontSize: wp('3.3%'),
-  },
+  hoursHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  hoursTitle: { fontSize: wp('3.8%'), fontWeight: '700', color: '#295C59' },
+  hoursValue: { fontSize: wp('3.7%'), fontWeight: '600', color: '#1C2B2A' },
+  hoursNote: { fontSize: wp('3%'), color: '#5A7270', marginTop: 3 },
 });
-

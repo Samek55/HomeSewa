@@ -28,7 +28,7 @@ export default function ServiceScreen() {
   // ✅ filter only once
   const data = useMemo(() => {
     return servicesData2.filter(
-      (item) => item.id !== 1 && item.id !== 6
+      (item) => item.id !== 1 && item.id !== 4
     );
   }, []);
 
@@ -78,7 +78,7 @@ export default function ServiceScreen() {
           style={styles.headerBackground}
         >
           <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Painting</Text>
+            <Text style={styles.headerTitle}>Our Services</Text>
             <Text style={styles.headerSubtitle}>
               On Demand Home Service in Nepal
             </Text>
@@ -197,9 +197,7 @@ const styles = StyleSheet.create({
     color: '#064E3B',
     marginBottom: hp('2%'),
     marginTop: hp(-1),
-
   },
-
 
   serviceItemContainer: {
     paddingLeft: wp('5%'),
@@ -212,20 +210,3 @@ const styles = StyleSheet.create({
     marginBottom: hp('3%'),
   },
 });
-
-
-
-// export default function ServiceScreen() {
-//     return (
-//         <View style={styles.container}>
-//             <Text style={styles.text}>Service Screen</Text>
-//             <Pressable
-//                 onPress={() => router.push("/service/ServiceDetail")}
-//                 style={styles.button}
-//             >
-//                 <Text style={{color:'white'}} >go to service details</Text>
-//             </Pressable>
-//         </View>
-//     );
-// }
-

@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet, View, Image, Text } from 'react-native';
+import { TouchableOpacity, StyleSheet, View, Image, Text, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
@@ -7,81 +7,63 @@ export default function Header3() {
   const navigation = useNavigation<any>();
 
   return (
-    <View style={styles.header}>
-      <View style={styles.subHeader}>
-        <View style={styles.left}>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#295C59" />
+      <View style={styles.wrapper}>
 
+        {/* LEFT: LOGO + BRAND */}
+        <View style={styles.left}>
           <Image
             source={require('../assets/images/homesewa.png')}
-            style={styles.leftIcon}
+            style={styles.logo}
           />
-          <Text style={{
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: '#064E3B',
-          }}>HomeSewa</Text>
+          <Text style={styles.brandBold}>HomeSewa</Text>
         </View>
 
-        <View style={styles.right}>
+        {/* RIGHT: MENU */}
+        <TouchableOpacity
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={() =>
+            navigation.dispatch(DrawerActions.openDrawer())
+          }
+        >
+          <Ionicons name="menu" size={30} color="#fff" />
+        </TouchableOpacity>
 
-          <Image
-            source={require('../assets/images/nepal-flag-logo.jpeg')}
-            style={styles.rightIcon}
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() =>
-              navigation.dispatch(DrawerActions.openDrawer())
-            }
-          >
-            <Ionicons name="menu" size={23} color='#fff' />
-          </TouchableOpacity>
-        </View>
       </View>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 95,
-    paddingTop: 50,
-    backgroundColor: "hsl(0, 0%, 95%)",
-  },
-  subHeader: {
+  wrapper: {
     flexDirection: 'row',
-    justifyContent: "space-between",
-    paddingHorizontal: 18
-
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#295C59',
+    paddingTop: Platform.OS === 'ios' ? 52 : 38,
+    paddingBottom: 14,
+    paddingHorizontal: 16,
   },
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5
+    gap: 10,
+    flex: 1,
+    marginRight: 10,
   },
-  right: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-    gap: 10
-  },
-  button: {
-    alignSelf: 'center',
-    borderRadius: 100,
-    padding: 3.6,
-    backgroundColor: '#008000',
-    overflow: 'hidden',
-  },
-
-  leftIcon: {
-    width: 33,
-    height: 33,
+  logo: {
+    width: 42,
+    height: 42,
     resizeMode: 'contain',
-    borderRadius: 200
   },
-  rightIcon: {
-    width: 30,
-    height: 30,
-    resizeMode: 'contain',
-    borderRadius: 15,
+  brand: {
+    flexShrink: 1,
+  },
+  brandBold: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
   },
 });

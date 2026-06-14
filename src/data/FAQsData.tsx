@@ -22,7 +22,7 @@ export const FaqsData = [
         question:
         'What payment methods are available?',
         answer:
-        'We accept cash, credit cards, debit cards, online transfers, and business checks for all handyman services.',
+        'We accept cash, eSewa, Khalti, ConnectIPS, IME Pay, and bank transfers for all home services.',
     },
 
     {
@@ -78,7 +78,15 @@ export const FaqsData = [
         question:
         'How can I contact your handyman support team?',
         answer:
-        'You can contact us through our website contact form, live chat, phone support, or email to schedule services or ask questions.',
+        'You can reach us via website contact form, WhatsApp, phone, or email at homesewa@sriyog.com. Our team is available 7:00 AM – 9:00 PM NST, 7 days a week.',
+    },
+
+    {
+        id:11,
+        question:
+        'What are your working hours?',
+        answer:
+        'We operate from 7:00 AM to 9:00 PM Nepal Standard Time (NST, UTC+5:45), seven days a week including public holidays. For urgent situations, emergency bookings may be accommodated outside these hours.',
     },
 
 ]

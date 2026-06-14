@@ -43,15 +43,19 @@ export default function AboutScreen() {
             <Text style={styles.title}>Our Story</Text>
 
             <Text style={styles.subtitle}>
-              HomeSewa is an on-demand hyperlocal service platform delivering fast, reliable, and professional home services across Nepal, powered by skilled and trained professionals available 24 hours a day, 365 days a year.
+              HomeSewa is a Nepal-based on-demand home service platform by SRIYOG Consulting Pvt. Ltd., delivering fast, reliable, and professional home services across Kathmandu Valley and major cities of Nepal — powered by skilled professionals available 7 days a week.
             </Text>
 
             <Text style={styles.lineheighpara}>
-              Our mission is to offer complete on demand multiple home service services under one trusted platform, eliminating the need to search multiple providers for different household and commercial requirements.
+              Founded in Kathmandu, our mission is to connect every Nepali household with trusted home service professionals under one platform — eliminating the hassle of searching for plumbers, electricians, cleaners, and technicians separately.
             </Text>
 
             <Text style={styles.lineheighpara}>
-              Our vision is to build a trusted workForce network recognized for professionalism, accessibility, and service excellence through long-term client relationships and consistent work quality.
+              Our vision is to become Nepal's most trusted home service marketplace, recognized for professionalism, accessibility, and service excellence — building long-term relationships with households, offices, and commercial establishments across Nepal.
+            </Text>
+
+            <Text style={styles.companyTag}>
+              A product of SRIYOG Consulting Pvt. Ltd., Kamalpokhari, Kathmandu, Nepal.
             </Text>
 
             {/* TEAM */}
@@ -114,7 +118,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: wp('5.2%'),
-    color: '#064E3B',
+    color: '#295C59',
     fontWeight: '900',
     marginBottom: 4,
   },
@@ -133,6 +137,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     paddingTop: 8,
     lineHeight: 19,
+  },
+
+  companyTag: {
+    fontSize: wp('3.3%'),
+    color: '#059669',
+    fontWeight: '600',
+    marginTop: 14,
+    fontStyle: 'italic',
   },
 
   row: {

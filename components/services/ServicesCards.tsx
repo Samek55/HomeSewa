@@ -21,13 +21,12 @@ type Props = {
   navigation?: any;
 };
 
-// Function to limit the text to 8 words for description
 const truncateDescription = (description: string) => {
-  const words = description.split(' '); // Split the string into words
+  const words = description.split(' ');
   if (words.length > 7) {
-    return words.slice(0, 8).join(' ') + '...'; // If more than 8 words, truncate and add ellipsis
+    return words.slice(0, 8).join(' ') + '...';
   }
-  return description; // Return the full description if 8 words or less
+  return description;
 };
 
 const ServicesCards = ({
@@ -42,7 +41,7 @@ const ServicesCards = ({
         <Image
           source={image}
           style={styles.image}
-          resizeMode="cover" // Ensure nice scaling of images
+          resizeMode="cover"
         />
       </View>
 
@@ -59,46 +58,41 @@ const ServicesCards = ({
 const styles = StyleSheet.create({
   cardContainer: {
     flexDirection: 'row',
-    width:wp(90),
+    width: wp(90),
     height: wp(26),
     marginBottom: hp(3.5),
-    alignItems:'center',
-    borderRadius:12,
-    boxShadow:'0px 0px 1px #7cbc7a',
-
+    alignItems: 'center',
+    borderRadius: 12,
+    boxShadow: '0px 0px 1px #7cbc7a',
   },
   imageContainer: {
     flex: 1,
-    width: wp(50), // Makes the image container 50% of the screen width
+    width: wp(50),
   },
   image: {
-    width: '100%', // Use full width of the container for responsiveness
-    height: wp(25.8), // Height based on screen width (adjustable)
-    borderRadius: 8, // Rounded corners
-    marginTop:-20,
-    marginLeft:3,
-    boxShadow:'-10px 10px 2px rgba(0, 0, 0,0.15)',
-
+    width: '100%',
+    height: wp(25.8),
+    borderRadius: 8,
+    marginTop: -20,
+    marginLeft: 3,
+    boxShadow: '-10px 10px 2px rgba(0, 0, 0,0.15)',
   },
   textContainer: {
-    marginLeft: wp(3), // Add some space between the image and text
-    width: wp(44), // Text container width set to a percentage of screen width
-
+    marginLeft: wp(3),
+    width: wp(44),
   },
   title: {
-    fontSize: wp(4.1), // Responsive font size based on screen width
+    fontSize: wp(4.1),
     fontWeight: '600',
-    // Responsive margin
     color: '#000',
-    paddingBottom:3,
-
+    paddingBottom: 3,
   },
   description: {
-    fontSize: wp(3.7), // Responsive description font size
+    fontSize: wp(3.7),
     fontWeight: '400',
     color: 'hsl(0, 0%, 25%)',
-    letterSpacing:-0.3,
-    lineHeight:17,
+    letterSpacing: -0.3,
+    lineHeight: 17,
   },
 });
 

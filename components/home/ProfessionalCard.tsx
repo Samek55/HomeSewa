@@ -1,19 +1,20 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
-import React from 'react';
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 type Props = { title: string; subtitle: string; image: any; style?: any };
 
-const ProfessionalCard = ({ title, subtitle, image, style }: Props) => {
+const ProfessionalCard = ({ title, image }: Props) => {
   return (
     <View style={styles.container}>
-      <Image source={image} style={[styles.image, style]} />
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-
+      <View style={styles.ringOuter}>
+        <View style={styles.ringInner}>
+          <Image source={image} style={styles.image} />
+        </View>
+      </View>
+      <Text style={styles.name}>{title}</Text>
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>Pro</Text>
+      </View>
     </View>
   );
 };
@@ -21,31 +22,50 @@ const ProfessionalCard = ({ title, subtitle, image, style }: Props) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: hp('1%'),
+    paddingVertical: hp('1%'),
+  },
+  ringOuter: {
+    width: wp('19%'),
+    height: wp('19%'),
+    borderRadius: wp('9.5%'),
+    backgroundColor: '#295C59',
+    padding: 2.5,
+    elevation: 4,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+  },
+  ringInner: {
+    flex: 1,
+    borderRadius: wp('9%'),
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   image: {
-    width: wp('18%'), // Default image width (can be overridden with prop)
-    height: wp('18%'), // Square image
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
-    borderRadius: 100,
-    borderColor: 'hsl(0, 0%, 50%)',
-    elevation: 3,
-    borderWidth:1,
   },
-  title: {
-    marginTop: hp('1%'),
-    fontWeight: '600',
-    fontSize: wp('3.5%'), // Responsive font size
-    color: '#000',
+  name: {
+    marginTop: hp('0.8%'),
+    fontWeight: '700',
+    fontSize: wp('3.2%'),
+    color: '#1C2B2A',
     textAlign: 'center',
   },
-  subtitle: {
-    marginTop: hp('0.1%'),
-    fontWeight: '500',
-    fontSize: wp('2.3%'), // Responsive font size
-    color: '#000',
-    textAlign: 'center',
-    width: wp('20%'),
+  badge: {
+    marginTop: 3,
+    backgroundColor: '#E8F4F3',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  badgeText: {
+    fontSize: wp('2.5%'),
+    fontWeight: '700',
+    color: '#295C59',
   },
 });
 

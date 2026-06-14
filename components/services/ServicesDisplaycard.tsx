@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    minHeight: hp(23), 
+    minHeight: hp(23),
     height: hp(24),
     shadowColor: '#7cbc7a',
     shadowOpacity: 0.2,
@@ -75,8 +75,7 @@ const styles = StyleSheet.create({
     color: 'grey',
     paddingHorizontal: 11,
     marginTop: hp(0.5),
-
-    flexShrink: 1, // prevents overflow
+    flexShrink: 1,
   },
 });
 

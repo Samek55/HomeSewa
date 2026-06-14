@@ -1,123 +1,82 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  Text,
-  Alert
-} from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, TextInput, Text, Alert } from 'react-native';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { router } from 'expo-router';
-
-// 1. MODULAR SDK IMPORTS
 import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
 
-// Exported global placeholder for screen orchestration
 export let globalFirebaseConfirmation: any = null;
 
-const NumberBar = ({ onFocus = () => { } }) => {
+const NumberBar = ({ onFocus = () => {} }) => {
   const [phone, setPhone] = useState('');
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [overlayStatus, setOverlayStatus] = useState<'loading' | 'success'>('loading');
-  const fontSize = wp('4.5%');
 
   const cleanPhone = phone.replace(/\s/g, '');
 
   const handleContinue = async () => {
-    // 1. Force remove everything except digits just in case
     const structuralClean = phone.replace(/[^0-9]/g, '');
-
-    console.log("--- OTP TRIGGER DEBUG ---");
-    console.log("Raw state phone value:", phone);
-    console.log("Stripped clean digits:", structuralClean);
-
     if (structuralClean.length !== 10) {
-      Alert.alert('Phone number must be 10 digits', `You entered ${structuralClean.length} digits.`);
+      Alert.alert('Invalid Number', `Please enter a valid 10-digit Nepal mobile number.`);
       return;
     }
-
     try {
       setOverlayStatus('loading');
       setOverlayVisible(true);
-
       const formattedPhone = '+977' + structuralClean;
-      console.log("Sending SMS to target:", formattedPhone);
-
       const authInstance = getAuth();
-
-      // 2. Wrap execution directly
       const confirmation = await signInWithPhoneNumber(authInstance, formattedPhone);
-
-      console.log("Firebase SMS successfully initialized!", confirmation);
       globalFirebaseConfirmation = confirmation;
-
       setOverlayVisible(false);
-
-      router.push({
-        pathname: '/helpbox/helpboxOTP',
-        params: { phone: structuralClean },
-      });
-
+      router.push({ pathname: '/helpbox/helpboxOTP', params: { phone: structuralClean } });
     } catch (error: any) {
       setOverlayVisible(false);
-
-      // 3. FORCE print full system diagnostics to your terminal log 
-      console.error("CRITICAL FIREBASE TRACE:", JSON.stringify(error, null, 2));
-
-      // Fallback native window alert breakdown
-      Alert.alert(
-        'System Dispatch Error',
-        error.message || 'An unhandled exception blocked the Firebase pipeline.'
-      );
+      Alert.alert('Error', error.message || 'Something went wrong. Please try again.');
     }
   };
 
   return (
-    <View style={[styles.container, { width: wp('75%') }]}>
+    <View style={styles.container}>
       <SubmitOverlay
         visible={overlayVisible}
         status={overlayStatus}
         onClose={() => setOverlayVisible(false)}
         onClear={() => setOverlayVisible(false)}
       />
-      <View style={styles.phoneContainer}>
-        <View style={styles.iconWrapper}>
+
+      {/* FLAG + INPUT */}
+      <View style={styles.inputRow}>
+        <View style={styles.flagWrapper}>
           <Image
-            source={require('../../assets/images/nepal-flag-logo.jpeg')}
-            style={styles.icon}
-            resizeMode="cover"
+            source={require('../../assets/images/NEW-Flag_of_Nepal.png')}
+            style={styles.flag}
           />
         </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            onFocus={() => onFocus?.()}
-            value={phone}
-            onChangeText={(text) => {
-              let cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
-              let formatted = cleaned;
-              if (cleaned.length > 3 && cleaned.length <= 6) {
-                formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-              } else if (cleaned.length > 6) {
-                formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
-              }
-              setPhone(formatted);
-            }}
-            placeholder="984 123 4567"
-            placeholderTextColor="#999"
-            style={[styles.input, { fontSize }]}
-            keyboardType="numeric"
-          />
-        </View>
+        <Text style={styles.code}>+977</Text>
+        <View style={styles.dividerLine} />
+        <TextInput
+          onFocus={() => onFocus?.()}
+          value={phone}
+          onChangeText={(text) => {
+            let cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
+            let formatted = cleaned;
+            if (cleaned.length > 3 && cleaned.length <= 6) {
+              formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
+            } else if (cleaned.length > 6) {
+              formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+            }
+            setPhone(formatted);
+          }}
+          placeholder="984 123 4567"
+          placeholderTextColor="#A0BAB8"
+          style={styles.input}
+          keyboardType="numeric"
+        />
       </View>
 
-      <TouchableOpacity onPress={handleContinue} style={styles.helpButton}>
-        <Text style={styles.helpText}> Help </Text>
+      {/* BUTTON */}
+      <TouchableOpacity onPress={handleContinue} style={styles.button} activeOpacity={0.85}>
+        <Text style={styles.buttonText}>Get Help</Text>
       </TouchableOpacity>
     </View>
   );
@@ -126,50 +85,58 @@ const NumberBar = ({ onFocus = () => { } }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    height: hp('5%'),
-    borderRadius: 25,
+    alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#0E61CD',
-    overflow: 'hidden',
+    borderColor: '#295C59',
+    borderRadius: 12,
     backgroundColor: '#fff',
-    width: '100%',
+    overflow: 'hidden',
+    height: hp('6%'),
   },
-  phoneContainer: {
+  inputRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     paddingHorizontal: wp('3%'),
+    gap: 6,
   },
-  iconWrapper: {
+  flagWrapper: {
     width: 28,
     height: 28,
-    borderRadius: 14,
-    overflow: 'hidden',
-    marginRight: wp('2%'),
-  },
-  icon: {
-    width: '100%',
-    height: '100%',
-  },
-  inputContainer: {
-    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flag: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
+  },
+  code: {
+    fontSize: wp('3.5%'),
+    fontWeight: '700',
+    color: '#295C59',
+  },
+  dividerLine: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#C5DCDA',
+    marginHorizontal: 2,
   },
   input: {
-    width: '100%',
-    color: '#4B4B4B',
-    fontWeight: '600',
-    textAlign: 'center',
-    includeFontPadding: false,
+    flex: 1,
     fontSize: wp('3.8%'),
+    fontWeight: '600',
+    color: '#1C2B2A',
+    includeFontPadding: false,
   },
-  helpButton: {
-    backgroundColor: '#0E61CD',
-    paddingHorizontal: wp('4%'),
+  button: {
+    backgroundColor: '#295C59',
+    paddingHorizontal: wp('4.5%'),
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  helpText: {
+  buttonText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: wp('3.5%'),

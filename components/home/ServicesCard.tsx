@@ -1,15 +1,5 @@
-import {
-  Text,
-  Image,
-  StyleSheet,
-  Pressable,
-  View,
-} from 'react-native';
-
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
+import { Text, Image, StyleSheet, Pressable, View } from 'react-native';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 type Props = {
   title: string;
@@ -18,60 +8,57 @@ type Props = {
   onPress?: () => void;
 };
 
-const ServicesCard = ({ title, image, style, onPress }: Props) => {
+const ServicesCard = ({ title, image, onPress }: Props) => {
   return (
-    <View style={styles.wrapper}>
-      <Pressable style={styles.card} onPress={onPress}>
-        <Image source={image} style={[styles.image, style]} />
-        <Text style={styles.title} allowFontScaling={false}>{title}</Text>
-      </Pressable>
-    </View>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      onPress={onPress}
+    >
+      <View style={styles.imageWrapper}>
+        <Image source={image} style={styles.image} />
+      </View>
+      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    borderRadius: 12,
-    backgroundColor: '#fff',
-
-    marginTop: hp('1.2%'),
-    marginHorizontal: wp('1.4%'),
-
-    elevation: 3,
-
-    // IOS
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
-
   card: {
-    borderRadius: 12,
-    overflow: 'hidden',
-
     alignItems: 'center',
-    height: hp('14%'),
     width: wp('27%'),
-
     backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingBottom: 10,
+    elevation: 3,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    overflow: 'hidden',
   },
-
-  image: {
-    height: hp('9%'),
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
+  },
+  imageWrapper: {
     width: '100%',
+    height: hp('10%'),
+    overflow: 'hidden',
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
   },
-
   title: {
-    fontSize: wp('3.5%'),
+    fontSize: wp('3.2%'),
     fontWeight: '700',
-    color: '#161616',
+    color: '#295C59',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
+    paddingHorizontal: 4,
   },
 });
 

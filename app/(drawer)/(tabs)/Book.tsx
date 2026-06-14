@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
   TextInput,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,15 +11,16 @@ import {
   Dimensions,
   Image,
   Pressable,
-  ActivityIndicator, // Added for loading state during API check
+  ActivityIndicator,
 } from 'react-native';
 import Dropdown from '../../../components/bookings/Dropdown';
-import { area, services, shifts, budget, priority } from '../../../src/data/Data';
+import { Ionicons } from '@expo/vector-icons';
+import { areasByCity, city, services, shifts, budget, priority } from '../../../src/data/Data';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CalenderIcon from '../../../assets/icons/booking/calendar.png';
 import TextArea from '../../../components/bookings/TextArea';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import countryLogo from '../../../assets/images/homesewa.png';
+import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -34,7 +36,7 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} disabled={disabled}>
       <LinearGradient
-        colors={disabled ? ['#9ca3af', '#6b7280', '#4b5563'] : ['#047857', '#15803d', '#65a30d']}
+        colors={disabled ? ['#9ca3af', '#6b7280', '#4b5563'] : ['#295C59', '#3D7A76', '#295C59']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.button1, style]}
@@ -53,7 +55,10 @@ export default function ServiceBookingScreen() {
   const [number, setNumber] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [selectedShift, setSelectedShift] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [selectedArea, setSelectedArea] = useState('');
+  const [areaQuery, setAreaQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedBudget, setSelectedBudget] = useState('');
   const [message, setMessage] = useState('');
@@ -62,13 +67,36 @@ export default function ServiceBookingScreen() {
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const filteredAreas = useMemo(() => {
+    if (!selectedCity || !areasByCity[selectedCity]) return [];
+    const q = areaQuery.toLowerCase().trim();
+    const all = areasByCity[selectedCity];
+    return q ? all.filter(a => a.toLowerCase().includes(q)) : all;
+  }, [selectedCity, areaQuery]);
+
+  const handleCitySelect = (c: string) => {
+    setSelectedCity(c);
+    setSelectedArea('');
+    setAreaQuery('');
+    setShowSuggestions(false);
+  };
+
+  const handleAreaSelect = (a: string) => {
+    setSelectedArea(a);
+    setAreaQuery(a);
+    setShowSuggestions(false);
+  };
+
   const clearAllFields = () => {
     setName('');
     setNumber('');
     setSelectedService('');
     setSelectedShift('');
     setDate(null);
+    setSelectedCity('');
     setSelectedArea('');
+    setAreaQuery('');
+    setShowSuggestions(false);
     setSelectedPriority('');
     setSelectedBudget('');
     setMessage('');
@@ -155,7 +183,8 @@ export default function ServiceBookingScreen() {
     if (!selectedService) { return Alert.alert('Validation Error', 'Please select a service'); }
     if (!date) { return Alert.alert('Validation Error', 'Please select a date'); }
     if (!selectedShift) { return Alert.alert('Validation Error', 'Please choose a time shift'); }
-    if (!selectedArea) { return Alert.alert('Validation Error', 'Please select your location'); }
+    if (!selectedCity) { return Alert.alert('Validation Error', 'Please select your city'); }
+    if (!selectedArea.trim()) { return Alert.alert('Validation Error', 'Please enter your area'); }
     if (!selectedBudget.trim()) { return Alert.alert('Validation Error', 'Budget cannot be empty'); }
     if (!selectedPriority.trim()) { return Alert.alert('Validation Error', 'Please choose a Priority'); }
     if (!message.trim()) { return Alert.alert('Validation Error', 'Message cannot be empty'); }
@@ -182,7 +211,7 @@ export default function ServiceBookingScreen() {
           number: cleanNumber,
           selectedService,
           selectedShift,
-          selectedArea,
+          selectedArea: selectedArea + ', ' + selectedCity,
           selectedPriority,
           selectedBudget,
           message: message.trim(),
@@ -198,7 +227,7 @@ export default function ServiceBookingScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'teal' }}>
+    <View style={{ flex: 1, backgroundColor: '#295C59' }}>
       <Header2 />
       <KeyboardAwareScrollView
         ref={scrollRef}
@@ -277,11 +306,11 @@ export default function ServiceBookingScreen() {
                 style={[styles.datePicker, activeInput === 'date' && styles.inputActive]}
               >
                 <Text style={[styles.datePickerText, { color: date ? '#1A1A1A' : '#4B4B4B' }]}>
-                  {date ? date.toDateString() : 'Pick a Date'}
+                  {date ? `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()}` : 'Pick a Date (DD/MM/YYYY)'}
                 </Text>
                 <Image
                   source={CalenderIcon}
-                  style={[styles.calendarIcon, activeInput === 'date' && { tintColor: '#2F6BFF' }]}
+                  style={[styles.calendarIcon, activeInput === 'date' && { tintColor: '#295C59' }]}
                 />
               </TouchableOpacity>
 
@@ -315,17 +344,73 @@ export default function ServiceBookingScreen() {
               value={selectedShift}
             />
 
-            {/* Your Location */}
-            <Text style={styles.label}>Your Location<Text style={{ color: 'red' }}>*</Text></Text>
+            {/* City */}
+            <Text style={styles.label}>City<Text style={{ color: 'red' }}>*</Text></Text>
             <Dropdown
-              options={area}
-              placeholder="Select your location"
+              options={city}
+              placeholder="Select your city"
               placeholderColor="#4B4B4B"
-              onSelectOption={setSelectedArea}
-              onOpen={() => setActiveInput('location')}
+              onSelectOption={handleCitySelect}
+              onOpen={() => setActiveInput('city')}
               onClose={() => setActiveInput(null)}
-              value={selectedArea}
+              value={selectedCity}
             />
+
+            {/* Area with typing suggestions */}
+            <Text style={styles.label}>Area<Text style={{ color: 'red' }}>*</Text></Text>
+            <View style={[styles.areaWrapper, { zIndex: showSuggestions ? 999 : 1 }]}>
+              <TextInput
+                value={areaQuery}
+                onChangeText={(text) => {
+                  setAreaQuery(text);
+                  setSelectedArea(text);
+                  setShowSuggestions(text.length > 0);
+                }}
+                onFocus={() => setActiveInput('area')}
+                onBlur={() => setTimeout(() => {
+                  setShowSuggestions(false);
+                  setActiveInput(null);
+                }, 200)}
+                placeholder={selectedCity ? 'Type your area...' : 'Select a city first'}
+                placeholderTextColor="#4B4B4B"
+                editable={!!selectedCity}
+                style={[
+                  styles.input,
+                  { marginBottom: 0 },
+                  activeInput === 'area' && styles.inputActive,
+                  !selectedCity && { backgroundColor: '#f5f5f5' },
+                ]}
+              />
+
+              {showSuggestions && filteredAreas.length > 0 && (
+                <View style={styles.suggestionBox}>
+                  <ScrollView
+                    nestedScrollEnabled
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator
+                    bounces={false}
+                  >
+                    {filteredAreas.map((s, i) => (
+                      <TouchableOpacity
+                        key={i}
+                        style={[
+                          styles.suggestionItem,
+                          i < filteredAreas.length - 1 && styles.suggestionDivider,
+                        ]}
+                        onPress={() => {
+                          handleAreaSelect(s);
+                          setActiveInput(null);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.suggestionText}>{s}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+            <View style={{ height: height * 0.02 }} />
 
             {/* Priority */}
             <Text style={styles.label}>Priority<Text style={{ color: 'red' }}>*</Text></Text>
@@ -390,12 +475,12 @@ export default function ServiceBookingScreen() {
 
 // ... styles remain unchanged ...
 const styles = StyleSheet.create({
-  container: { backgroundColor: 'teal', flexGrow: 1 },
-  formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: 'teal' },
+  container: { backgroundColor: '#295C59', flexGrow: 1 },
+  formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: '#295C59' },
   title: { fontSize: width * 0.06, fontWeight: '700', color: 'white', paddingLeft: 8, marginBottom: 10 },
   inputGroup: { marginTop: height * 0.015, padding: 20, borderRadius: 20, backgroundColor: '#fff', elevation: 10, marginBottom: height * 0.05 },
   input: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: width * 0.035, height: height * 0.055, marginBottom: height * 0.02, fontSize: width * 0.035, fontWeight: '500', borderColor: '#E2E8F0', color: '#1A1A1A', backgroundColor: '#fff' },
-  inputActive: { borderColor: 'hsl(142, 71%, 45%)', backgroundColor: '#F4F7FF' },
+  inputActive: { borderColor: '#295C59', backgroundColor: '#EFF8F7' },
   phoneContainer: { position: 'relative', justifyContent: 'center', marginBottom: height * 0.02 },
   icon: { width: wp('7%'), height: hp('3%'), position: 'absolute', left: 10, zIndex: 2 },
   phoneInput: { borderWidth: 1.5, borderRadius: 12, borderColor: '#E2E8F0', height: height * 0.055, paddingLeft: wp('12%'), paddingRight: 10, fontSize: width * 0.035, fontWeight: '500', color: '#1A1A1A', backgroundColor: '#fff' },
@@ -409,4 +494,36 @@ const styles = StyleSheet.create({
   buttonClearFlex: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 20, paddingRight: 10, justifyContent: 'center' },
   buttonClear: { color: '#0a7de1', fontSize: width * 0.038, fontWeight: '500' },
   clearIcon: { width: wp('6%'), height: hp('2.5%'), resizeMode: 'contain', marginRight: 2 },
+  areaWrapper: { position: 'relative', marginBottom: 0 },
+  suggestionBox: {
+    position: 'absolute',
+    top: height * 0.058,
+    left: 0,
+    right: 0,
+    maxHeight: height * 0.35,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#295C59',
+    elevation: 20,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    zIndex: 999,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    paddingHorizontal: width * 0.04,
+    paddingVertical: height * 0.016,
+  },
+  suggestionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F7F6',
+  },
+  suggestionText: {
+    fontSize: width * 0.035,
+    fontWeight: '500',
+    color: '#1C2B2A',
+  },
 });

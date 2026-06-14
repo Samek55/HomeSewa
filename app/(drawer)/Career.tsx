@@ -14,7 +14,7 @@ import {
 import { area, positionAppliedFor, services } from '../../src/data/Data';
 import TextArea from '../../components/bookings/TextArea';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
-import countryLogo from '../../assets/images/homesewa.png';
+import countryLogo from '../../assets/images/NEW-Flag_of_Nepal.png';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: width * 0.065,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: '#295C59',
     paddingLeft: 3,
   },
   spacerGap: {
@@ -519,8 +519,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   inputActive: {
-    borderColor: 'hsl(142, 71%, 45%)',      // Dynamic premium highlight glow color
-    backgroundColor: '#F4F7FF',  // Soft backdrop selection tint color
+    borderColor: '#295C59',
+    backgroundColor: '#EFF8F7',
   },
   phoneContainer: {
     position: 'relative',
@@ -572,10 +572,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     marginBottom: 40,
-    backgroundColor: '#000',
+    backgroundColor: '#295C59',
   },
   buttonClear: {
-    color: '#0a7de1',
+    color: '#295C59',
     fontSize: width * 0.038,
     fontWeight: '500',
   },

@@ -47,13 +47,14 @@ export default function BookingDetails() {
     date,
   } = useLocalSearchParams();
 
-  const formattedDate = date
-    ? new Date(date as string).toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : '';
+  const formattedDate = (() => {
+    if (!date) return '';
+    const d = new Date(date as string);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  })();
 
   const handleSubmit = async () => {
     // Aggressively clean string to extract pure digits
@@ -152,7 +153,7 @@ export default function BookingDetails() {
 
         <TouchableOpacity onPress={handleSubmit} activeOpacity={0.85}>
           <LinearGradient
-            colors={['#047857', '#15803d', '#65a30d']}
+            colors={['#1E4542', '#295C59', '#3D7A76']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.confirmBtn}
@@ -174,31 +175,31 @@ export default function BookingDetails() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: 'teal' },
+  screen: { flex: 1, backgroundColor: '#295C59' },
   container: { paddingHorizontal: width * 0.05, paddingBottom: hp('6%') },
   titleArea: { paddingTop: hp('3%'), paddingBottom: hp('2%'), paddingHorizontal: 4 },
-  title: { fontSize: width * 0.065, fontWeight: '700', color: '#fff', marginBottom: 5 },
-  subtitle: { fontSize: width * 0.033, color: 'rgba(255,255,255,0.78)', fontWeight: '400' },
+  title: { fontSize: width * 0.065, fontWeight: '800', color: '#fff', marginBottom: 5, letterSpacing: 0.2 },
+  subtitle: { fontSize: width * 0.033, color: 'rgba(255,255,255,0.70)', fontWeight: '400' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,
     paddingHorizontal: wp('5%'),
     paddingVertical: 4,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
+    elevation: 12,
+    shadowColor: '#1E4542',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
     marginBottom: hp('3%'),
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: hp('1.8%') },
-  rowLabel: { fontSize: wp('3.5%'), color: '#999', fontWeight: '500', flex: 1 },
-  rowValue: { fontSize: wp('3.5%'), color: '#111', fontWeight: '600', flex: 1.6, textAlign: 'right' },
+  rowLabel: { fontSize: wp('3.4%'), color: '#9BBAB8', fontWeight: '500', flex: 1 },
+  rowValue: { fontSize: wp('3.5%'), color: '#1C2B2A', fontWeight: '700', flex: 1.6, textAlign: 'right' },
   messageBlock: { paddingVertical: hp('1.8%'), gap: 6 },
-  messageText: { fontSize: wp('3.5%'), color: '#444', fontWeight: '500', lineHeight: 20 },
-  divider: { height: 1, backgroundColor: '#f2f2f2' },
-  confirmBtn: { height: hp('6.5%'), borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: hp('1.8%') },
-  confirmBtnText: { color: '#fff', fontSize: wp('4.2%'), fontWeight: '700', letterSpacing: 0.4 },
-  backBtn: { height: hp('6.5%'), borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.55)' },
-  backBtnText: { color: '#fff', fontSize: wp('4.2%'), fontWeight: '600' },
+  messageText: { fontSize: wp('3.5%'), color: '#5A7270', fontWeight: '500', lineHeight: 20 },
+  divider: { height: 1, backgroundColor: '#F0F7F6' },
+  confirmBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: hp('1.8%') },
+  confirmBtnText: { color: '#fff', fontSize: wp('4.2%'), fontWeight: '700', letterSpacing: 0.5 },
+  backBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.40)' },
+  backBtnText: { color: 'rgba(255,255,255,0.85)', fontSize: wp('4.2%'), fontWeight: '600' },
 });

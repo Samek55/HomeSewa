@@ -1,57 +1,48 @@
-import {View, Text, Image, StyleSheet, Dimensions} from 'react-native';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const {width, height} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-type Props = {name: string; image: any};
+type Props = { name: string; image: any };
 
-const SliderCard = ({name, image}: Props) => {
-  return (
-    <View style={styles.container}>
-      <Image source={image} style={styles.image} resizeMode="cover" />
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>HomeSewa | Nepal</Text>
-        <Text style={styles.subtitle}>
-         On Demand Home Service in Chennai
-        </Text>
-        <Text style={styles.name}>{name}</Text>
-      </View>
-    </View>
-  );
-};
+const SliderCard = ({ name, image }: Props) => (
+  <View style={styles.container}>
+    <Image source={image} style={styles.image} resizeMode="cover" />
+    <LinearGradient
+      colors={['transparent', 'rgba(18,46,44,0.90)']}
+      style={styles.gradient}
+    >
+      <Text style={styles.label}>HomeSewa · Nepal</Text>
+      <Text style={styles.name}>{name}</Text>
+    </LinearGradient>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
+    borderRadius: 16,
+    overflow: 'hidden',
+    width: '100%',
+    height: width * 0.45,
+    elevation: 4,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
-  image: {
-    width: width * 0.9,
-    height: height * 0.28, // 40% of the screen height
-  },
-  textContainer: {
+  image: { width: '100%', height: '100%', position: 'absolute' },
+  gradient: {
     position: 'absolute',
-    top: '30%', // Adjusted a bit to be better centered
-    alignItems: 'center',
-    paddingHorizontal: 10,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '55%',
+    justifyContent: 'flex-end',
+    padding: 14,
+    gap: 2,
   },
-  title: {
-    fontSize: width * 0.04, // Responsive font size
-    fontWeight: '900',
-    color: '#fff',
-    paddingBottom:2,
-
-  },
-  subtitle: {
-    fontSize: width * 0.036,
-    fontWeight: '500',
-    marginBottom: height * 0.018,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  name: {
-    fontSize: width * 0.044,
-    fontWeight: '600',
-    color: '#fff',
-  },
+  label: { fontSize: width * 0.03, fontWeight: '600', color: 'rgba(255,255,255,0.72)' },
+  name: { fontSize: width * 0.05, fontWeight: '800', color: '#fff' },
 });
 
 export default SliderCard;

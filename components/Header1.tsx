@@ -1,79 +1,69 @@
-import { TouchableOpacity, StyleSheet, View, Image, Text } from 'react-native';
+import { TouchableOpacity, StyleSheet, View, Image, Text, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
-import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 export default function Header1() {
   const navigation = useNavigation<any>();
 
   return (
-    <View style={styles.wrapper}>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#295C59" />
+      <View style={styles.wrapper}>
 
-      {/* LEFT ICON */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-        <Image
-          source={require('../assets/images/homesewa.png')}
-          style={styles.leftIcon}
-        />
-        <Text style={{
-          fontSize: hp('2%'),
-          fontWeight: 'bold',
-          color: '#ffffff',
-        }}>HomeSewa</Text>
-      </View>
+        {/* LEFT: LOGO + BRAND */}
+        <View style={styles.left}>
+          <Image
+            source={require('../assets/images/homesewa.png')}
+            style={styles.logo}
+          />
+          <Text style={styles.brandBold}>HomeSewa</Text>
+        </View>
 
-      {/* RIGHT ICON */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Image
-          source={require('../assets/images/nepal-flag-logo.jpeg')}
-          style={styles.rightIcon}
-        />
-
-        {/* MENU BUTTON */}
+        {/* RIGHT: MENU */}
         <TouchableOpacity
-          style={styles.button}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           onPress={() =>
             navigation.getParent()?.dispatch(DrawerActions.openDrawer())
           }
         >
-          <Ionicons name="menu" size={23} color="#fff" />
+          <Ionicons name="menu" size={30} color="#fff" />
         </TouchableOpacity>
+
       </View>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'absolute',
-    top: 41.5,
-    left: 0,
-    right: 0,
-    height: 50,
-    zIndex: 100,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
+    backgroundColor: '#295C59',
+    paddingTop: Platform.OS === 'ios' ? 52 : 38,
+    paddingBottom: 14,
+    paddingHorizontal: 16,
   },
-
-  button: {
-    borderRadius: 100,
-    backgroundColor: '#008000',
-    padding: 3.6,
+  left: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    marginRight: 10,
   },
-
-  leftIcon: {
-    width: 34,
-    height: 34,
+  logo: {
+    width: 42,
+    height: 42,
     resizeMode: 'contain',
   },
-
-  rightIcon: {
-    width: 30,
-    height: 30,
-    resizeMode: 'contain',
-    borderRadius: 15,
+  brand: {
+    flexShrink: 1,
+  },
+  brandBold: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
   },
 });
