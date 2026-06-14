@@ -27,12 +27,6 @@ export default function ContactScreen() {
             style={styles.mapImage}
             resizeMode="cover"
           />
-          <View style={styles.mapOverlay}>
-            <View style={styles.mapBadge}>
-              <Ionicons name="location" size={14} color="#295C59" />
-              <Text style={styles.mapBadgeText}>Kathmandu, Nepal</Text>
-            </View>
-          </View>
         </View>
 
         {/* BRAND BLOCK */}
@@ -71,15 +65,6 @@ export default function ContactScreen() {
           />
         </View>
 
-        {/* HOURS */}
-        <View style={styles.hoursCard}>
-          <View style={styles.hoursHeader}>
-            <Ionicons name="time-outline" size={18} color="#295C59" />
-            <Text style={styles.hoursTitle}>Working Hours (NST)</Text>
-          </View>
-          <Text style={styles.hoursValue}>7:00 AM – 9:00 PM · 7 days a week</Text>
-          <Text style={styles.hoursNote}>Nepal Standard Time (UTC+5:45)</Text>
-        </View>
 
       </ScrollView>
     </View>
@@ -109,17 +94,17 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: hp('5%') },
 
   hero: {
-    backgroundColor: '#295C59',
+    backgroundColor: '#F5F9F8',
     paddingHorizontal: wp('6%'),
     paddingTop: hp('3%'),
-    paddingBottom: hp('3.5%'),
+    paddingBottom: hp('1.5%'),
   },
-  heroTitle: { fontSize: wp('7%'), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
-  heroSub: { fontSize: wp('3.5%'), color: 'rgba(255,255,255,0.75)', marginTop: 6 },
+  heroTitle: { fontSize: wp('7%'), fontWeight: '800', color: '#1C2B2A', letterSpacing: 0.3 },
+  heroSub: { fontSize: wp('3.5%'), color: '#5A7270', marginTop: 6 },
 
   mapWrapper: {
     marginHorizontal: wp('4%'),
-    marginTop: hp('2.5%'),
+    marginTop: hp('1%'),
     borderRadius: 16,
     overflow: 'hidden',
     height: 200,
@@ -149,7 +134,7 @@ const styles = StyleSheet.create({
 
   brandBlock: {
     paddingHorizontal: wp('5%'),
-    paddingTop: hp('2%'),
+    paddingTop: hp('1%'),
     paddingBottom: hp('0.5%'),
   },
   brandName: { fontSize: wp('5%'), fontWeight: '800', color: '#1C2B2A' },

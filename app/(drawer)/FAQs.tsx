@@ -74,20 +74,20 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: hp('5%') },
 
   hero: {
-    backgroundColor: '#295C59',
+    backgroundColor: '#F5F9F8',
     paddingHorizontal: wp('6%'),
     paddingTop: hp('3%'),
-    paddingBottom: hp('3.5%'),
+    paddingBottom: hp('1.5%'),
   },
   heroTitle: {
     fontSize: wp('7%'),
     fontWeight: '800',
-    color: '#fff',
+    color: '#1C2B2A',
     letterSpacing: 0.3,
   },
   heroSub: {
     fontSize: wp('3.5%'),
-    color: 'rgba(255,255,255,0.75)',
+    color: '#5A7270',
     marginTop: 6,
     fontWeight: '400',
   },

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "HomeSewa",
-    "slug": "HomeSewa",
+    "slug": "homesewa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/homesewa.png",
@@ -55,11 +55,11 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "owner": "ujjwal321",
+    "owner": "mr.ded",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "11bdd822-faeb-4c83-aecf-9af239f5bbaf"
+        "projectId": "4ef1e836-b268-4ec8-b6dd-e0e127189eec"
       }
     }
   }

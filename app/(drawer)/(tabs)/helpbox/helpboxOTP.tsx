@@ -63,7 +63,7 @@ export default function HelpboxOTP() {
             
             // 2. FIX SYNC: Pass auth instance explicitly + pass boolean resend trigger
             const authInstance = getAuth();
-            await (signInWithPhoneNumber as any)(authInstance, phone, true); 
+            await (signInWithPhoneNumber as any)(authInstance, '+977' + phone, true);
             
             Alert.alert('Success', 'A new code has been successfully sent.');
         } catch (error: any) {
