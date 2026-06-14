@@ -35,12 +35,16 @@ Thumbs.db
 # Android
 android/app/build/
 android/build/
+google-services.json
+android/app/google-services.json
 
 # iOS
 ios/Pods/
 ios/build/
 ios/*.xcworkspace
 ios/*.xcuserstate
+ios/RocketSingh/GoogleService-Info.plist
+GoogleService-Info.plist
 
 # VS Code
 .vscode/
