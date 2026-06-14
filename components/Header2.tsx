@@ -2,6 +2,7 @@ import { TouchableOpacity, StyleSheet, View, Image, Text, Platform, StatusBar } 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
+import { router } from 'expo-router';
 
 export default function Header2() {
   const navigation = useNavigation<any>();
@@ -11,7 +12,16 @@ export default function Header2() {
       <StatusBar barStyle="light-content" backgroundColor="#295C59" />
       <View style={styles.wrapper}>
 
-        {/* LEFT: LOGO + BRAND */}
+        {/* LEFT: BACK BUTTON */}
+        <TouchableOpacity
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={() => router.push('/Service')}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={26} color="#fff" />
+        </TouchableOpacity>
+
+        {/* CENTER: LOGO + BRAND */}
         <View style={styles.left}>
           <Image
             source={require('../assets/images/homesewa.png')}
@@ -44,6 +54,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 52 : 38,
     paddingBottom: 14,
     paddingHorizontal: 16,
+  },
+  backButton: {
+    marginRight: 10,
   },
   left: {
     flexDirection: 'row',

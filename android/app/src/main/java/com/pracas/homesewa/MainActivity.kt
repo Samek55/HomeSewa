@@ -1,4 +1,4 @@
-package com.pracas.rocketsingh
+package com.pracas.homesewa
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

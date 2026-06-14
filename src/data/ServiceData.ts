@@ -9,7 +9,7 @@ export const servicesData2 = [
       'Keep your home, office, apartment, or commercial space spotless with HomeSewa\'s professional deep cleaning services in Kathmandu. Our trained cleaning professionals use modern equipment and safe cleaning products to remove dirt, dust, stains, bacteria, and allergens from every corner of your property. Our services include complete home deep cleaning, kitchen deep cleaning, bathroom sanitization, sofa and upholstery cleaning, floor scrubbing and polishing, and window and glass cleaning. Deep cleaning improves hygiene and cleanliness, removes germs and allergens, creates a healthier indoor environment, uses professional cleaning equipment, and offers flexible scheduling options. Enjoy a cleaner, healthier, and fresher living space with our professional deep cleaning services.',
     question: 'What does deep cleaning include?',
     answer: 'Deep cleaning includes complete home and kitchen cleaning, bathroom sanitization, sofa and upholstery cleaning, floor scrubbing and polishing, and window cleaning to ensure a spotless and hygienic environment.',
-    image: require('../../assets/services/cleaningANDexteriorMaintenance/deep-cleaning.jpg'),
+    image: require('../../assets/services/deep-cleaning.jpg'),
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ export const servicesData2 = [
       'Transform and maintain your outdoor spaces with HomeSewa\'s professional garden care services in Kathmandu. Our experienced gardening professionals help keep lawns, plants, flowers, and landscapes healthy, attractive, and well-maintained throughout the year. Our services include lawn mowing, plant care and maintenance, garden landscaping, fertilization services, weed removal, and seasonal garden maintenance. Regular garden care creates beautiful outdoor spaces, promotes healthier plants and lawns, increases property value, provides professional maintenance support, and offers customized garden care plans. Create a vibrant and beautiful garden with expert gardening professionals.',
     question: 'What is included in garden care services?',
     answer: 'Garden care includes lawn mowing, plant care, garden landscaping, fertilization, weed removal, and seasonal maintenance to keep your outdoor spaces healthy and attractive.',
-    image: require('../../assets/services/outdoorServices/garden-care.jpg'),
+    image: require('../../assets/services/garden-care.jpg'),
   },
   {
     id: 3,
@@ -33,7 +33,7 @@ export const servicesData2 = [
       'Restore the strength and appearance of your property with HomeSewa\'s masonry repair services in Kathmandu. Our skilled technicians repair damaged walls, concrete surfaces, brickwork, and structural elements with precision and quality workmanship. Our services include wall crack repair, brick replacement, concrete repair, mortar joint restoration, structural patchwork, and surface finishing. Professional masonry repair improves structural integrity, enhances property appearance, provides long-lasting repairs, prevents further damage, and ensures professional workmanship. Protect your property and restore its appearance with reliable masonry repair services.',
     question: 'What does masonry repair include?',
     answer: 'Masonry repair includes wall crack repair, brick replacement, concrete repair, mortar joint restoration, structural patchwork, and surface finishing to restore structural integrity and appearance.',
-    image: require('../../assets/services/HomeRepairANDMaintenance/flooring.jpg'),
+    image: require('../../assets/services/masonry-repair.jpg'),
   },
   {
     id: 4,
@@ -45,7 +45,7 @@ export const servicesData2 = [
       'Get fast and reliable plumbing solutions with HomeSewa\'s plumbing repair services in Kathmandu. Our experienced plumbers handle leaks, blockages, fixture repairs, and water system issues to keep your home or business running smoothly. Our services include pipe leak repair, drain cleaning, faucet replacement, toilet repair, water pressure troubleshooting, and plumbing inspections. Professional plumbing repair reduces water wastage, ensures quick problem resolution, maintains reliable plumbing systems, prevents water damage, and provides dependable professional service. Restore your plumbing system with professional and reliable repair services.',
     question: 'What is included in plumbing repair services?',
     answer: 'Plumbing repair includes pipe leak repair, drain cleaning, faucet replacement, toilet repair, water pressure troubleshooting, and plumbing inspections to keep your water system running properly.',
-    image: require('../../assets/services/HomeRepairANDMaintenance/plumbing.jpg'),
+    image: require('../../assets/services/plumbing-repair.jpg'),
   },
   {
     id: 5,
@@ -57,7 +57,7 @@ export const servicesData2 = [
       'Ensure the safety and efficiency of your electrical systems with HomeSewa\'s electrical repair services in Kathmandu. Our qualified electricians diagnose and repair electrical issues for residential and commercial properties. Our services include wiring repairs, switch and socket replacement, circuit breaker repair, lighting installation, electrical troubleshooting, and safety inspections. Professional electrical repair improves electrical safety, reduces the risk of power failures, delivers energy-efficient solutions, employs skilled electricians, and ensures reliable long-term repairs. Ensure safe and efficient electrical systems with our qualified electrical professionals.',
     question: 'What do electrical repair services include?',
     answer: 'Electrical repair includes wiring repairs, switch and socket replacement, circuit breaker repair, lighting installation, electrical troubleshooting, and safety inspections to ensure a safe and efficient electrical system.',
-    image: require('../../assets/services/HomeRepairANDMaintenance/electrical.jpg'),
+    image: require('../../assets/services/electrical-repair.jpg'),
   },
   {
     id: 6,
@@ -69,7 +69,7 @@ export const servicesData2 = [
       'Enhance the functionality and appearance of your home or office with HomeSewa\'s professional carpentry services in Kathmandu. Our skilled carpenters provide custom woodwork, furniture repairs, installations, and maintenance solutions tailored to your requirements. Our services include furniture repair and restoration, door and window installation, cabinet and wardrobe installation, shelving and storage solutions, wooden partition work, and custom carpentry projects. Professional carpentry delivers skilled and experienced workmanship, high-quality results, customized wood solutions, durable and reliable finishes, and affordable service pricing. Get professional woodwork solutions for your home or office with trusted carpentry experts.',
     question: 'What types of carpentry services are available?',
     answer: 'Carpentry services include furniture repair, door and window installation, cabinet and wardrobe fitting, shelving solutions, wooden partitions, and custom woodwork projects for homes and offices.',
-    image: require('../../assets/services/HomeRepairANDMaintenance/carpentry.jpg'),
+    image: require('../../assets/services/carpentry.jpg'),
   },
   {
     id: 7,
@@ -81,7 +81,7 @@ export const servicesData2 = [
       'A faulty washing machine can disrupt your daily routine. HomeSewa provides reliable washing machine repair services in Kathmandu, helping you restore the performance of your appliance quickly and efficiently. Our services include washing machine diagnosis, motor repair and replacement, drainage issue repair, water leakage repair, drum and spin repair, and preventive maintenance. Professional appliance repair ensures quick restoration, employs experienced technicians, provides support for major brands, delivers cost-effective repairs, and extends appliance lifespan. Keep your laundry routine uninterrupted with expert washing machine repair services.',
     question: 'What does washing machine repair service cover?',
     answer: 'Washing machine repair includes diagnosis, motor repair, drainage issue fixes, leakage repair, drum and spin repair, and preventive maintenance to restore full appliance performance.',
-    image: require('../../assets/services/HomeRepairANDMaintenance/washing-machine-repair.jpg'),
+    image: require('../../assets/services/washing-machine-repair.jpg'),
   },
   {
     id: 8,
@@ -93,7 +93,7 @@ export const servicesData2 = [
       'Power your electric vehicle conveniently with HomeSewa\'s EV charger installation services in Kathmandu. Our certified technicians install safe and efficient charging systems for homes, apartments, offices, and commercial properties. Our services include home EV charger installation, commercial charging station setup, electrical load assessment, charger configuration, safety inspection, and system testing and commissioning. Professional installation provides convenient home charging, enhanced charging safety, increased property value, and future-ready infrastructure. Enjoy safe and efficient electric vehicle charging solutions installed by professionals.',
     question: 'What does EV charger installation include?',
     answer: 'EV charger installation includes home and commercial charger setup, electrical load assessment, charger configuration, safety inspection, and system testing to ensure safe and efficient electric vehicle charging.',
-    image: require('../../assets/services/installationANDsmartHome/electric-charger-installation.jpg'),
+    image: require('../../assets/services/ev-charger-installation.jpg'),
   },
   {
     id: 9,
@@ -105,7 +105,7 @@ export const servicesData2 = [
       'Stay cool and comfortable throughout the year with HomeSewa\'s AC services in Kathmandu. We provide installation, servicing, maintenance, and repair solutions for residential and commercial air conditioning systems. Our services include AC installation, AC servicing and cleaning, gas refilling, cooling issue repair, compressor repair, and preventive maintenance. Professional AC services improve cooling performance, enhance indoor air quality, reduce energy consumption, extend equipment lifespan, and deliver fast and reliable service. Keep your air conditioning system operating at peak performance with professional AC services.',
     question: 'What is included in AC services?',
     answer: 'AC services include installation, cleaning and servicing, gas refilling, cooling issue repair, compressor repair, and preventive maintenance to keep your air conditioning system running efficiently.',
-    image: require('../../assets/services/installationANDsmartHome/ac-service.jpg'),
+    image: require('../../assets/services/ac-service.jpg'),
   },
   {
     id: 10,
@@ -117,7 +117,7 @@ export const servicesData2 = [
       'Refresh and transform your property with HomeSewa\'s painting services in Kathmandu. Our professional painters deliver high-quality interior and exterior painting solutions for homes, offices, apartments, and commercial buildings. Our services include interior painting, exterior painting, wall preparation, texture painting, waterproof coating, and repainting and touch-ups. Professional painting improves property appearance, provides a long-lasting paint finish, offers color consultation, protects surfaces, and increases property value. Give your property a fresh new look with expert painting services.',
     question: 'What does painting service include?',
     answer: 'Painting services include interior and exterior painting, wall preparation, texture painting, waterproof coating, and repainting to give your property a fresh and lasting finish.',
-    image: require('../../assets/services/homeImprovement/painting.jpg'),
+    image: require('../../assets/services/painting.jpg'),
   },
   {
     id: 11,
@@ -129,7 +129,7 @@ export const servicesData2 = [
       'Relocating can be stressful, but HomeSewa makes it easy with reliable packing and moving services in Kathmandu. Our trained team ensures safe handling and transportation of your belongings. Our services include household shifting, office relocation, packing services, loading and unloading, furniture transportation, and unpacking assistance. Professional packing and moving provides safe transportation, uses professional packing materials, reduces relocation stress, ensures timely service delivery, and employs an experienced moving team. Move your home or office with confidence using our trusted relocation services.',
     question: 'What is included in packing and moving services?',
     answer: 'Packing and moving services include household and office shifting, professional packing, loading and unloading, furniture transportation, and unpacking assistance for a smooth and stress-free relocation.',
-    image: require('../../assets/services/movingANDproperty/packing.jpg'),
+    image: require('../../assets/services/packing-and-moving.jpg'),
   },
   {
     id: 12,
@@ -141,7 +141,7 @@ export const servicesData2 = [
       'Keep your Airbnb property guest-ready with HomeSewa\'s comprehensive Airbnb maintenance services in Kathmandu. We help property owners maintain high standards and improve guest satisfaction. Our services include property inspection, cleaning and housekeeping, minor repairs, guest-ready preparation, appliance checks, and emergency maintenance support. Professional Airbnb maintenance provides a better guest experience, improves property ratings, reduces maintenance workload, ensures professional upkeep, and increases occupancy potential. Ensure your Airbnb property remains clean, functional, and ready for every guest.',
     question: 'What does Airbnb maintenance service include?',
     answer: 'Airbnb maintenance includes property inspection, cleaning and housekeeping, minor repairs, guest-ready preparation, appliance checks, and emergency maintenance to keep your property in top condition for guests.',
-    image: require('../../assets/services/movingANDproperty/airbnb-maintenance.jpg'),
+    image: require('../../assets/services/airbnb-maintenance.jpg'),
   },
   {
     id: 13,
@@ -153,7 +153,7 @@ export const servicesData2 = [
       'Look radiant and confident on your special day with HomeSewa\'s bridal makeup services in Kathmandu. Our experienced makeup artists create stunning bridal looks tailored to your style and preferences. Our services include bridal makeup, engagement makeup, reception makeup, hairstyling, saree draping, and makeup trials. Professional bridal makeup employs experienced artists, uses premium beauty products, ensures long-lasting makeup, creates customized bridal looks, and provides stress-free beauty preparation. Make your special day unforgettable with professional bridal beauty services.',
     question: 'What is included in bridal makeup services?',
     answer: 'Bridal makeup services include bridal, engagement, and reception makeup, hairstyling, saree draping, and makeup trials to ensure you look stunning and confident on your special day.',
-    image: require('../../assets/services/subscriptionServices/home-concierge.jpg'),
+    image: require('../../assets/services/bridal-makeup.jpg'),
   },
   {
     id: 14,
@@ -165,7 +165,7 @@ export const servicesData2 = [
       'Ensure access to clean and safe drinking water with HomeSewa\'s RO water purifier services in Kathmandu. We provide installation, maintenance, servicing, and repair solutions for residential and commercial systems. Our services include RO installation, filter replacement, membrane replacement, system servicing, water quality inspection, and RO repair. Professional RO services provide safe drinking water, improve purifier performance, extend equipment lifespan, reduce contamination risks, and offer reliable technical support. Protect your family\'s health with reliable RO water purifier services.',
     question: 'What does RO water purifier service include?',
     answer: 'RO water purifier services include installation, filter and membrane replacement, system servicing, water quality inspection, and repair to ensure clean and safe drinking water for your home or office.',
-    image: require('../../assets/services/outdoorServices/smart-irrigation.jpg'),
+    image: require('../../assets/services/ro-water-purifying.jpg'),
   },
   {
     id: 15,
@@ -177,7 +177,7 @@ export const servicesData2 = [
       'Keep your food fresh and your refrigerator running efficiently with HomeSewa\'s refrigerator repair services in Kathmandu. Our skilled technicians diagnose and repair a wide range of refrigeration issues. Our services include cooling issue repair, compressor servicing, gas refilling, thermostat replacement, leakage repair, and preventive maintenance. Professional repair provides faster fixes, reduces food spoilage, improves energy efficiency, extends appliance lifespan, and offers support for all major brands. Restore your refrigerator\'s performance with expert repair and maintenance services.',
     question: 'What does refrigerator repair service include?',
     answer: 'Refrigerator repair includes cooling issue repair, compressor servicing, gas refilling, thermostat replacement, leakage repair, and preventive maintenance to restore your refrigerator\'s performance.',
-    image: require('../../assets/services/additionalServices/refrigerator-repair.jpg'),
+    image: require('../../assets/services/refrigerator-repair.jpg'),
   },
   {
     id: 16,
@@ -189,7 +189,7 @@ export const servicesData2 = [
       'Protect your home, office, shop, or commercial property with HomeSewa\'s CCTV services in Kathmandu. We provide end-to-end surveillance solutions designed to improve security, monitor activities, and provide peace of mind. Our services include CCTV camera installation, DVR and NVR setup, IP camera installation, remote monitoring configuration, CCTV maintenance and repair, and security system upgrades. Professional CCTV services enhance property security, enable 24/7 surveillance monitoring, provide remote access through mobile devices, and deter criminal activity. Secure your property with reliable CCTV surveillance solutions from experienced professionals.',
     question: 'What is included in CCTV services?',
     answer: 'CCTV services include camera installation, DVR and NVR setup, IP camera installation, remote monitoring configuration, and maintenance to provide 24/7 surveillance and enhanced property security.',
-    image: require('../../assets/services/installationANDsmartHome/smart-home.jpg'),
+    image: require('../../assets/services/cctv-services.jpg'),
   },
   {
     id: 17,
@@ -201,7 +201,7 @@ export const servicesData2 = [
       'Create a modern, organized, and highly functional cooking space with HomeSewa\'s modular kitchen services in Kathmandu. Our design and installation experts build customized kitchens that maximize storage, improve workflow, and enhance the overall appearance of your home. Our services include modular kitchen design, cabinet installation, storage solutions, countertop installation, kitchen remodeling, and hardware and accessory fitting. Professional modular kitchen services optimize space utilization, deliver modern designs, increase storage capacity, use durable materials, and improve kitchen functionality. Transform your kitchen into a stylish and efficient space tailored to your lifestyle.',
     question: 'What does modular kitchen service include?',
     answer: 'Modular kitchen services include kitchen design, cabinet and countertop installation, storage solutions, kitchen remodeling, and hardware fitting to create a functional and attractive cooking space.',
-    image: require('../../assets/services/additionalServices/modular-kitchen.jpg'),
+    image: require('../../assets/services/modular-kitchen.jpg'),
   },
   {
     id: 18,
@@ -213,7 +213,7 @@ export const servicesData2 = [
       'Upgrade your property with HomeSewa\'s comprehensive home renovation services in Kathmandu. Whether you are modernizing a single room or renovating an entire house, our experienced professionals deliver high-quality solutions that improve comfort, functionality, and property value. Our services include interior remodeling, structural improvements, kitchen renovation, bathroom renovation, flooring upgrades, and complete home makeovers. Professional renovation enhances property value, improves living comfort, modernizes interiors, offers professional project management, and provides customized renovation solutions. Give your home a fresh new look with professional renovation services.',
     question: 'What does home renovation service include?',
     answer: 'Home renovation includes interior remodeling, structural improvements, kitchen and bathroom renovation, flooring upgrades, and complete home makeovers to improve comfort, functionality, and property value.',
-    image: require('../../assets/services/homeImprovement/wall-decoration.jpg'),
+    image: require('../../assets/services/home-renovation.jpg'),
   },
   {
     id: 19,
@@ -225,7 +225,7 @@ export const servicesData2 = [
       'Protect your home and workplace from unwanted pests with HomeSewa\'s pest control services in Kathmandu. Our trained specialists provide safe and effective treatments to eliminate insects, rodents, termites, and other pests while preventing future infestations. Our services include termite treatment, cockroach control, rodent control, bed bug treatment, mosquito control, and preventive pest management. Professional pest control creates a healthier living environment, provides long-term pest prevention, uses safe treatment methods, protects property and belongings, and offers professional inspection and support. Maintain a pest-free environment with trusted pest control experts.',
     question: 'What is included in pest control services?',
     answer: 'Pest control includes termite treatment, cockroach and rodent control, bed bug treatment, mosquito control, and preventive pest management to eliminate pests and maintain a safe environment.',
-    image: require('../../assets/services/cleaningANDexteriorMaintenance/pressure-washing.jpg'),
+    image: require('../../assets/services/pest-control.jpg'),
   },
   {
     id: 20,
@@ -237,7 +237,7 @@ export const servicesData2 = [
       'Restore damaged walls and ceilings with HomeSewa\'s drywall repair services in Kathmandu. We repair cracks, holes, dents, and water-damaged surfaces, ensuring smooth and visually appealing finishes that blend seamlessly with your interiors. Our services include crack repair, hole patching, water damage restoration, surface smoothing, ceiling repairs, and wall finishing. Professional drywall repair improves interior appearance, prevents further damage, provides durable repair solutions, ensures professional workmanship, and delivers cost-effective restoration. Restore the beauty of your interiors with expert drywall repair services.',
     question: 'What does drywall repair include?',
     answer: 'Drywall repair includes crack repair, hole patching, water damage restoration, surface smoothing, ceiling repairs, and wall finishing to restore the beauty and integrity of your interior walls.',
-    image: require('../../assets/services/homeImprovement/drywall-repair.jpg'),
+    image: require('../../assets/services/drywall-repair.jpg'),
   },
   {
     id: 21,
@@ -249,7 +249,7 @@ export const servicesData2 = [
       'Enjoy professional beauty and grooming services from the comfort of your home with HomeSewa\'s salon at home services in Kathmandu. Our experienced beauticians provide personalized beauty treatments at your doorstep. Our services include haircuts and hairstyling, facial treatments, manicure and pedicure, hair spa services, grooming treatments, and beauty consultations. Salon at home provides convenient home service, employs professional beauticians, ensures hygienic beauty treatments, gives personalized attention, and offers flexible appointment scheduling. Experience premium beauty services without leaving your home.',
     question: 'What is included in salon at home services?',
     answer: 'Salon at home services include haircuts, hairstyling, facial treatments, manicure and pedicure, hair spa, and grooming treatments delivered by professional beauticians at your doorstep.',
-    image: require('../../assets/services/subscriptionServices/cleaning-plan.jpg'),
+    image: require('../../assets/services/salon-at-home.jpg'),
   },
   {
     id: 22,
@@ -261,7 +261,7 @@ export const servicesData2 = [
       'Enhance the appearance and durability of your floors and walls with HomeSewa\'s professional tiling services in Kathmandu. Our skilled tile installers provide precision workmanship for residential and commercial projects. Our services include floor tile installation, wall tile installation, tile replacement, grouting services, tile repair, and surface preparation. Professional tiling provides attractive finishes, ensures long-lasting durability, enables easy maintenance, increases property value, and guarantees professional installation. Upgrade your property with expertly installed tiles and premium finishes.',
     question: 'What does tiling service include?',
     answer: 'Tiling services include floor and wall tile installation, tile replacement, grouting, tile repair, and surface preparation to enhance the appearance and durability of your spaces.',
-    image: require('../../assets/services/homeImprovement/tiling-work.jpg'),
+    image: require('../../assets/services/tiling.jpg'),
   },
   {
     id: 23,
@@ -273,7 +273,7 @@ export const servicesData2 = [
       'Enjoy restaurant-quality dining experiences at home with HomeSewa\'s chef at home services in Kathmandu. Our professional chefs prepare delicious meals tailored to your preferences, dietary requirements, and special occasions. Our services include private chef sessions, family meal preparation, event catering support, custom menu planning, healthy meal preparation, and special occasion dining. Chef at home provides freshly prepared meals, personalized menu options, a convenient dining experience, professional culinary expertise, and a time-saving solution for busy households. Bring exceptional dining experiences directly to your home.',
     question: 'What is included in chef at home services?',
     answer: 'Chef at home services include private chef sessions, family meal preparation, event catering, custom menu planning, and healthy meal preparation to bring restaurant-quality food to your home.',
-    image: require('../../assets/services/additionalServices/chef-at-home.jpg'),
+    image: require('../../assets/services/chef-at-home.jpg'),
   },
   {
     id: 24,
@@ -285,7 +285,7 @@ export const servicesData2 = [
       'Turn your house into a smart home with HomeSewa\'s home automation services in Kathmandu. We install intelligent systems that provide greater convenience, security, and energy efficiency through centralized control of household devices. Our services include smart lighting installation, smart lock setup, smart security integration, automated curtain systems, smart appliance integration, and home automation consulting. Professional home automation improves convenience, enhances home security, delivers energy savings, enables remote device control, and provides a modern smart living experience. Experience the future of living with customized smart home solutions.',
     question: 'What is included in home automation services?',
     answer: 'Home automation services include smart lighting, lock setup, security integration, automated curtains, appliance integration, and consulting to create an intelligent and convenient smart home environment.',
-    image: require('../../assets/services/outdoorServices/outdoor-lightning.jpg'),
+    image: require('../../assets/services/home-automation.jpg'),
   },
   {
     id: 25,
@@ -297,7 +297,7 @@ export const servicesData2 = [
       'Enhance the elegance of your interiors with HomeSewa\'s parqueting services in Kathmandu. Our specialists install and restore premium parquet flooring that adds warmth, sophistication, and long-term value to residential and commercial spaces. Our services include parquet flooring installation, floor polishing, sanding and refinishing, floor restoration, wood floor maintenance, and floor inspection. Professional parqueting delivers an elegant interior appearance, durable flooring solutions, increased property value, easy maintenance, and long-lasting performance. Elevate your interiors with premium parquet flooring installed by experts.',
     question: 'What does parqueting service include?',
     answer: 'Parqueting services include parquet flooring installation, polishing, sanding and refinishing, floor restoration, and maintenance to enhance the elegance and value of your interiors.',
-    image: require('../../assets/services/homeImprovement/floor-repair.jpg'),
+    image: require('../../assets/services/parqueting.jpg'),
   },
   {
     id: 26,
@@ -309,7 +309,7 @@ export const servicesData2 = [
       'Bring nature indoors with HomeSewa\'s indoor planting services in Kathmandu. Our experts help homes, offices, hotels, restaurants, and commercial spaces create healthier and more attractive environments through carefully selected indoor plants and maintenance solutions. Our services include indoor plant selection, plant installation, decorative planter setup, plant maintenance, fertilization services, and plant replacement and care. Indoor planting improves air quality, enhances interior aesthetics, reduces stress levels, provides low-maintenance greenery solutions, and creates healthier work and living spaces. Transform your indoor spaces with beautiful and professionally maintained plants.',
     question: 'What is included in indoor planting services?',
     answer: 'Indoor planting services include plant selection, installation, decorative planter setup, plant maintenance, fertilization, and replacement care to create healthier and more attractive indoor spaces.',
-    image: require('../../assets/services/outdoorServices/lawn-care.jpg'),
+    image: require('../../assets/services/indoor-planting.jpg'),
   },
   {
     id: 27,
@@ -321,7 +321,7 @@ export const servicesData2 = [
       'Relax and rejuvenate without leaving your home with HomeSewa\'s spa at home services in Kathmandu. Our trained wellness professionals provide premium spa treatments designed to reduce stress, improve well-being, and help you unwind in a comfortable environment. Our services include facial treatments, body scrubs, aromatherapy sessions, wellness therapies, skin care treatments, and relaxation packages. Spa at home provides a professional spa experience, reduces stress and fatigue, improves skin health, offers personalized treatments, and ensures greater comfort and privacy. Enjoy luxury spa treatments from the comfort of your own home.',
     question: 'What does spa at home service include?',
     answer: 'Spa at home services include facial treatments, body scrubs, aromatherapy, wellness therapies, skin care treatments, and relaxation packages to help you unwind and rejuvenate at home.',
-    image: require('../../assets/services/subscriptionServices/maintenance-plan.jpg'),
+    image: require('../../assets/services/spa-at-home.jpg'),
   },
   {
     id: 28,
@@ -333,7 +333,7 @@ export const servicesData2 = [
       'Recover from injuries, manage pain, and improve mobility with HomeSewa\'s physiotherapy services in Kathmandu. Our qualified physiotherapists provide personalized treatment plans to help patients regain strength, flexibility, and independence. Our services include injury rehabilitation, post-surgery recovery, mobility improvement exercises, pain management therapy, sports injury treatment, and home physiotherapy sessions. Professional physiotherapy ensures a faster recovery process, improves mobility and flexibility, reduces pain and discomfort, provides personalized treatment plans, and offers professional healthcare support. Take the first step toward recovery with professional physiotherapy care.',
     question: 'What is included in physiotherapy services?',
     answer: 'Physiotherapy services include injury rehabilitation, post-surgery recovery, mobility exercises, pain management, sports injury treatment, and home sessions to help patients regain strength and independence.',
-    image: require('../../assets/services/additionalServices/physiotherapy.jpg'),
+    image: require('../../assets/services/physiotherapy.jpg'),
   },
   {
     id: 29,
@@ -345,7 +345,7 @@ export const servicesData2 = [
       'Get everyday repairs and maintenance tasks completed efficiently with HomeSewa\'s handyman services in Kathmandu. Our skilled professionals handle a wide range of household and commercial maintenance jobs, saving you time and effort. Our services include furniture assembly, fixture installation, minor plumbing repairs, minor electrical work, wall mounting services, and general maintenance tasks. Professional handyman services provide a one-stop maintenance solution, employ skilled and reliable technicians, save time, offer affordable pricing, and ensure quick problem resolution. Keep your property in top condition with professional handyman services.',
     question: 'What services does a handyman provide?',
     answer: 'Handyman services include furniture assembly, fixture installation, minor plumbing and electrical repairs, wall mounting, and general maintenance to keep your property in top condition.',
-    image: require('../../assets/services/HomeRepairANDMaintenance/handyman.jpg'),
+    image: require('../../assets/services/handyman.jpg'),
   },
   {
     id: 30,
@@ -357,7 +357,7 @@ export const servicesData2 = [
       'Relieve stress, muscle tension, and fatigue with HomeSewa\'s massage therapy services in Kathmandu. Our trained therapists provide customized treatments designed to improve relaxation, circulation, and overall well-being. Our services include relaxation massage, deep tissue massage, therapeutic massage, sports massage, stress relief therapy, and home massage sessions. Professional massage therapy reduces muscle tension, improves blood circulation, promotes better relaxation and sleep, reduces stress levels, and enhances physical well-being. Experience professional massage therapy tailored to your wellness needs.',
     question: 'What does massage therapy service include?',
     answer: 'Massage therapy includes relaxation massage, deep tissue massage, therapeutic and sports massage, stress relief therapy, and home sessions to improve well-being and relieve muscle tension.',
-    image: require('../../assets/services/additionalServices/massage-therapy.jpg'),
+    image: require('../../assets/services/massage-therapy.jpg'),
   },
   {
     id: 31,
@@ -369,7 +369,7 @@ export const servicesData2 = [
       'Ensure safe and hygienic water storage with HomeSewa\'s water tank cleaning services in Kathmandu. Our specialists thoroughly clean and disinfect water tanks to remove sediment, bacteria, algae, and contaminants. Our services include water tank cleaning, tank sanitization, sludge removal, tank inspection, disinfection treatment, and maintenance recommendations. Professional cleaning provides a cleaner water supply, improves hygiene, reduces health risks, extends tank lifespan, and uses professional cleaning methods for safe and pure water. Protect your family\'s health with professional water tank cleaning services.',
     question: 'What is included in water tank cleaning services?',
     answer: 'Water tank cleaning includes tank cleaning and sanitization, sludge removal, inspection, disinfection treatment, and maintenance recommendations to ensure safe and hygienic water storage.',
-    image: require('../../assets/services/additionalServices/water-tank-cleaning.jpg'),
+    image: require('../../assets/services/water-tank-cleaning.jpg'),
   },
   {
     id: 32,
@@ -381,7 +381,7 @@ export const servicesData2 = [
       'Enhance your property with durable and modern aluminum solutions from HomeSewa. Our aluminum fabrication services in Kathmandu provide customized structures for residential and commercial projects. Our services include aluminum doors and windows, office partitions, railings and frames, shopfront fabrication, and custom aluminum work. Professional aluminum fabrication delivers durable construction, a modern appearance, corrosion resistance, low maintenance requirements, and customized designs suited to your property\'s specific needs. Get high-quality aluminum fabrication solutions customized for your property.',
     question: 'What does aluminum fabrication service include?',
     answer: 'Aluminum fabrication includes aluminum doors and windows, office partitions, railings, frames, shopfront fabrication, and custom aluminum work for residential and commercial properties.',
-    image: require('../../assets/services/homeImprovement/window-repair.jpg'),
+    image: require('../../assets/services/aluminum-fabrication.jpeg'),
   },
   {
     id: 33,
@@ -393,7 +393,7 @@ export const servicesData2 = [
       'Improve the aesthetics and functionality of your interiors with HomeSewa\'s false ceiling services in Kathmandu. We design and install stylish ceiling solutions for homes, offices, and commercial properties. Our services include gypsum ceiling installation, POP ceiling work, decorative ceiling designs, LED lighting integration, ceiling repairs, and acoustic ceiling solutions. Professional false ceiling installation provides a modern interior appearance, improves lighting design, offers better insulation, conceals wiring systems, and increases property value. Transform your interiors with elegant and professionally installed false ceilings.',
     question: 'What is included in false ceiling services?',
     answer: 'False ceiling services include gypsum and POP ceiling installation, decorative ceiling designs, LED lighting integration, ceiling repairs, and acoustic solutions for modern and functional interiors.',
-    image: require('../../assets/services/additionalServices/false-ceiling.jpg'),
+    image: require('../../assets/services/false-ceiling.jpg'),
   },
   {
     id: 34,
@@ -405,7 +405,7 @@ export const servicesData2 = [
       'Keep your devices running efficiently with HomeSewa\'s computer repair services in Kathmandu. Our technicians provide fast and reliable solutions for desktops, laptops, and IT systems. Our services include hardware repair, software troubleshooting, virus removal, operating system installation, data backup assistance, and performance optimization. Professional repair delivers faster system performance, reduces downtime, provides professional diagnostics, ensures cost-effective repairs, and offers reliable technical support for homes and businesses. Restore your computer\'s performance with expert repair and support services.',
     question: 'What does computer repair service include?',
     answer: 'Computer repair includes hardware repair, software troubleshooting, virus removal, operating system installation, data backup assistance, and performance optimization for desktops and laptops.',
-    image: require('../../assets/services/additionalServices/computer-repair.jpg'),
+    image: require('../../assets/services/computer-repair.jpg'),
   },
   {
     id: 35,
@@ -417,7 +417,7 @@ export const servicesData2 = [
       'Ensure a consistent hot water supply with HomeSewa\'s geyser repair services in Kathmandu. Our technicians diagnose and repair heating issues quickly and effectively. Our services include heating element repair, thermostat replacement, leakage repair, electrical troubleshooting, geyser maintenance, and safety inspections. Professional geyser repair provides a reliable hot water supply, improves energy efficiency, extends equipment lifespan, delivers professional repairs, and enhances safety for your home or business. Enjoy uninterrupted hot water with professional geyser repair services.',
     question: 'What does geyser repair service include?',
     answer: 'Geyser repair includes heating element repair, thermostat replacement, leakage repair, electrical troubleshooting, maintenance, and safety inspections to restore a reliable hot water supply.',
-    image: require('../../assets/services/additionalServices/geyser-repair.jpg'),
+    image: require('../../assets/services/geyser-repair.jpeg'),
   },
   {
     id: 36,
@@ -429,7 +429,7 @@ export const servicesData2 = [
       'Maintain a clean and smoke-free kitchen with HomeSewa\'s chimney repair services in Kathmandu. Our technicians provide inspection, cleaning, maintenance, and repair solutions for kitchen chimneys. Our services include chimney cleaning, motor repair, filter replacement, suction performance testing, electrical repairs, and chimney servicing. Professional chimney repair ensures better kitchen ventilation, improves chimney performance, reduces fire risks, creates a cleaner cooking environment, and extends appliance lifespan. Keep your kitchen fresh and smoke-free with professional chimney services.',
     question: 'What does chimney repair service include?',
     answer: 'Chimney repair includes cleaning, motor repair, filter replacement, suction performance testing, electrical repairs, and servicing to maintain proper kitchen ventilation and safe operation.',
-    image: require('../../assets/services/additionalServices/chimney-repair.jpg'),
+    image: require('../../assets/services/chimney-repair.jpg'),
   },
   {
     id: 37,
@@ -441,7 +441,7 @@ export const servicesData2 = [
       'Maintain healthy and attractive trees with HomeSewa\'s tree cutting and pruning services in Kathmandu. Our trained professionals safely trim, shape, and remove trees to improve landscape appearance and safety. Our services include tree pruning, branch trimming, tree shaping, hazardous tree removal, storm damage cleanup, and tree health assessment. Professional tree care promotes healthier tree growth, improves landscape appearance, reduces safety risks, protects nearby structures, and provides expert outdoor maintenance. Keep your outdoor spaces safe and beautiful with expert tree care services.',
     question: 'What is included in tree cutting and pruning services?',
     answer: 'Tree cutting and pruning services include pruning, branch trimming, tree shaping, hazardous tree removal, storm damage cleanup, and health assessment to keep trees healthy and safe.',
-    image: require('../../assets/services/outdoorServices/tree-cutting.jpg'),
+    image: require('../../assets/services/tree-cutting.jpg'),
   },
   {
     id: 38,
@@ -453,7 +453,7 @@ export const servicesData2 = [
       'Maintain a hygienic and efficient wastewater system with HomeSewa\'s septic tank cleaning services in Kathmandu. We provide safe and professional cleaning solutions for residential and commercial properties. Our services include septic tank pumping, sludge removal, tank inspection, waste disposal, maintenance support, and emergency cleaning services. Professional septic tank cleaning prevents blockages, reduces foul odors, improves system efficiency, maintains better hygiene standards, and reduces the risk of overflow or contamination. Ensure proper wastewater management with professional septic tank cleaning services.',
     question: 'What does septic tank cleaning service include?',
     answer: 'Septic tank cleaning includes tank pumping, sludge removal, inspection, waste disposal, maintenance support, and emergency cleaning to ensure a hygienic and efficient wastewater system.',
-    image: require('../../assets/services/additionalServices/septic-tank.jpg'),
+    image: require('../../assets/services/septic-tank-cleaning.jpg'),
   },
   {
     id: 39,
@@ -465,7 +465,7 @@ export const servicesData2 = [
       'Keep your pets healthy, clean, and comfortable with HomeSewa\'s pet grooming services in Kathmandu. Our trained groomers provide comprehensive grooming and hygiene care for dogs and cats. Our services include pet bathing, coat brushing, hair trimming, nail clipping, ear cleaning, and hygiene treatments. Professional pet grooming improves pet hygiene, promotes healthier skin and coat, reduces shedding, provides greater comfort for your pets, and ensures professional grooming care from trained specialists. Give your pets the care they deserve with professional grooming services.',
     question: 'What is included in pet grooming services?',
     answer: 'Pet grooming services include bathing, coat brushing, hair trimming, nail clipping, ear cleaning, and hygiene treatments to keep your pets healthy, clean, and comfortable.',
-    image: require('../../assets/services/additionalServices/pet-grooming.jpg'),
+    image: require('../../assets/services/pet-grooming.jpg'),
   },
   {
     id: 40,
@@ -477,6 +477,6 @@ export const servicesData2 = [
       'Ensure the safe and reliable operation of your elevators with HomeSewa\'s lift and elevator repair services in Kathmandu. Our technicians provide maintenance, troubleshooting, repairs, and inspections for residential and commercial lift systems. Our services include lift diagnostics, mechanical repairs, electrical troubleshooting, safety inspections, preventive maintenance, and emergency breakdown support. Professional elevator repair improves passenger safety, reduces downtime, enhances equipment performance, extends elevator lifespan, and ensures compliance with safety standards. Maintain safe and efficient vertical transportation with professional elevator repair services.',
     question: 'What does lift and elevator repair service include?',
     answer: 'Lift and elevator repair includes diagnostics, mechanical and electrical repairs, safety inspections, preventive maintenance, and emergency support to ensure safe and efficient vertical transportation.',
-    image: require('../../assets/services/additionalServices/elevator-repair.jpg'),
+    image: require('../../assets/services/elevator-repair.avif'),
   },
 ];

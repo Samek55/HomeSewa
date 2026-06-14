@@ -40,7 +40,7 @@ export async function notifyProfessionals(service: string, bookingArea: string) 
         ],
         // Omit headings/contents so this profile segment doesn't receive a duplicate push
         sms_from: "+1234567890", // Must match your OneSignal SMS dashboard config
-        sms_body: `🚀 RocketSingh Alert: New "${cleanService}" job is available in ${cleanArea}. Open your app to accept the booking!`,
+        sms_body: `🏠 HomeSewa Alert: New "${cleanService}" job is available in ${cleanArea}. Open your app to accept the booking!`,
       });
       console.log(`SMS broadcast successfully queued for "${cleanService}" in "${cleanArea}"`);
     } catch (smsError) {
@@ -57,7 +57,7 @@ export async function notifyProfessionals(service: string, bookingArea: string) 
           { field: 'tag', key: 'services', relation: '=', value: cleanService }, // No Area Filter
         ],
         headings: { en: '🚀 New Job Available!' },
-        contents: { en: `New "${cleanService}" booking in ${cleanArea}. Open RocketSingh to respond.` },
+        contents: { en: `New "${cleanService}" booking in ${cleanArea}. Open HomeSewa to respond.` },
       });
       console.log(`Push notification broadcast successfully queued for all "${cleanService}" providers`);
     } catch (pushError) {
@@ -101,7 +101,7 @@ export async function notifyUsers(service: string, bookingArea: string, customer
       // This forces OneSignal to only count users with valid, subscribed Push tokens
       is_wp_wns: false,
       headings: { en: 'Booking Accepted 🚀' },
-      contents: { en: `Provider (${providerPhone}) has accepted your request for "${cleanService}" in ${cleanArea}.` },
+      contents: { en: `Your HomeSewa provider (${providerPhone}) has accepted your request for "${cleanService}" in ${cleanArea}.` },
     });
 
     console.log(`Notification safely sent to customer tag phone: ${cleanCustomerPhone}`);

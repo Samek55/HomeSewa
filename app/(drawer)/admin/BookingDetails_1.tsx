@@ -50,11 +50,11 @@ export default function BookingDetails() {
     }, [id]);
 
     const photos = [
-        require('../../../assets/services/HomeRepairANDMaintenance/carpentry.jpg'),
-        require('../../../assets/services/HomeRepairANDMaintenance/handyman.jpg'),
-        require('../../../assets/services/HomeRepairANDMaintenance/electrical.jpg'),
-        require('../../../assets/services/HomeRepairANDMaintenance/washing-machine-repair.jpg'),
-        require('../../../assets/services/HomeRepairANDMaintenance/flooring.jpg'),
+        require('../../../assets/services/carpentry.jpg'),
+        require('../../../assets/services/handyman.jpg'),
+        require('../../../assets/services/electrical-repair.jpg'),
+        require('../../../assets/services/washing-machine-repair.jpg'),
+        require('../../../assets/services/masonry-repair.jpg'),
     ];
 
     const openImage = (index: number) => {

@@ -16,7 +16,7 @@
     "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "backgroundColor": "#dcdcdc",
+        "backgroundColor": "#295C59",
         "foregroundImage": "./assets/images/homesewa.png"
       },
       "edgeToEdgeEnabled": true,

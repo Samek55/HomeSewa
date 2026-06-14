@@ -33,7 +33,7 @@ export default function HomeScreen() {
         {/* ── HERO ─────────────────────────────────────── */}
         <View style={styles.hero}>
           <Image
-            source={require('../../../assets/services/bannerServices.jpg')}
+            source={require('../../../assets/images/Banner.jpg')}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -76,7 +76,7 @@ export default function HomeScreen() {
             }
           >
             <Image
-              source={require('../../../assets/services/cleaningANDexteriorMaintenance/deep-cleaning.jpg')}
+              source={require('../../../assets/services/deep-cleaning.jpg')}
               style={styles.featuredImage}
               resizeMode="cover"
             />
@@ -96,21 +96,21 @@ export default function HomeScreen() {
           <View style={styles.servicesRow}>
             <ServicesCard
               title="Painting"
-              image={require('../../../assets/services/homeImprovement/painting.jpg')}
+              image={require('../../../assets/services/painting.jpg')}
               onPress={() =>
                 router.push({ pathname: '/service/ServiceDetail', params: { id: '10' } })
               }
             />
             <ServicesCard
               title="Plumbing"
-              image={require('../../../assets/services/HomeRepairANDMaintenance/plumbing.jpg')}
+              image={require('../../../assets/services/plumbing-repair.jpg')}
               onPress={() =>
                 router.push({ pathname: '/service/ServiceDetail', params: { id: '4' } })
               }
             />
             <ServicesCard
               title="Electrical"
-              image={require('../../../assets/services/HomeRepairANDMaintenance/electrical.jpg')}
+              image={require('../../../assets/services/electrical-repair.jpg')}
               onPress={() =>
                 router.push({ pathname: '/service/ServiceDetail', params: { id: '5' } })
               }

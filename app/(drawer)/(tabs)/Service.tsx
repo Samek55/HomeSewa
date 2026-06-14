@@ -55,7 +55,7 @@ export default function ServiceScreen() {
       <Header1 />
 
       <ImageBackground
-        source={require('../../../assets/services/bannerServices.jpg')}
+        source={require('../../../assets/images/Banner.jpg')}
         resizeMode="cover"
         style={styles.headerBackground}
       >
@@ -90,7 +90,7 @@ export default function ServiceScreen() {
         <View style={styles.sliderCardContainer}>
           <SliderCard
             name="Interior Designing"
-            image={require('../../../assets/services/banner4.jpg')}
+            image={require('../../../assets/images/Interior Designing.webp')}
           />
         </View>
 
