@@ -3,8 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../src/firebase/firebaseConfig'; // verify this matching path relative to root layout
+import auth from '@react-native-firebase/auth';
 
 // Prevent splash screen from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => { });
@@ -38,7 +37,7 @@ export default function RootLayout() {
 
   // --- FEATURE 1: FIREBASE AUTH PERSISTENCE TRACKER ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = auth().onAuthStateChanged((firebaseUser) => {
       setUser(firebaseUser);
       setInitializing(false);
       
