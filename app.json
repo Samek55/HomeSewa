@@ -5,12 +5,12 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/homesewa.png",
-    "scheme": "rocketsingh",
+    "scheme": "homesewa",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pracas.rocketsingh"
+      "bundleIdentifier": "com.pracas.homesewa"
     },
     "android": {
     "googleServicesFile": "./google-services.json",
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.pracas.rocketsingh"
+      "package": "com.pracas.homesewa"
     },
     "web": {
       "output": "static",
