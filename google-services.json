@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "254950076649",
+    "project_id": "rocketsingh-3b612",
+    "storage_bucket": "rocketsingh-3b612.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:254950076649:android:e7eb861474685853aa4078",
+        "android_client_info": {
+          "package_name": "com.pracas.rocketsingh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALYjalHxo0SC4q4Sk2RvyFb6lBxYdeaTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

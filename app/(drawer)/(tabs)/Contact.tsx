@@ -1,0 +1,200 @@
+import React, { useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  Linking,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
+
+
+import Email from '../../../assets/icons/contact/email_1.png';
+import Location from '../../../assets/icons/contact/location-pin.png';
+import Website from '../../../assets/icons/contact/globe.png';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import Header2 from '@/components/Header2';
+
+const ICON_SIZE = hp('3.3%');
+
+export default function ContactScreen() {
+
+  const openWebsite = useCallback(() => {
+    Linking.openURL('https://RocketSingh.app');
+  }, []);
+
+  const handleEmailPress = useCallback(() => {
+    Linking.openURL('mailto:help@rocketsingh.app');
+  }, []);
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Header2 />
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+
+        <View style={styles.container}>
+          <Text style={styles.title}>Contact Us</Text>
+          <Text style={styles.subtitle}> We&apos;re always here to help you out.</Text>
+
+          {/* MAP */}
+          <View style={styles.imageContainer}>
+            <Image
+              source={require('../../../assets/images/chennai.jpg')}
+              style={styles.mapImage}
+              resizeMode="cover"
+            />
+          </View>
+
+          {/* COMPANY */}
+          <Text style={styles.companyName}>RocketSingh | SuperFast Service </Text>
+          <Text style={styles.companySubtitle}>
+           On Demand Home Service in Chennai 
+          </Text>
+
+          {/* CARDS */}
+          <View style={styles.GridBox}>
+
+            {/* LOCATION */}
+            <View style={styles.card}>
+              <Image source={Location} style={styles.icon} />
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Visit us</Text>
+                <Text style={styles.cardSubtitle}>
+                  LLTM, Bartaprak, PIN-SPAN 2026, Chennai, India.
+                </Text>
+              </View>
+            </View>
+
+            {/* EMAIL */}
+            <View style={styles.card}>
+              <Image source={Email} style={styles.icon} />
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Email us</Text>
+                <TouchableOpacity onPress={handleEmailPress}>
+                  <Text style={styles.cardSubtitle}>
+                    help@rocketsingh.app
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* WEBSITE */}
+            <View style={styles.card}>
+              <Image source={Website} style={styles.icon} />
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle}>Website</Text>
+                <TouchableOpacity onPress={openWebsite}>
+                  <Text style={styles.cardSubtitle}>
+                     https://RocketSingh.app
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: '1%',
+  },
+
+
+  container: {
+    paddingHorizontal: wp('4%'),
+    paddingTop: hp('2%'),
+  },
+
+  title: {
+    fontSize: wp('5.8%'),
+    fontWeight: '700',
+    color: '#064E3B',
+  },
+
+  subtitle: {
+    fontSize: wp('3.8%'),
+    marginTop: 4,
+    marginBottom: hp('2%'),
+  },
+
+  imageContainer: {
+    width: '100%',
+    height: 230,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#eee',
+  },
+
+  mapImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  companyName: {
+    fontSize: wp('4.8%'),
+    fontWeight: '600',
+    marginTop: hp('2.5%'),
+    color: '#064E3B',
+  },
+
+  companySubtitle: {
+    fontSize: wp('3.6%'),
+    marginBottom: hp('2%'),
+    marginTop: 4,
+  },
+
+  GridBox: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    height: hp('10%'),
+    marginBottom: hp('2%'),
+    borderRadius: 15,
+    backgroundColor: '#fff',
+    elevation: 2,
+    overflow: 'hidden',
+    boxShadow: '0px 0px 2px #000',
+    justifyContent: 'space-around',
+    paddingLeft: 10,
+  },
+
+  icon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    resizeMode: 'contain',
+  },
+
+  cardContent: {
+    width: '75%',
+  },
+
+  cardTitle: {
+    fontSize: wp('4%'),
+    fontWeight: '500',
+    color: '#166534',
+  },
+
+  cardSubtitle: {
+    fontSize: wp('3.3%'),
+  },
+});
+

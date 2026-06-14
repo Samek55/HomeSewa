@@ -1,0 +1,3 @@
+RocketSingh is the Indian version of TACKLES PRO — a growing platform built with a vision to deliver fast, reliable, and professional on-demand services across India.
+Powered by a pool of dedicated, skilled, and trained professionals, RocketSingh is committed to providing SuperFast Services 24 hours a day, 365 days a year. From emergency support to daily maintenance solutions, our mission is to connect customers with trusted experts anytime, anywhere.
+With a strong focus on speed, professionalism, customer satisfaction, and digital convenience, RocketSingh aims to redefine modern service delivery by bringing technology-driven workforce solutions to homes, offices, and businesses throughout India.
