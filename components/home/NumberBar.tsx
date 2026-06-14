@@ -108,7 +108,7 @@ const NumberBar = ({ onFocus = () => { } }) => {
               }
               setPhone(formatted);
             }}
-            placeholder="984 123 4567"
+            placeholder="98520 24 365"
             placeholderTextColor="#999"
             style={[styles.input, { fontSize }]}
             keyboardType="numeric"
