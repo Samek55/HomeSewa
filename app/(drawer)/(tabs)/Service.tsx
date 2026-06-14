@@ -80,7 +80,7 @@ export default function ServiceScreen() {
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerTitle}>Painting</Text>
             <Text style={styles.headerSubtitle}>
-              On Demand Home Service in Chennai
+              On Demand Home Service in Nepal
             </Text>
           </View>
         </ImageBackground>

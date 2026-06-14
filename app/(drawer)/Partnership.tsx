@@ -15,7 +15,7 @@ import Dropdown from '../../components/bookings/Dropdown';
 import { businessType, city, howduhear, partnershipInterest, services } from '../../src/data/Data';
 import TextArea from '../../components/bookings/TextArea';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
-import countryLogo from '../../assets/header/right.png';
+import countryLogo from '../../assets/images/homesewa.png';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -238,7 +238,7 @@ export default function PartnershipScreen() {
       >
         <View style={[styles.formContainer, { marginBottom: hp('5%') }]}>
           <Text style={styles.title}>Become a Partner</Text>
-          <Text style={styles.subTitle}>Partnership opportunity with RocketSingh</Text>
+          <Text style={styles.subTitle}>Partnership opportunity with HomeSewa</Text>
 
           <View style={styles.spacerGap} />
 

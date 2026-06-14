@@ -14,7 +14,7 @@ import {
 import { area, positionAppliedFor, services } from '../../src/data/Data';
 import TextArea from '../../components/bookings/TextArea';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
-import countryLogo from '../../assets/header/right.png';
+import countryLogo from '../../assets/images/homesewa.png';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -238,7 +238,7 @@ export default function CareerScreen() {
         keyboardDismissMode="on-drag"
       >
         <View style={[styles.formContainer, { marginBottom: hp('5%') }]}>
-          <Text style={styles.title}>RocketSingh - Join Now</Text>
+          <Text style={styles.title}>HomeSewa - Join Now</Text>
 
           <View style={styles.spacerGap} />
 

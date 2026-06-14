@@ -5,7 +5,7 @@ export const servicesData2 = [
     words: 'Complete home cleaning.',
     number: 12,
     description:
-      'Keeping your home or workspace truly clean requires more than regular dusting and vacuuming. Our professional deep cleaning service removes built-up dirt, grime, allergens, and bacteria from every corner, creating a fresher and healthier environment. Serving clients across Chennai, we provide detailed cleaning solutions tailored to your needs. Unlike basic cleaning, deep cleaning focuses on hard-to-reach and neglected areas that collect dust and germs over time. Our trained professionals clean kitchens, bathrooms, bedrooms, living areas, and offices using high-quality equipment and safe products. From scrubbing tiles and disinfecting surfaces to cleaning appliances, fans, and floors, we ensure every area receives attention.',
+      'Keeping your home or workspace truly clean requires more than regular dusting and vacuuming. Our professional deep cleaning service removes built-up dirt, grime, allergens, and bacteria from every corner, creating a fresher and healthier environment. Serving clients across Nepal, we provide detailed cleaning solutions tailored to your needs. Unlike basic cleaning, deep cleaning focuses on hard-to-reach and neglected areas that collect dust and germs over time. Our trained professionals clean kitchens, bathrooms, bedrooms, living areas, and offices using high-quality equipment and safe products. From scrubbing tiles and disinfecting surfaces to cleaning appliances, fans, and floors, we ensure every area receives attention.',
     question: 'What does deep cleaning include?',
     answer:
       'Deep cleaning includes cleaning floors, walls, furniture, fixtures, and hard-to-reach spaces to ensure a completely hygienic environment.',
@@ -17,7 +17,7 @@ export const servicesData2 = [
     words: 'Outdoor surface cleaning.',
     number: 12,
     description:
-      'Dirt, stains, and grime can quickly make any property look worn out and unmaintained. Pressure washing removes mold, oil stains, algae, dust, and heavy buildup from driveways, patios, walls, fences, and commercial surfaces across Chennai. Advanced equipment and safe cleaning techniques ensure deep cleaning without damaging surfaces. Soft washing is used for delicate areas, while high-pressure cleaning handles stubborn dirt and stains. It restores a fresh, clean appearance and improves overall curb appeal. Regular cleaning also helps protect surfaces from long-term damage and wear. Reliable service, flexible scheduling, and consistent results are always delivered.',
+      'Dirt, stains, and grime can quickly make any property look worn out and unmaintained. Pressure washing removes mold, oil stains, algae, dust, and heavy buildup from driveways, patios, walls, fences, and commercial surfaces across Nepal. Advanced equipment and safe cleaning techniques ensure deep cleaning without damaging surfaces. Soft washing is used for delicate areas, while high-pressure cleaning handles stubborn dirt and stains. It restores a fresh, clean appearance and improves overall curb appeal. Regular cleaning also helps protect surfaces from long-term damage and wear. Reliable service, flexible scheduling, and consistent results are always delivered.',
     question: 'Why is pressure washing useful for properties?',
     answer: 'Pressure washing helps remove dirt, stains, mold, algae, and grime from exterior surfaces like driveways, patios, walls, and sidewalks to restore a clean appearance.',
     image: require('../../assets/services/cleaningANDexteriorMaintenance/pressure-washing.jpg'),
@@ -28,7 +28,7 @@ export const servicesData2 = [
     words: 'Roof and drainage cleaning.',
     number: 12,
     description:
-      'Blocked gutters and dirty roofs can cause leaks, water overflow, and serious structural damage over time. Leaves, moss, dirt, and debris are carefully removed to maintain proper water flow and drainage. Serving properties across Chennai, this service helps protect roofs and prevent costly repairs. Each visit includes inspection of gutters, downspouts, and drainage areas to ensure everything works properly. Seasonal cleaning and storm debris removal help avoid long-term issues. It also improves the overall appearance and safety of the property. Safe methods and detailed maintenance ensure long-lasting protection.',
+      'Blocked gutters and dirty roofs can cause leaks, water overflow, and serious structural damage over time. Leaves, moss, dirt, and debris are carefully removed to maintain proper water flow and drainage. Serving properties across Nepal, this service helps protect roofs and prevent costly repairs. Each visit includes inspection of gutters, downspouts, and drainage areas to ensure everything works properly. Seasonal cleaning and storm debris removal help avoid long-term issues. It also improves the overall appearance and safety of the property. Safe methods and detailed maintenance ensure long-lasting protection.',
     question: 'What is included in roof and gutter cleaning?',
     answer: 'Roof and gutter cleaning involves removing leaves, debris, and blockages while ensuring proper water flow and preventing leaks or water damage.',
     image: require('../../assets/services/cleaningANDexteriorMaintenance/roof-gutter-cleaning.jpg'),
@@ -39,7 +39,7 @@ export const servicesData2 = [
     words: 'Small repair works.',
     number: 12,
     description:
-      'Small repair issues can quickly turn into bigger and more expensive problems if left unattended. Services include door repairs, drywall patching, flooring fixes, mounting, painting touch-ups, and minor installations. Homes, offices, and rental properties across Chennai are supported with fast and reliable solutions. Every task is handled with proper tools and attention to detail for quality results. Quick response and efficient work help reduce stress and prevent further damage. Jobs are completed cleanly, safely, and on time. Practical and affordable maintenance keeps properties in good working condition.',
+      'Small repair issues can quickly turn into bigger and more expensive problems if left unattended. Services include door repairs, drywall patching, flooring fixes, mounting, painting touch-ups, and minor installations. Homes, offices, and rental properties across Nepal are supported with fast and reliable solutions. Every task is handled with proper tools and attention to detail for quality results. Quick response and efficient work help reduce stress and prevent further damage. Jobs are completed cleanly, safely, and on time. Practical and affordable maintenance keeps properties in good working condition.',
     question: 'What services does a handyman provide?',
     answer: 'A handyman handles small repairs, installations, maintenance tasks, and general home improvement work to keep your property in good condition.',
     image: require('../../assets/services/HomeRepairANDMaintenance/handyman.jpg'),
@@ -50,7 +50,7 @@ export const servicesData2 = [
     words: 'Wood and furniture work.',
     number: 12,
     description:
-      'Well-built woodwork enhances both the strength and appearance of any space. Services include custom cabinets, shelving, doors, framing, decks, furniture repair, and installation work. Every project is crafted using durable materials for long-lasting performance. Across Chennai, carpentry solutions are tailored for residential and commercial needs. Repairs, upgrades, and new installations are completed with precision and care. Attention is given to smooth finishing and structural accuracy. The result is improved functionality, durability, and a polished look.',
+      'Well-built woodwork enhances both the strength and appearance of any space. Services include custom cabinets, shelving, doors, framing, decks, furniture repair, and installation work. Every project is crafted using durable materials for long-lasting performance. Across Nepal, carpentry solutions are tailored for residential and commercial needs. Repairs, upgrades, and new installations are completed with precision and care. Attention is given to smooth finishing and structural accuracy. The result is improved functionality, durability, and a polished look.',
     question: 'What types of carpentry work do you offer?',
     answer: 'Carpentry services include custom woodwork, furniture repair, door and window installation, framing, shelving, and other wood-based construction tasks.',
     image: require('../../assets/services/HomeRepairANDMaintenance/carpentry.jpg'),
@@ -61,7 +61,7 @@ export const servicesData2 = [
     words: 'Pipe and leak fixing.',
     number: 12,
     description:
-      'Leaks, clogged drains, and pipe issues can disrupt daily life and cause water damage if not fixed quickly. Services include drain cleaning, faucet repair, toilet installation, pipe replacement, and water heater maintenance. Across Chennai, both emergency and routine plumbing needs are handled efficiently. Problems are diagnosed using modern tools for accurate and fast repair. Work is completed with care to prevent future issues and reduce damage. Clean and safe methods ensure reliable long-term performance. Professional support keeps plumbing systems running smoothly.',
+      'Leaks, clogged drains, and pipe issues can disrupt daily life and cause water damage if not fixed quickly. Services include drain cleaning, faucet repair, toilet installation, pipe replacement, and water heater maintenance. Across Nepal, both emergency and routine plumbing needs are handled efficiently. Problems are diagnosed using modern tools for accurate and fast repair. Work is completed with care to prevent future issues and reduce damage. Clean and safe methods ensure reliable long-term performance. Professional support keeps plumbing systems running smoothly.',
     question: 'What is included in plumbing services?',
     answer: 'Plumbing services cover leak repairs, drain cleaning, pipe installation, fixture replacement, and troubleshooting water system issues.',
     image: require('../../assets/services/HomeRepairANDMaintenance/plumbing.jpg'),
@@ -72,7 +72,7 @@ export const servicesData2 = [
     words: 'Wiring and power fixes.',
     number: 12,
     description:
-      'Safe and reliable electrical repair for homes and businesses in Chennai. We fix faulty wiring, flickering lights, broken outlets, and circuit breaker issues. Services include lighting installation, panel upgrades, fan fitting, wiring repairs, and troubleshooting electrical faults. Our technicians use modern tools to diagnose issues quickly and complete repairs with proper safety standards. We focus on fast response, dependable service, and minimal disruption. Electrical problems are handled carefully to restore safety and smooth power use. Transparent pricing and professional workmanship ensure peace of mind on every job.',
+      'Safe and reliable electrical repair for homes and businesses in Nepal. We fix faulty wiring, flickering lights, broken outlets, and circuit breaker issues. Services include lighting installation, panel upgrades, fan fitting, wiring repairs, and troubleshooting electrical faults. Our technicians use modern tools to diagnose issues quickly and complete repairs with proper safety standards. We focus on fast response, dependable service, and minimal disruption. Electrical problems are handled carefully to restore safety and smooth power use. Transparent pricing and professional workmanship ensure peace of mind on every job.',
     question: 'What do electrical repair services include?',
     answer: 'Electrical repairs include fixing wiring issues, repairing outlets and switches, resolving power failures, and installing electrical fixtures safely.',
     image: require('../../assets/services/HomeRepairANDMaintenance/electrical.jpg'),
@@ -83,7 +83,7 @@ export const servicesData2 = [
     words: 'Tile and surface repair.',
     number: 12,
     description:
-      'Floor repair services restore damaged, worn, or uneven surfaces across homes and commercial spaces in Chennai. We fix cracked tiles, scratched hardwood, loose boards, water damage, and surface wear. Services include patching, tile replacement, refinishing, grout repair, and leveling uneven areas. Each floor is carefully inspected to find the root cause before repair. High-quality materials and techniques ensure strong, long-lasting results. Repairs are matched seamlessly to existing flooring for a clean finish. The goal is to improve safety, appearance, and durability with minimal disruption.',
+      'Floor repair services restore damaged, worn, or uneven surfaces across homes and commercial spaces in Nepal. We fix cracked tiles, scratched hardwood, loose boards, water damage, and surface wear. Services include patching, tile replacement, refinishing, grout repair, and leveling uneven areas. Each floor is carefully inspected to find the root cause before repair. High-quality materials and techniques ensure strong, long-lasting results. Repairs are matched seamlessly to existing flooring for a clean finish. The goal is to improve safety, appearance, and durability with minimal disruption.',
     question: 'What is covered in flooring repair?',
     answer: 'Flooring repair includes fixing cracks, replacing damaged tiles or boards, repairing scratches, and restoring uneven or worn-out floor surfaces.',
     image: require('../../assets/services/HomeRepairANDMaintenance/flooring.jpg'),
@@ -120,7 +120,7 @@ export const servicesData2 = [
     words: 'Appliance maintenance.',
     number: 12,
     description:
-      'Washing machine repair service for all major brands in Chennai. We fix machines that won’t spin, drain, start, or are leaking or making noise. Our technicians diagnose motor, pump, belt, and control panel issues using advanced tools. Repairs are done on-site whenever possible for faster turnaround. We handle both routine fixes and emergency breakdowns. The focus is on long-lasting repair instead of temporary solutions. Proper servicing helps extend appliance life and avoid costly replacements.',
+      'Washing machine repair service for all major brands in Nepal. We fix machines that won’t spin, drain, start, or are leaking or making noise. Our technicians diagnose motor, pump, belt, and control panel issues using advanced tools. Repairs are done on-site whenever possible for faster turnaround. We handle both routine fixes and emergency breakdowns. The focus is on long-lasting repair instead of temporary solutions. Proper servicing helps extend appliance life and avoid costly replacements.',
     question: 'What does washing machine repair service cover?',
     answer: 'Washing machine repair includes fixing issues like drainage problems, motor faults, leaks, spinning issues, and general machine malfunctions.',
     image: require('../../assets/services/HomeRepairANDMaintenance/washing-machine-repair.jpg'),
@@ -131,7 +131,7 @@ export const servicesData2 = [
     words: 'CCTV & automation.',
     number: 12,
     description:
-      'Smart home installation and setup for modern homes and offices in Chennai. We install and configure smart lighting, security cameras, thermostats, and voice-controlled systems. Devices are integrated for smooth automation and remote control. Wiring, setup, and configuration are handled by trained technicians. Systems are tested for performance, safety, and connectivity. Solutions are customized based on property layout and user needs. The result is a more secure, efficient, and convenient living space.',
+      'Smart home installation and setup for modern homes and offices in Nepal. We install and configure smart lighting, security cameras, thermostats, and voice-controlled systems. Devices are integrated for smooth automation and remote control. Wiring, setup, and configuration are handled by trained technicians. Systems are tested for performance, safety, and connectivity. Solutions are customized based on property layout and user needs. The result is a more secure, efficient, and convenient living space.',
     question: 'What is included in smart home setup?',
     answer: 'Smart home setup includes installing and configuring smart devices such as lighting, security systems, thermostats, and voice-controlled automation.',
     image: require('../../assets/services/installationANDsmartHome/smart-home.jpg'),
@@ -142,7 +142,7 @@ export const servicesData2 = [
     words: 'EV charging install.',
     number: 12,
     description:
-      'EV charger installation for homes and commercial properties in Chennai. We install Level 1 and Level 2 charging stations based on vehicle and power needs. Services include wiring, panel checks, upgrades, and safety compliance. Compatible with Tesla, BMW, Nissan, Ford, and other EV brands. Installations are designed for fast, efficient, and safe charging. We also provide maintenance and troubleshooting support. The goal is a reliable and future-ready charging setup.',
+      'EV charger installation for homes and commercial properties in Nepal. We install Level 1 and Level 2 charging stations based on vehicle and power needs. Services include wiring, panel checks, upgrades, and safety compliance. Compatible with Tesla, BMW, Nissan, Ford, and other EV brands. Installations are designed for fast, efficient, and safe charging. We also provide maintenance and troubleshooting support. The goal is a reliable and future-ready charging setup.',
     question: 'What does EV charger installation include?',
     answer: 'EV charger installation includes setting up home or commercial charging stations, wiring connections, safety checks, and system configuration for electric vehicles.',
     image: require('../../assets/services/installationANDsmartHome/electric-charger-installation.jpg'),
@@ -153,7 +153,7 @@ export const servicesData2 = [
     words: 'Cooling system maintenance.',
     number: 12,
     description:
-      'AC servicing for all major cooling systems including split, window, and central units in Chennai. We clean filters, check gas levels, inspect coils, and test full system performance. Services help fix poor cooling, leaks, noise, and high energy use. Regular maintenance improves efficiency and extends unit lifespan. Our technicians handle both repairs and preventive servicing. Work is done quickly with minimal disruption. The aim is consistent cooling and better energy savings.',
+      'AC servicing for all major cooling systems including split, window, and central units in Nepal. We clean filters, check gas levels, inspect coils, and test full system performance. Services help fix poor cooling, leaks, noise, and high energy use. Regular maintenance improves efficiency and extends unit lifespan. Our technicians handle both repairs and preventive servicing. Work is done quickly with minimal disruption. The aim is consistent cooling and better energy savings.',
     question: 'What is included in AC servicing?',
     answer: 'AC servicing includes cleaning filters, checking gas levels, inspecting components, and ensuring efficient cooling performance and energy use.',
     image: require('../../assets/services/installationANDsmartHome/ac-service.jpg'),
@@ -164,7 +164,7 @@ export const servicesData2 = [
     words: 'Interior & exterior paint.',
     number: 12,
     description:
-      'High-quality interior and exterior painting that refreshes and protects residential and commercial properties in Chennai. We handle wall painting, ceiling touch-ups, exterior coating, accent walls, and full property repainting. Surface prep includes sanding, crack filling, priming, and wall repair for a smooth finish. Premium and eco-friendly paints are used for durability, weather resistance, and long-lasting color. Color selection support and different finishes are available to match your style. Services are designed for renovations, new spaces, or simple upgrades. Clean work, minimal disruption, and professional finishing ensure strong results every time.',
+      'High-quality interior and exterior painting that refreshes and protects residential and commercial properties in Nepal. We handle wall painting, ceiling touch-ups, exterior coating, accent walls, and full property repainting. Surface prep includes sanding, crack filling, priming, and wall repair for a smooth finish. Premium and eco-friendly paints are used for durability, weather resistance, and long-lasting color. Color selection support and different finishes are available to match your style. Services are designed for renovations, new spaces, or simple upgrades. Clean work, minimal disruption, and professional finishing ensure strong results every time.',
     question: 'What does painting service include?',
     answer: 'Painting services include surface preparation, wall painting, touch-ups, exterior and interior painting, and applying protective and decorative finishes.',
     image: require('../../assets/services/homeImprovement/painting.jpg'),
@@ -175,7 +175,7 @@ export const servicesData2 = [
     words: 'Wall decoration.',
     number: 12,
     description:
-      'Wallpaper installation and removal for modern and stylish interiors across Chennai. We work with vinyl, textured, fabric, peel-and-stick, and custom designs. Services include wall preparation, leveling, crack filling, precise cutting, pattern matching, and bubble-free installation. Old wallpaper removal is done safely without damaging walls, followed by proper surface prep for repainting or new installs. Suitable for homes, offices, hotels, and commercial spaces. Focus is on clean alignment, smooth finish, and durable results that enhance interior aesthetics. Each project is handled with attention to detail and professional finishing.',
+      'Wallpaper installation and removal for modern and stylish interiors across Nepal. We work with vinyl, textured, fabric, peel-and-stick, and custom designs. Services include wall preparation, leveling, crack filling, precise cutting, pattern matching, and bubble-free installation. Old wallpaper removal is done safely without damaging walls, followed by proper surface prep for repainting or new installs. Suitable for homes, offices, hotels, and commercial spaces. Focus is on clean alignment, smooth finish, and durable results that enhance interior aesthetics. Each project is handled with attention to detail and professional finishing.',
     question: 'What is included in wallpaper installation?',
     answer: 'Wallpaper installation includes wall preparation, measuring, cutting, pattern alignment, and applying wallpaper for a smooth and decorative finish.',
     image: require('../../assets/services/homeImprovement/wall-decoration.jpg'),
@@ -230,7 +230,7 @@ export const servicesData2 = [
     words: 'Grass & landscaping.',
     number: 12,
     description:
-      'Lawn care services to maintain healthy, green, and well-kept outdoor spaces in Chennai. We provide mowing, edging, fertilizing, weed control, aeration, overseeding, and seasonal cleanup. Regular maintenance keeps grass healthy, neat, and properly trimmed. Services are tailored to soil type, weather, and landscape needs. Additional treatments improve growth and prevent patchy or dry areas. Ideal for homes, HOAs, and commercial properties needing consistent outdoor upkeep and visual appeal.',
+      'Lawn care services to maintain healthy, green, and well-kept outdoor spaces in Nepal. We provide mowing, edging, fertilizing, weed control, aeration, overseeding, and seasonal cleanup. Regular maintenance keeps grass healthy, neat, and properly trimmed. Services are tailored to soil type, weather, and landscape needs. Additional treatments improve growth and prevent patchy or dry areas. Ideal for homes, HOAs, and commercial properties needing consistent outdoor upkeep and visual appeal.',
     question: 'What does lawn care service include?',
     answer: 'Lawn care includes mowing, edging, fertilizing, weed control, trimming, and seasonal maintenance to keep your lawn healthy and green.',
     image: require('../../assets/services/outdoorServices/lawn-care.jpg'),

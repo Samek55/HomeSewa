@@ -13,20 +13,20 @@ export default function Header1() {
       {/* LEFT ICON */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
         <Image
-          source={require('../assets/images/icon.png')}
+          source={require('../assets/images/homesewa.png')}
           style={styles.leftIcon}
         />
         <Text style={{
           fontSize: hp('2%'),
           fontWeight: 'bold',
           color: '#ffffff',
-        }}>Rocket Singh</Text>
+        }}>HomeSewa</Text>
       </View>
 
       {/* RIGHT ICON */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Image
-          source={require('../assets/header/right.png')}
+          source={require('../assets/images/nepal-flag-logo.jpeg')}
           style={styles.rightIcon}
         />
 
@@ -74,5 +74,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     resizeMode: 'contain',
+    borderRadius: 15,
   },
 });

@@ -9,7 +9,7 @@ const SliderCard = ({name, image}: Props) => {
     <View style={styles.container}>
       <Image source={image} style={styles.image} resizeMode="cover" />
       <View style={styles.textContainer}>
-        <Text style={styles.title}>RocketSingh | Chennai</Text>
+        <Text style={styles.title}>HomeSewa | Nepal</Text>
         <Text style={styles.subtitle}>
          On Demand Home Service in Chennai
         </Text>

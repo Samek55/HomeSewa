@@ -24,11 +24,11 @@ const ICON_SIZE = hp('3.3%');
 export default function ContactScreen() {
 
   const openWebsite = useCallback(() => {
-    Linking.openURL('https://RocketSingh.app');
+    Linking.openURL('https://homesewa.app');
   }, []);
 
   const handleEmailPress = useCallback(() => {
-    Linking.openURL('mailto:help@rocketsingh.app');
+    Linking.openURL('mailto:help@homesewa.app');
   }, []);
 
   return (
@@ -53,9 +53,9 @@ export default function ContactScreen() {
           </View>
 
           {/* COMPANY */}
-          <Text style={styles.companyName}>RocketSingh | SuperFast Service </Text>
+          <Text style={styles.companyName}>HomeSewa | SuperFast Service</Text>
           <Text style={styles.companySubtitle}>
-           On Demand Home Service in Chennai 
+           On Demand Home Service in Nepal
           </Text>
 
           {/* CARDS */}
@@ -67,7 +67,7 @@ export default function ContactScreen() {
               <View style={styles.cardContent}>
                 <Text style={styles.cardTitle}>Visit us</Text>
                 <Text style={styles.cardSubtitle}>
-                  LLTM, Bartaprak, PIN-SPAN 2026, Chennai, India.
+                  Kathmandu, Bagmati Province, Nepal.
                 </Text>
               </View>
             </View>
@@ -79,7 +79,7 @@ export default function ContactScreen() {
                 <Text style={styles.cardTitle}>Email us</Text>
                 <TouchableOpacity onPress={handleEmailPress}>
                   <Text style={styles.cardSubtitle}>
-                    help@rocketsingh.app
+                    help@homesewa.app
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -92,7 +92,7 @@ export default function ContactScreen() {
                 <Text style={styles.cardTitle}>Website</Text>
                 <TouchableOpacity onPress={openWebsite}>
                   <Text style={styles.cardSubtitle}>
-                     https://RocketSingh.app
+                     https://homesewa.app
                   </Text>
                 </TouchableOpacity>
               </View>

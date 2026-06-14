@@ -18,7 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import CalenderIcon from '../../../assets/icons/booking/calendar.png';
 import TextArea from '../../../components/bookings/TextArea';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import countryLogo from '../../../assets/header/right.png';
+import countryLogo from '../../../assets/images/homesewa.png';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,

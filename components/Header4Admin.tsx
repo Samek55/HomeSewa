@@ -12,20 +12,20 @@ export default function Header4() {
         <View style={styles.left}>
 
           <Image
-            source={require('../assets/images/icon.png')}
+            source={require('../assets/images/homesewa.png')}
             style={styles.leftIcon}
           />
           <Text style={{
             fontSize: 18,
             fontWeight: 'bold',
             color: '#064E3B',
-          }}>Rocket Singh</Text>
+          }}>HomeSewa</Text>
         </View>
 
         <View style={styles.right}>
 
           <Image
-            source={require('../assets/header/right.png')}
+            source={require('../assets/images/nepal-flag-logo.jpeg')}
             style={styles.rightIcon}
           />
           <TouchableOpacity
@@ -77,9 +77,9 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   rightIcon: {
-
     width: 30,
     height: 30,
-    resizeMode: 'contain'
+    resizeMode: 'contain',
+    borderRadius: 15,
   },
 });

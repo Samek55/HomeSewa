@@ -43,7 +43,7 @@ export default function AboutScreen() {
             <Text style={styles.title}>Our Story</Text>
 
             <Text style={styles.subtitle}>
-              ROCKETSINGH is an on-demand hyperlocal service platform delivering fast, reliable, and professional home services across India, powered by skilled and trained professionals available 24 hours a day, 365 days a year.
+              HomeSewa is an on-demand hyperlocal service platform delivering fast, reliable, and professional home services across Nepal, powered by skilled and trained professionals available 24 hours a day, 365 days a year.
             </Text>
 
             <Text style={styles.lineheighpara}>

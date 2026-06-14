@@ -55,10 +55,10 @@ export default function HomeScreen() {
             />
 
             <View style={styles.content}>
-              <Text style={styles.title}>RocketSingh | SuperFast Service</Text>
+              <Text style={styles.title}>HomeSewa | SuperFast Service</Text>
 
               <Text style={styles.subtitle}>
-                On Demand Home Service in Chennai
+                On Demand Home Service in Nepal
               </Text>
 
               <Text style={styles.sectionTitle}>Top Services</Text>

@@ -148,7 +148,7 @@ export default function CreateUser() {
       }
 
       // 🔐 Firebase Setup
-      const email = `${cleanPhone}@rocketsingh.app`;
+      const email = `${cleanPhone}@homesewa.app`;
 
       const userCredential = await createUserWithEmailAndPassword(
         auth,

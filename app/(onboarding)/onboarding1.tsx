@@ -21,7 +21,7 @@ export default function OnBoarding1() {
       </Pressable>
 
       <Text style={styles.title}>
-        Welcome to RocketSingh
+        Welcome to HomeSewa
       </Text>
 
       <Text style={styles.subtitle}>

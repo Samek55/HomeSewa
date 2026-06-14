@@ -108,7 +108,7 @@ export default function SingleScreen() {
           </View>
 
           <Text style={[styles.subtitle, { fontSize: scaleFont(17) }]}>
-            {service.name} Services in Chennai
+            {service.name} Services in Nepal
           </Text>
 
           <Text style={[styles.description, { fontSize: scaleFont(14) }]}>

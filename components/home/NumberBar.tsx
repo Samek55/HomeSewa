@@ -87,11 +87,13 @@ const NumberBar = ({ onFocus = () => { } }) => {
         onClear={() => setOverlayVisible(false)}
       />
       <View style={styles.phoneContainer}>
-        <Image
-          source={require('../../assets/header/right.png')}
-          style={styles.icon}
-          resizeMode="contain"
-        />
+        <View style={styles.iconWrapper}>
+          <Image
+            source={require('../../assets/images/nepal-flag-logo.jpeg')}
+            style={styles.icon}
+            resizeMode="cover"
+          />
+        </View>
         <View style={styles.inputContainer}>
           <TextInput
             onFocus={() => onFocus?.()}
@@ -106,7 +108,7 @@ const NumberBar = ({ onFocus = () => { } }) => {
               }
               setPhone(formatted);
             }}
-            placeholder="787 125 8006"
+            placeholder="984 123 4567"
             placeholderTextColor="#999"
             style={[styles.input, { fontSize }]}
             keyboardType="numeric"
@@ -138,10 +140,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: wp('3%'),
   },
-  icon: {
-    height: hp('3%'),
-    width: wp('5.5%'),
+  iconWrapper: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
     marginRight: wp('2%'),
+  },
+  icon: {
+    width: '100%',
+    height: '100%',
   },
   inputContainer: {
     flex: 1,

@@ -26,10 +26,10 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
         {/* PROFILE */}
         <View style={styles.profileBox}>
           <Image
-            source={require('../assets/images/icon.png')}
+            source={require('../assets/images/homesewa.png')}
             style={styles.avatar}
           />
-          <Text style={styles.name}>RocketSingh</Text>
+          <Text style={styles.name}>HomeSewa</Text>
         </View>
 
         {/* MENU */}
