@@ -11,7 +11,8 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { area, positionAppliedFor, services } from '../../src/data/Data';
+import { area, city, areasByCity } from '../../src/data/Data';
+import { servicesData2 } from '../../src/data/ServiceData';
 import TextArea from '../../components/bookings/TextArea';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
 import countryLogo from '../../assets/images/NEW-Flag_of_Nepal.png';
@@ -22,10 +23,12 @@ import {
 import FileUploadBox from '../../components/bookings/FileUploadBox';
 import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
+import HeadshotCropModal from '../../components/bookings/HeadshotCropModal';
 import { createCareer } from '@/api/PostApiCareer';
 import Header3 from '@/components/Header3drawer';
 import { uploadMultipleToCloudinary } from '@/api/uploadToCloudinary';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -48,26 +51,31 @@ export default function CareerScreen() {
 
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [gender, setGender] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
 
   const [experience, setExperience] = useState('');
-  const [policyNumber, setPolicyNumber] = useState('');
   const [emergencyNumber, setEmergencyNumber] = useState('');
-  const [coverMessage, setCoverMessage] = useState('');
+  const [referralNumber, setReferralNumber] = useState('');
 
   type FileItem = {
     uri: string;
     fileName?: string;
   };
 
+
+  // headshot crop flow
+  const [tempHeadshotUri, setTempHeadshotUri] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+
   // photos
-  const [selectedCV, setSelectedCV] = useState<FileItem[]>([]);
+  const [selectedHeadshot, setSelectedHeadshot] = useState<FileItem[]>([]);
   const [selectedID, setSelectedID] = useState<FileItem[]>([]);
 
   // dropdown states
-  const [selectedPosition, setSelectedPosition] = useState<string[]>([]);
   const [selectedExpertise, setSelectedExpertise] = useState<string[]>([]);
+  const [selectedCity, setSelectedCity] = useState('');
   const [selectedArea, setSelectedArea] = useState<string[]>([]);
 
   const [overlayVisible, setOverlayVisible] = useState(false);
@@ -79,16 +87,18 @@ export default function CareerScreen() {
   const clearAllFields = () => {
     setName('');
     setNumber('');
+    setGender('');
+    setTempHeadshotUri(null);
+    setSelectedHeadshot([]);
     setEmail('');
     setMessage('');
     setExperience('');
-    setPolicyNumber('');
+
     setEmergencyNumber('');
-    setCoverMessage('');
-    setSelectedCV([]);
+    setReferralNumber('');
     setSelectedID([]);
-    setSelectedPosition([]);
     setSelectedExpertise([]);
+    setSelectedCity('');
     setSelectedArea([]);
     setActiveInput(null);
   };
@@ -111,6 +121,19 @@ export default function CareerScreen() {
     );
   };
 
+  const pickHeadshot = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setTempHeadshotUri(result.assets[0].uri);
+      setShowCropModal(true);
+    }
+  };
+
   const handleSubmit = async () => {
     const cleanNumber = number.replace(/\s/g, '');
     const cleanEmergencyNumber = emergencyNumber.replace(/\s/g, '');
@@ -123,21 +146,19 @@ export default function CareerScreen() {
       return Alert.alert('Validation Error', 'Enter a valid 10-digit phone number');
     }
 
-    if (!email.trim()) {
-      return Alert.alert('Validation Error', 'Email is required');
+    if (!gender) {
+      return Alert.alert('Validation Error', 'Please select your gender');
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return Alert.alert('Validation Error', 'Enter a valid email address');
-    }
-
-    if (!selectedPosition || selectedPosition.length === 0) {
-      return Alert.alert('Validation Error', 'Please select at least one position');
+    if (email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return Alert.alert('Validation Error', 'Enter a valid email address');
+      }
     }
 
     if (!selectedExpertise || selectedExpertise.length === 0) {
-      return Alert.alert('Validation Error', 'Please select at least one expertise');
+      return Alert.alert('Validation Error', 'Please select your expertise');
     }
 
     if (!experience.trim()) {
@@ -145,28 +166,21 @@ export default function CareerScreen() {
     }
 
     if (!selectedID || selectedID.length === 0) {
-      return Alert.alert('Validation Error', 'Please upload your ID');
+      return Alert.alert('Validation Error', 'Please upload your Citizenship / Driving Licence / NID');
+    }
+
+    if (!selectedCity) {
+      return Alert.alert('Validation Error', 'Please select your city');
     }
 
     if (!selectedArea || selectedArea.length === 0) {
-      return Alert.alert('Validation Error', 'Please select area');
-    }
-
-    if (!policyNumber.trim()) {
-      return Alert.alert('Validation Error', 'Policy number is required');
+      return Alert.alert('Validation Error', 'Please select preferred working area');
     }
 
     if (!cleanEmergencyNumber || cleanEmergencyNumber.length !== 10) {
       return Alert.alert('Validation Error', 'Enter a valid emergency contact number');
     }
 
-    if (!selectedCV || selectedCV.length === 0) {
-      return Alert.alert('Validation Error', 'Please upload your CV');
-    }
-
-    if (!coverMessage.trim()) {
-      return Alert.alert('Validation Error', 'Cover message is required');
-    }
 
     if (!message.trim()) {
       return Alert.alert('Validation Error', 'Message is required');
@@ -176,35 +190,29 @@ export default function CareerScreen() {
     setOverlayVisible(true);
 
     try {
-      const [idProofImages, cvImages] = await Promise.all([
+      const [idProofImages, headshotImages] = await Promise.all([
         uploadMultipleToCloudinary(
-          selectedID.map(item => ({
-            uri: item.uri,
-            fileName: item.fileName,
-          }))
+          selectedID.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
-        uploadMultipleToCloudinary(
-          selectedCV.map(item => ({
-            uri: item.uri,
-            fileName: item.fileName,
-          }))
-        ),
+        selectedHeadshot.length > 0
+          ? uploadMultipleToCloudinary(selectedHeadshot.map(item => ({ uri: item.uri, fileName: item.fileName })))
+          : Promise.resolve([]),
       ]);
 
       const career = {
         "Full Name": name,
         "Phone": number,
+        "Gender": gender,
         "Email": email,
-        "Position Applied For": selectedPosition,
-        "Area of Expertise": selectedExpertise,
+        ...(headshotImages.length > 0 && { "Headshot": headshotImages.map(url => ({ url })) }),
+        "Your Expertise": selectedExpertise,
         "Years of Experience": experience,
+        "Preferred City": selectedCity,
         "Preferred Working Area": selectedArea,
-        "Insurance Policy Number": policyNumber,
         "Emergency Contact Number": emergencyNumber,
-        "Cover Letter": coverMessage,
+        "Referral Phone Number": referralNumber,
         "Message": message,
-        "Resume/CV": cvImages.map(url => ({ url })),
-        "ID Proof": idProofImages.map(url => ({ url })),
+        "Citizenship / Driving Licence / NID": idProofImages.map(url => ({ url })),
       };
 
       await createCareer(career);
@@ -226,6 +234,20 @@ export default function CareerScreen() {
         onClear={() => { clearAllFields(); setOverlayVisible(false); }}
         onClose={() => setOverlayVisible(false)}
       />
+      {tempHeadshotUri && (
+        <HeadshotCropModal
+          visible={showCropModal}
+          imageUri={tempHeadshotUri}
+          onSave={() => {
+            setSelectedHeadshot([{ uri: tempHeadshotUri }]);
+            setShowCropModal(false);
+          }}
+          onCancel={() => {
+            setTempHeadshotUri(null);
+            setShowCropModal(false);
+          }}
+        />
+      )}
       <KeyboardAwareScrollView
         ref={scrollRef}
         contentContainerStyle={styles.container}
@@ -266,7 +288,7 @@ export default function CareerScreen() {
               resizeMode="contain"
             />
             <TextInput
-              placeholder="Enter your Phone Number"
+              placeholder="98520 24 365"
               value={number}
               onFocus={() => setActiveInput('phone')}
               onBlur={() => setActiveInput(null)}
@@ -296,8 +318,35 @@ export default function CareerScreen() {
             />
           </View>
 
+          {/* Gender */}
+          <Text style={styles.label}>Gender<Text style={{ color: 'red' }}>*</Text></Text>
+          <View style={styles.radioRow}>
+            {['Male', 'Female'].map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={styles.radioOption}
+                onPress={() => setGender(option)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.radioOuter}>
+                  {gender === option && <View style={styles.radioInner} />}
+                </View>
+                <Text style={styles.radioLabel}>{option}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Headshot */}
+          <Text style={styles.label}>Headshot / Profile Picture</Text>
+          <FileUploadBox
+            value={selectedHeadshot}
+            onChange={setSelectedHeadshot}
+            label="Drop Headshot / Profile Picture"
+            onPressOverride={pickHeadshot}
+          />
+
           {/* Email */}
-          <Text style={styles.label}>Email<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
             placeholder="Enter your email address"
             value={email}
@@ -311,23 +360,11 @@ export default function CareerScreen() {
             placeholderTextColor={'#4B4B4B'}
           />
 
-          {/* Position Applied For */}
-          <Text style={styles.label}>Position Applied For<Text style={{ color: 'red' }}>*</Text></Text>
+          {/* Your Expertise */}
+          <Text style={styles.label}>Your Expertise<Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
-            options={positionAppliedFor}
-            placeholder="Select the position you are applying for"
-            placeholderColor="#4B4B4B"
-            value={selectedPosition}
-            onSelectOption={setSelectedPosition}
-            onOpen={() => setActiveInput('position')}
-            onClose={() => setActiveInput(null)}
-          />
-
-          {/* Area of Expertise */}
-          <Text style={styles.label}>Area of Expertise<Text style={{ color: 'red' }}>*</Text></Text>
-          <DropdownAdd
-            options={services}
-            placeholder="Select the area of expertise (max 5)"
+            options={servicesData2.map(s => s.name)}
+            placeholder="Select maximum UpTo 5"
             placeholderColor="#4B4B4B"
             value={selectedExpertise}
             onSelectOption={setSelectedExpertise}
@@ -339,7 +376,7 @@ export default function CareerScreen() {
           {/* Years of Experience */}
           <Text style={styles.label}>Years of Experience<Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
-            placeholder="Enter your years of experience in the field"
+            placeholder="5"
             value={experience}
             onFocus={() => setActiveInput('experience')}
             onBlur={() => setActiveInput(null)}
@@ -356,17 +393,34 @@ export default function CareerScreen() {
           />
 
           {/* ID Proof */}
-          <Text style={styles.label}>ID Proof<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Citizenship / Driving Licence / NID<Text style={{ color: 'red' }}>*</Text></Text>
           <FileUploadBox
             value={selectedID}
             onChange={setSelectedID}
           />
 
+          {/* Preferred City */}
+          <Text style={styles.label}>Preferred City<Text style={{ color: 'red' }}>*</Text></Text>
+          <DropdownAdd
+            options={city}
+            placeholder="Select your preferred city"
+            placeholderColor="#4B4B4B"
+            value={selectedCity ? [selectedCity] : []}
+            onSelectOption={(vals) => {
+              const picked = vals[vals.length - 1] ?? '';
+              setSelectedCity(picked);
+              setSelectedArea([]);
+            }}
+            onOpen={() => setActiveInput('city')}
+            onClose={() => setActiveInput(null)}
+            maxSelections={1}
+          />
+
           {/* Preferred Working Area */}
           <Text style={styles.label}>Preferred Working Area<Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
-            options={area}
-            placeholder="Select your preferred working area (max 5)"
+            options={selectedCity ? (areasByCity[selectedCity] ?? []) : area}
+            placeholder="Select maximum UpTo 5"
             placeholderColor="#4B4B4B"
             value={selectedArea}
             onSelectOption={setSelectedArea}
@@ -375,24 +429,6 @@ export default function CareerScreen() {
             maxSelections={5}
           />
 
-          {/* Insurance Policy Number */}
-          <Text style={styles.label}>Insurance Policy Number<Text style={{ color: 'red' }}>*</Text></Text>
-          <TextInput
-            placeholder="Enter the insurance policy number"
-            value={policyNumber}
-            onFocus={() => setActiveInput('policy')}
-            onBlur={() => setActiveInput(null)}
-            onChangeText={(text) => {
-              const onlyNumbers = text.replace(/[^0-9]/g, '');
-              setPolicyNumber(onlyNumbers);
-            }}
-            style={[
-              styles.input,
-              activeInput === 'policy' && styles.inputActive
-            ]}
-            placeholderTextColor={'#4B4B4B'}
-            keyboardType="numeric"
-          />
 
           {/* Emergency Contact Number */}
           <Text style={styles.label}>Emergency Contact Number<Text style={{ color: 'red' }}>*</Text></Text>
@@ -403,7 +439,7 @@ export default function CareerScreen() {
               resizeMode="contain"
             />
             <TextInput
-              placeholder="Enter your emergency contact number"
+              placeholder="98520 24 365"
               value={emergencyNumber}
               onFocus={() => setActiveInput('emergencyPhone')}
               onBlur={() => setActiveInput(null)}
@@ -433,25 +469,38 @@ export default function CareerScreen() {
             />
           </View>
 
-          {/* CV/Resume */}
-          <Text style={styles.label}>CV/Resume<Text style={{ color: 'red' }}>*</Text></Text>
-          <FileUploadBox
-            value={selectedCV}
-            onChange={setSelectedCV}
-          />
-
-          {/* Cover Letter */}
-          <Text style={styles.label}>Cover Letter<Text style={{ color: 'red' }}>*</Text></Text>
-          <TextArea
-            value={coverMessage}
-            onChangeText={setCoverMessage}
-            placeholder=""
-            placeholderTextColor="#4B4B4B"
-            maxHeight={160}
-            onFocus={() => setActiveInput('coverLetter')}
-            onBlur={() => setActiveInput(null)}
-            style={activeInput === 'coverLetter' && styles.inputActive}
-          />
+          {/* Referral Phone Number */}
+          <Text style={styles.label}>Referral Phone Number</Text>
+          <View style={styles.phoneContainer}>
+            <Image
+              source={countryLogo}
+              style={styles.icon}
+              resizeMode="contain"
+            />
+            <TextInput
+              placeholder="Enter referral phone number"
+              value={referralNumber}
+              onFocus={() => setActiveInput('referralPhone')}
+              onBlur={() => setActiveInput(null)}
+              onChangeText={(value) => {
+                let cleaned = value.replace(/[^0-9]/g, '');
+                cleaned = cleaned.slice(0, 10);
+                let formatted = cleaned;
+                if (cleaned.length > 3 && cleaned.length <= 6) {
+                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
+                } else if (cleaned.length > 6) {
+                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+                }
+                setReferralNumber(formatted);
+              }}
+              keyboardType="number-pad"
+              style={[
+                styles.phoneInput,
+                activeInput === 'referralPhone' && styles.inputActive
+              ]}
+              placeholderTextColor={'#4B4B4B'}
+            />
+          </View>
 
           {/* Message */}
           <Text style={styles.label}>Message<Text style={{ color: 'red' }}>*</Text></Text>
@@ -558,6 +607,44 @@ const styles = StyleSheet.create({
     fontSize: wp('3.6%'),
     fontWeight: '600',
     color: '#4A4A4A',
+  },
+  helperText: {
+    fontSize: wp('3%'),
+    color: '#888',
+    paddingLeft: 4,
+    marginTop: -hp('1.5%'),
+    marginBottom: hp('1.5%'),
+  },
+  radioRow: {
+    flexDirection: 'row',
+    gap: wp('6%'),
+    paddingHorizontal: wp('1%'),
+    marginBottom: hp('2.5%'),
+  },
+  radioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp('2%'),
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#295C59',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#295C59',
+  },
+  radioLabel: {
+    fontSize: wp('3.6%'),
+    color: '#4A4A4A',
+    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',

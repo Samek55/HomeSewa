@@ -12,7 +12,7 @@ const SliderCard = ({ name, image }: Props) => (
       colors={['transparent', 'rgba(18,46,44,0.90)']}
       style={styles.gradient}
     >
-      <Text style={styles.label}>HomeSewa · Nepal</Text>
+      <Text style={styles.label}>HomeSewa</Text>
       <Text style={styles.name}>{name}</Text>
     </LinearGradient>
   </View>
@@ -33,16 +33,18 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: '100%', position: 'absolute' },
   gradient: {
     position: 'absolute',
+    top: 0,
     bottom: 0,
     left: 0,
     right: 0,
-    height: '55%',
-    justifyContent: 'flex-end',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 14,
     gap: 2,
   },
-  label: { fontSize: width * 0.03, fontWeight: '600', color: 'rgba(255,255,255,0.72)' },
-  name: { fontSize: width * 0.05, fontWeight: '800', color: '#fff' },
+  label: { fontSize: width * 0.03, fontWeight: '600', color: 'rgba(255,255,255,0.72)', textAlign: 'center' },
+  name: { fontSize: width * 0.05, fontWeight: '800', color: '#fff', textAlign: 'center' },
 });
 
 export default SliderCard;

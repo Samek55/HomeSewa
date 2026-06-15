@@ -477,6 +477,6 @@ export const servicesData2 = [
       'Ensure the safe and reliable operation of your elevators with HomeSewa\'s lift and elevator repair services in Kathmandu. Our technicians provide maintenance, troubleshooting, repairs, and inspections for residential and commercial lift systems. Our services include lift diagnostics, mechanical repairs, electrical troubleshooting, safety inspections, preventive maintenance, and emergency breakdown support. Professional elevator repair improves passenger safety, reduces downtime, enhances equipment performance, extends elevator lifespan, and ensures compliance with safety standards. Maintain safe and efficient vertical transportation with professional elevator repair services.',
     question: 'What does lift and elevator repair service include?',
     answer: 'Lift and elevator repair includes diagnostics, mechanical and electrical repairs, safety inspections, preventive maintenance, and emergency support to ensure safe and efficient vertical transportation.',
-    image: require('../../assets/services/elevator-repair.avif'),
+    image: require('../../assets/services/elevator-repair.jpg'),
   },
 ];

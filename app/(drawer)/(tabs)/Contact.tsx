@@ -1,13 +1,16 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header2 from '@/components/Header2';
+
+const MAP_URL = 'https://maps.google.com/?q=27.7090,85.3221';
 
 export default function ContactScreen() {
   const openWebsite = useCallback(() => { Linking.openURL('https://homesewa.app'); }, []);
   const handleEmailPress = useCallback(() => { Linking.openURL('mailto:homesewa@sriyog.com'); }, []);
   const handlePhonePress = useCallback(() => { Linking.openURL('tel:+97798520 24365'); }, []);
+  const handleMapPress = useCallback(() => { Linking.openURL(MAP_URL); }, []);
 
   return (
     <View style={styles.screen}>
@@ -20,19 +23,24 @@ export default function ContactScreen() {
           <Text style={styles.heroSub}>We are always here to help you out.</Text>
         </View>
 
-        {/* MAP IMAGE */}
-        <View style={styles.mapWrapper}>
-          <Image
-            source={require('../../../assets/images/chennai.jpg')}
-            style={styles.mapImage}
-            resizeMode="cover"
-          />
-        </View>
+        {/* MAP CARD */}
+        <TouchableOpacity style={styles.mapWrapper} onPress={handleMapPress} activeOpacity={0.85}>
+          <View style={styles.mapPlaceholder}>
+            <View style={styles.mapPin}>
+              <Ionicons name="location" size={32} color="#295C59" />
+            </View>
+            <Text style={styles.mapAddress}>Rem.Work, Kamalpokhari{'\n'}Kathmandu, Nepal</Text>
+            <View style={styles.mapOpenBtn}>
+              <Ionicons name="map-outline" size={14} color="#fff" />
+              <Text style={styles.mapOpenText}>Open in Maps</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* BRAND BLOCK */}
         <View style={styles.brandBlock}>
           <Text style={styles.brandName}>HomeSewa</Text>
-          <Text style={styles.brandTag}>Express Home Service · Nepal</Text>
+          <Text style={styles.brandTag}>Express Home Service</Text>
         </View>
 
         {/* CONTACT CARDS */}
@@ -59,7 +67,7 @@ export default function ContactScreen() {
           <ContactCard
             icon="globe-outline"
             title="Website"
-            value="homesewa.app"
+            value="https://homesewa.app"
             onPress={openWebsite}
             tappable
           />
@@ -107,30 +115,48 @@ const styles = StyleSheet.create({
     marginTop: hp('1%'),
     borderRadius: 16,
     overflow: 'hidden',
-    height: 200,
-    position: 'relative',
   },
-  mapImage: { width: '100%', height: '100%' },
-  mapOverlay: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
+  mapPlaceholder: {
+    height: 160,
+    backgroundColor: '#E8F4F3',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#C9E8E6',
   },
-  mapBadge: {
+  mapPin: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  mapAddress: {
+    fontSize: wp('3.4%'),
+    color: '#1C2B2A',
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  mapOpenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: 5,
+    backgroundColor: '#295C59',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    marginTop: 2,
   },
-  mapBadgeText: { fontSize: wp('3%'), fontWeight: '700', color: '#295C59' },
+  mapOpenText: { fontSize: wp('3%'), color: '#fff', fontWeight: '600' },
 
   brandBlock: {
     paddingHorizontal: wp('5%'),
@@ -172,7 +198,7 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   cardTitle: { fontSize: wp('3.2%'), fontWeight: '600', color: '#5A7270', marginBottom: 2 },
   cardValue: { fontSize: wp('3.7%'), fontWeight: '600', color: '#1C2B2A' },
-  cardValueLink: { color: '#295C59', textDecorationLine: 'underline' },
+  cardValueLink: { color: '#295C59' },
 
   hoursCard: {
     marginHorizontal: wp('4%'),

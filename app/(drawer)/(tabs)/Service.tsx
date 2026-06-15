@@ -23,30 +23,82 @@ import {
 import Header1 from '@/components/Header1';
 import { router } from 'expo-router';
 
+type ServiceItem = typeof servicesData2[0];
+type RowItem =
+  | { type: 'pair'; items: ServiceItem[]; key: string }
+  | { type: 'featured'; item: ServiceItem; key: string };
+
+const PAIRS_BEFORE_FEATURED = 4;
+
+function buildRows(services: ServiceItem[]): RowItem[] {
+  const rows: RowItem[] = [];
+  let i = 0;
+  let pairCount = 0;
+
+  while (i < services.length) {
+    if (pairCount === PAIRS_BEFORE_FEATURED && i < services.length) {
+      rows.push({ type: 'featured', item: services[i], key: `featured-${services[i].id}` });
+      i++;
+      pairCount = 0;
+    } else {
+      const pair: ServiceItem[] = [services[i]];
+      if (i + 1 < services.length) pair.push(services[i + 1]);
+      rows.push({ type: 'pair', items: pair, key: `pair-${pair.map(p => p.id).join('-')}` });
+      i += pair.length;
+      pairCount++;
+    }
+  }
+
+  return rows;
+}
+
 export default function ServiceScreen() {
-  const data = useMemo(() => {
-    return servicesData2.filter(
-      (item) => item.id !== 1 && item.id !== 4
-    );
+  const rows = useMemo(() => {
+    const trending = servicesData2.filter(item => item.id !== 1 && item.id !== 4);
+    return buildRows(trending);
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: any }) => (
-      <View style={styles.serviceItemContainer}>
-        <ServicesDisplaycard
-          id={item.id}
-          name={item.name}
-          words={item.words}
-          image={item.image}
-          onPress={() =>
-            router.push({
-              pathname: '/service/ServiceDetail',
-              params: { id: item.id.toString() },
-            })
-          }
-        />
-      </View>
-    ),
+    ({ item }: { item: RowItem }) => {
+      if (item.type === 'featured') {
+        return (
+          <View style={styles.featuredContainer}>
+            <ServicesCards
+              name={item.item.name}
+              description={item.item.description}
+              image={item.item.image}
+              onPress={() =>
+                router.push({
+                  pathname: '/service/ServiceDetail',
+                  params: { id: item.item.id.toString() },
+                })
+              }
+            />
+          </View>
+        );
+      }
+      return (
+        <View style={styles.pairRow}>
+          {item.items.map((s) => (
+            <View key={s.id} style={styles.serviceItemContainer}>
+              <ServicesDisplaycard
+                id={s.id}
+                name={s.name}
+                words={s.words}
+                image={s.image}
+                onPress={() =>
+                  router.push({
+                    pathname: '/service/ServiceDetail',
+                    params: { id: s.id.toString() },
+                  })
+                }
+              />
+            </View>
+          ))}
+          {item.items.length === 1 && <View style={styles.serviceItemContainer} />}
+        </View>
+      );
+    },
     []
   );
 
@@ -55,14 +107,15 @@ export default function ServiceScreen() {
       <Header1 />
 
       <ImageBackground
-        source={require('../../../assets/images/Banner.jpg')}
+        source={require('../../../assets/header/Header.jpeg')}
         resizeMode="cover"
         style={styles.headerBackground}
+        imageStyle={{ transform: [{ scale: 1.08 }] }}
       >
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Our Services</Text>
+          <Text style={styles.headerTitle}>SuperFast Services</Text>
           <Text style={styles.headerSubtitle}>
-            On Demand Home Service in Nepal
+            Express Home Service
           </Text>
         </View>
       </ImageBackground>
@@ -94,7 +147,7 @@ export default function ServiceScreen() {
           />
         </View>
 
-        <Text style={styles.sectionTitle2}>More Services</Text>
+        <Text style={styles.sectionTitle2}>Trending Services</Text>
       </View>
     </View>
   ), []);
@@ -102,11 +155,9 @@ export default function ServiceScreen() {
   return (
     <View style={{ flex: 1 }}>
       <FlatList
-        data={data}
-        keyExtractor={(item) => item.id.toString()}
+        data={rows}
+        keyExtractor={(item) => item.key}
         renderItem={renderItem}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
         ListHeaderComponent={ListHeader}
         initialNumToRender={6}
         maxToRenderPerBatch={10}
@@ -129,7 +180,7 @@ const styles = StyleSheet.create({
     width: wp('100%'),
     height: hp('30%'),
     justifyContent: 'space-between',
-    boxShadow: '0px 0px 2px #7cbc7a',
+    overflow: 'hidden',
   },
 
   headerTextContainer: {
@@ -182,7 +233,8 @@ const styles = StyleSheet.create({
     marginTop: hp('2%'),
   },
 
-  columnWrapper: {
+  pairRow: {
+    flexDirection: 'row',
     paddingHorizontal: wp('4%'),
     justifyContent: 'space-between',
   },
@@ -190,6 +242,11 @@ const styles = StyleSheet.create({
   serviceItemContainer: {
     width: wp('44%'),
     marginBottom: hp('3%'),
+  },
+
+  featuredContainer: {
+    paddingHorizontal: wp('4%'),
+    marginBottom: hp('1%'),
   },
 
   listContent: {

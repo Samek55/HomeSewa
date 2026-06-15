@@ -45,6 +45,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="Service"
         options={{
+          tabBarLabel: 'Services',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="construct-outline" size={size} color={color} />
           ),

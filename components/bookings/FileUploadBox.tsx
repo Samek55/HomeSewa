@@ -25,9 +25,11 @@ type FileItem = {
 type Props = {
   value: FileItem[];
   onChange: (files: FileItem[]) => void;
+  label?: string;
+  onPressOverride?: () => void;
 };
 
-const FileUploadBox: React.FC<Props> = ({ value, onChange }) => {
+const FileUploadBox: React.FC<Props> = ({ value, onChange, label = 'Drop files/photos here', onPressOverride }) => {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const pickImages = async () => {
@@ -65,12 +67,10 @@ const FileUploadBox: React.FC<Props> = ({ value, onChange }) => {
     <View style={styles.container}>
       {/* EMPTY DASHED UPLOAD BOX */}
       {value.length === 0 && (
-        <TouchableOpacity style={styles.boxEmpty} onPress={pickImages} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.boxEmpty} onPress={onPressOverride ?? pickImages} activeOpacity={0.7}>
           <View style={styles.emptyState}>
             <Image source={ArrowDownIcon} style={styles.uploadIcon} />
-            <Text style={styles.placeholder}>
-              Drop files/photos here
-            </Text>
+            <Text style={styles.placeholder}>{label}</Text>
           </View>
         </TouchableOpacity>
       )}

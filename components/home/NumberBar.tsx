@@ -12,8 +12,6 @@ const NumberBar = ({ onFocus = () => {} }) => {
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [overlayStatus, setOverlayStatus] = useState<'loading' | 'success'>('loading');
 
-  const cleanPhone = phone.replace(/\s/g, '');
-
   const handleContinue = async () => {
     const structuralClean = phone.replace(/[^0-9]/g, '');
     if (structuralClean.length !== 10) {
@@ -60,14 +58,14 @@ const NumberBar = ({ onFocus = () => {} }) => {
           onChangeText={(text) => {
             let cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
             let formatted = cleaned;
-            if (cleaned.length > 3 && cleaned.length <= 6) {
-              formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-            } else if (cleaned.length > 6) {
-              formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+            if (cleaned.length > 5 && cleaned.length <= 7) {
+              formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+            } else if (cleaned.length > 7) {
+              formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
             }
             setPhone(formatted);
           }}
-          placeholder="984 123 4567"
+          placeholder="98520 24 365"
           placeholderTextColor="#A0BAB8"
           style={styles.input}
           keyboardType="numeric"
@@ -76,7 +74,7 @@ const NumberBar = ({ onFocus = () => {} }) => {
 
       {/* BUTTON */}
       <TouchableOpacity onPress={handleContinue} style={styles.button} activeOpacity={0.85}>
-        <Text style={styles.buttonText}>Get Help</Text>
+        <Text style={styles.buttonText}>Help</Text>
       </TouchableOpacity>
     </View>
   );

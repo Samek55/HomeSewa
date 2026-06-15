@@ -121,13 +121,11 @@ export default function PartnershipScreen() {
       return Alert.alert('Validation Error', 'Enter a valid 10-digit phone number');
     }
 
-    if (!email.trim()) {
-      return Alert.alert('Validation Error', 'Email is required');
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return Alert.alert('Validation Error', 'Enter a valid email address');
+    if (email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return Alert.alert('Validation Error', 'Enter a valid email address');
+      }
     }
 
     if (!organizationName.trim()) {
@@ -312,7 +310,7 @@ export default function PartnershipScreen() {
           </View>
 
           {/* Email */}
-          <Text style={styles.label}>Email<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
             placeholder="Enter your Email Address"
             value={email}

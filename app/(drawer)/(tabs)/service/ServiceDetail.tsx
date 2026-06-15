@@ -127,7 +127,7 @@ export default function SingleScreen() {
 
           <View style={styles.buttonPadding}>
             <Button onPress={() => router.push('/Book')}>
-              Book a Service
+              Book this Service
             </Button>
           </View>
 

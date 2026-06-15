@@ -24,16 +24,6 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
           </View>
           <Text style={styles.brandName}>HomeSewa</Text>
           <Text style={styles.brandTagline}>Express Home Service</Text>
-          <View style={styles.tagRow}>
-            <View style={styles.tag}>
-              <Ionicons name="location-outline" size={11} color="#d1fae5" />
-              <Text style={styles.tagText}>Nepal</Text>
-            </View>
-            <View style={styles.tag}>
-              <Ionicons name="star-outline" size={11} color="#d1fae5" />
-              <Text style={styles.tagText}>Verified</Text>
-            </View>
-          </View>
         </LinearGradient>
 
         {/* MENU */}
@@ -55,17 +45,17 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
           <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => router.push('/Partnership')} />
           <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => router.push('/Career')} />
 
-          <View style={styles.divider} />
-
-          <MenuItem icon="shield-checkmark-outline" label="Admin" active={isActive('/Admin')} onPress={() => router.push('/Admin')} />
-
         </View>
 
-        {/* FOOTER */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>© 2025 SRIYOG Consulting Pvt. Ltd.</Text>
-          <Text style={styles.footerSub}>Kamalpokhari, Kathmandu, Nepal</Text>
-        </View>
+        {/* ADMIN LOGIN BUTTON */}
+        <TouchableOpacity
+          style={styles.adminBtn}
+          onPress={() => router.push('/Admin')}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
+          <Text style={styles.adminBtnText}>Admin Login</Text>
+        </TouchableOpacity>
 
       </View>
     </SafeAreaView>
@@ -80,7 +70,7 @@ function MenuItem({ icon, label, onPress, active }: any) {
       activeOpacity={0.7}
     >
       <View style={[styles.iconBox, active && styles.iconBoxActive]}>
-        <Ionicons name={icon} size={18} color={active ? '#295C59' : '#6B7280'} />
+        <Ionicons name={icon} size={20} color={active ? '#295C59' : '#6B7280'} />
       </View>
       <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
       {active && <View style={styles.activeBar} />}
@@ -110,19 +100,19 @@ const styles = StyleSheet.create({
 
   /* PROFILE */
   profileHeader: {
-    paddingTop: 22,
-    paddingBottom: 18,
+    paddingTop: 14,
+    paddingBottom: 12,
     paddingHorizontal: 20,
     alignItems: 'center',
   },
   avatarWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.6)',
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 6,
     backgroundColor: '#fff',
   },
   avatar: {
@@ -131,17 +121,17 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   brandName: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 0.3,
   },
   brandTagline: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '400',
     color: 'rgba(255,255,255,0.75)',
     marginTop: 2,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   tagRow: {
     flexDirection: 'row',
@@ -164,19 +154,19 @@ const styles = StyleSheet.create({
 
   /* MENU */
   menu: {
-    flex: 1,
     paddingHorizontal: 12,
     paddingTop: 10,
+    paddingBottom: 4,
   },
   divider: {
     borderTopWidth: 1,
     borderColor: '#eee',
-    marginVertical: 6,
+    marginVertical: 7,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 9,
+    paddingVertical: 11,
     paddingHorizontal: 10,
     borderRadius: 12,
     marginBottom: 2,
@@ -185,9 +175,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F4F3',
   },
   iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: '#F0F4F3',
     alignItems: 'center',
     justifyContent: 'center',
@@ -197,7 +187,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#C9E8E6',
   },
   label: {
-    fontSize: 13.5,
+    fontSize: 14.5,
     fontWeight: '500',
     color: '#4B5563',
     flex: 1,
@@ -208,27 +198,26 @@ const styles = StyleSheet.create({
   },
   activeBar: {
     width: 3,
-    height: 18,
+    height: 20,
     borderRadius: 2,
     backgroundColor: '#295C59',
   },
 
-  /* FOOTER */
-  footer: {
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  adminBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#295C59',
+    margin: 12,
+    marginTop: 8,
+    paddingVertical: 13,
+    borderRadius: 14,
   },
-  footerText: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    fontWeight: '500',
-  },
-  footerSub: {
-    fontSize: 9,
-    color: '#B0C4C2',
-    marginTop: 2,
+  adminBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
   },
 });

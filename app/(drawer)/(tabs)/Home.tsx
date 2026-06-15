@@ -15,11 +15,17 @@ import {
 } from 'react-native-responsive-screen';
 import Header1 from '@/components/Header1';
 import { router } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
+import { servicesData2 } from '../../../src/data/ServiceData';
 
 
 export default function HomeScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
+
+  const shuffledServices = useMemo(
+    () => [...servicesData2].sort(() => Math.random() - 0.5).slice(0, 9),
+    []
+  );
 
   return (
     <View style={styles.screen}>
@@ -33,7 +39,7 @@ export default function HomeScreen() {
         {/* ── HERO ─────────────────────────────────────── */}
         <View style={styles.hero}>
           <Image
-            source={require('../../../assets/images/Banner.jpg')}
+            source={require('../../../assets/header/Header.jpeg')}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -42,9 +48,9 @@ export default function HomeScreen() {
             style={styles.heroOverlay}
           >
             {/* HEADLINE */}
-            <Text style={styles.heroTitle}>On Demand{'\n'}Home Service</Text>
+            <Text style={styles.heroTitle}>Express{'\n'}Home Service</Text>
             <Text style={styles.heroSub}>
-              Trusted professionals at your doorstep across Nepal
+              SuperFast Service at your Home.
             </Text>
 
             {/* PHONE BAR */}
@@ -92,30 +98,23 @@ export default function HomeScreen() {
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* 3 SMALLER CARDS */}
-          <View style={styles.servicesRow}>
-            <ServicesCard
-              title="Painting"
-              image={require('../../../assets/services/painting.jpg')}
-              onPress={() =>
-                router.push({ pathname: '/service/ServiceDetail', params: { id: '10' } })
-              }
-            />
-            <ServicesCard
-              title="Plumbing"
-              image={require('../../../assets/services/plumbing-repair.jpg')}
-              onPress={() =>
-                router.push({ pathname: '/service/ServiceDetail', params: { id: '4' } })
-              }
-            />
-            <ServicesCard
-              title="Electrical"
-              image={require('../../../assets/services/electrical-repair.jpg')}
-              onPress={() =>
-                router.push({ pathname: '/service/ServiceDetail', params: { id: '5' } })
-              }
-            />
-          </View>
+          {/* 9 SHUFFLED CARDS — refreshes each app open */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.servicesScrollContent}
+          >
+            {shuffledServices.map((service) => (
+              <ServicesCard
+                key={service.id}
+                title={service.name}
+                image={service.image}
+                onPress={() =>
+                  router.push({ pathname: '/service/ServiceDetail', params: { id: String(service.id) } })
+                }
+              />
+            ))}
+          </ScrollView>
         </View>
 
 
@@ -199,11 +198,12 @@ const styles = StyleSheet.create({
   featuredTitle: { fontSize: wp('4.8%'), fontWeight: '800', color: '#fff' },
   featuredSub: { fontSize: wp('3%'), color: 'rgba(255,255,255,0.80)', fontWeight: '400' },
 
-  /* SERVICE CARDS ROW */
-  servicesRow: {
+  /* SERVICE CARDS HORIZONTAL SCROLL */
+  servicesScrollContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: hp('0.5%'),
+    gap: wp('3%'),
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp('0.5%'),
   },
 
 });

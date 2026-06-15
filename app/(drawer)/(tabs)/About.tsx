@@ -40,22 +40,22 @@ export default function AboutScreen() {
           {/* CONTENT */}
           <View style={styles.content}>
 
-            <Text style={styles.title}>Our Story</Text>
+            <Text style={styles.title}>About Us</Text>
 
             <Text style={styles.subtitle}>
-              HomeSewa is a Nepal-based on-demand home service platform by SRIYOG Consulting Pvt. Ltd., delivering fast, reliable, and professional home services across Kathmandu Valley and major cities of Nepal — powered by skilled professionals available 7 days a week.
+              Home Sewa is a technology-driven express home service marketplace designed to connect customers with nearby service professionals through real-time location-based matching.
             </Text>
 
             <Text style={styles.lineheighpara}>
-              Founded in Kathmandu, our mission is to connect every Nepali household with trusted home service professionals under one platform — eliminating the hassle of searching for plumbers, electricians, cleaners, and technicians separately.
+              The platform aims to simplify the process of finding trusted service providers while helping skilled professionals generate business opportunities within their local communities.
             </Text>
 
             <Text style={styles.lineheighpara}>
-              Our vision is to become Nepal's most trusted home service marketplace, recognized for professionalism, accessibility, and service excellence — building long-term relationships with households, offices, and commercial establishments across Nepal.
+              With increasing urbanization and growing demand for on-demand services, customers often struggle to find reliable professionals quickly, while service providers face challenges in acquiring quality leads.
             </Text>
 
-            <Text style={styles.companyTag}>
-              A product of SRIYOG Consulting Pvt. Ltd., Kamalpokhari, Kathmandu, Nepal.
+            <Text style={styles.lineheighpara}>
+              Home Sewa bridges this gap by enabling instant service requests, AI powered matching, and real-time notifications.
             </Text>
 
             {/* TEAM */}
@@ -65,21 +65,21 @@ export default function AboutScreen() {
 
             <View style={styles.row}>
               <OurTeamCard
-                image={require('../../../assets/aboutUs/1_keshab.jpeg')}
-                title="Keshab"
-                suBTitle="Founder"
+                image={require('../../../assets/aboutUs/Yogendra.jpeg')}
+                title="Yogendra"
+                suBTitle="CEO"
               />
 
               <OurTeamCard
-                image={require('../../../assets/aboutUs/2_raju.jpeg')}
+                image={require('../../../assets/aboutUs/Pankaj.jpeg')}
+                title="Pankaj"
+                suBTitle="CFO"
+              />
+
+              <OurTeamCard
+                image={require('../../../assets/aboutUs/Raju.jpeg')}
                 title="Raju"
-                suBTitle="CEP"
-              />
-
-              <OurTeamCard
-                image={require('../../../assets/aboutUs/3_birendra.jpeg')}
-                title="Birendra"
-                suBTitle="Community Manager"
+                suBTitle="CMO"
               />
             </View>
 
@@ -137,14 +137,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     paddingTop: 8,
     lineHeight: 19,
-  },
-
-  companyTag: {
-    fontSize: wp('3.3%'),
-    color: '#059669',
-    fontWeight: '600',
-    marginTop: 14,
-    fontStyle: 'italic',
   },
 
   row: {

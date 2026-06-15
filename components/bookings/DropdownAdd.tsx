@@ -17,6 +17,7 @@ type Props = {
   onOpen?: () => void;
   onClose?: () => void;
   maxSelections?: number;
+  helperText?: string;
 };
 
 const DropdownAdd = ({
@@ -31,6 +32,7 @@ const DropdownAdd = ({
   onOpen,
   onClose,
   maxSelections,
+  helperText,
 }: Props) => {
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>(value);
@@ -69,21 +71,20 @@ const DropdownAdd = ({
   ), [isFocus, dropdownType, getDropIcon]);
 
   const renderItem = useCallback((item: any) => {
-    const backgroundColor = item.index % 2 === 0 ? '#fff' : '#f9f9f9';
     const isSelected = selectedOptions.includes(item.value);
 
+    // Hide already-selected items from the list (multi-select only)
+    if (maxSelections !== 1 && isSelected) return null;
+
+    const backgroundColor = item.index % 2 === 0 ? '#fff' : '#f9f9f9';
     return (
-      <View style={[
-        styles.itemContainer,
-        { backgroundColor },
-        isSelected && styles.selectedOption
-      ]}>
-        <Text style={[styles.itemText, isSelected && styles.selectedOptionText]}>
-          {item.label}
-        </Text>
+      <View style={[styles.itemContainer, { backgroundColor }]}>
+        <Text style={styles.itemText}>{item.label}</Text>
       </View>
     );
-  }, [selectedOptions]);
+  }, [selectedOptions, maxSelections]);
+
+  const activeBorderColor = isFocus ? 'hsl(142, 71%, 45%)' : borderColor;
 
   return (
     <View style={styles.container}>
@@ -95,12 +96,9 @@ const DropdownAdd = ({
       <MultiSelect
         style={[
           styles.dropdownStyle,
-          {
-            borderColor: isFocus
-              ? 'hsl(142, 71%, 45%)'
-              : borderColor,
-          },
+          { borderColor: activeBorderColor },
           isFocus && styles.dropdownActiveBackground,
+          helperText && styles.dropdownNoBottomRadius,
         ]}
         placeholderStyle={[
           styles.placeholder,
@@ -162,6 +160,12 @@ const DropdownAdd = ({
           </View>
         )}
       />
+
+      {helperText && (
+        <View style={[styles.helperStrip, { borderColor: activeBorderColor }]}>
+          <Text style={styles.helperStripText}>{helperText}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -174,7 +178,7 @@ const styles = StyleSheet.create({
   dropdownStyle: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap', // 🌟 Allows tags to wrap onto a new line inside the box if space runs out
+    flexWrap: 'wrap',
     borderWidth: 1.5,
     borderRadius: 12,
     paddingHorizontal: wp('3.5%'),
@@ -182,8 +186,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingVertical: hp('0.5%'),
   },
+  dropdownNoBottomRadius: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderBottomWidth: 0,
+  },
   dropdownActiveBackground: {
     backgroundColor: '#F4F7FF',
+  },
+  helperStrip: {
+    borderWidth: 1.5,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    paddingHorizontal: wp('3.5%'),
+    paddingVertical: hp('0.7%'),
+    backgroundColor: '#F8FAFA',
+  },
+  helperStripText: {
+    fontSize: wp('3%'),
+    color: '#888',
+    fontWeight: '400',
   },
   placeholder: {
     fontSize: wp('3.6%'),

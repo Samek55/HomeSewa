@@ -80,6 +80,8 @@ const styles = StyleSheet.create({
   textContainer: {
     marginLeft: wp(3),
     width: wp(44),
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   title: {
     fontSize: wp(4.1),

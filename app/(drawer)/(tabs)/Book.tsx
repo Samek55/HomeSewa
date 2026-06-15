@@ -1,4 +1,5 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useCallback } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   Image,
   Pressable,
   ActivityIndicator,
+  findNodeHandle,
 } from 'react-native';
 import Dropdown from '../../../components/bookings/Dropdown';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,6 +53,25 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
 
 export default function ServiceBookingScreen() {
   const scrollRef = useRef<any>(null);
+  const serviceFieldRef = useRef<View>(null);
+  const shiftFieldRef = useRef<View>(null);
+  const cityFieldRef = useRef<View>(null);
+  const areaFieldRef = useRef<View>(null);
+  const priorityFieldRef = useRef<View>(null);
+  const budgetFieldRef = useRef<View>(null);
+
+  const scrollToField = (fieldRef: React.RefObject<View>) => {
+    if (!fieldRef.current || !scrollRef.current) return;
+    const node = findNodeHandle(scrollRef.current);
+    if (!node) return;
+    (fieldRef.current as any).measureLayout(
+      node,
+      (_x: number, y: number) => {
+        scrollRef.current?.scrollToPosition(0, Math.max(0, y - 80), true);
+      },
+      () => {}
+    );
+  };
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [selectedService, setSelectedService] = useState('');
@@ -66,6 +87,29 @@ export default function ServiceBookingScreen() {
   const [show, setShow] = useState<boolean>(false);
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  const pickPhotos = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photos.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      quality: 0.7,
+      selectionLimit: 5 - photos.length,
+    });
+    if (!result.canceled) {
+      const uris = result.assets.map(a => a.uri);
+      setPhotos(prev => [...prev, ...uris].slice(0, 5));
+    }
+  }, [photos.length]);
+
+  const removePhoto = useCallback((index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   const filteredAreas = useMemo(() => {
     if (!selectedCity || !areasByCity[selectedCity]) return [];
@@ -261,7 +305,7 @@ export default function ServiceBookingScreen() {
             <View style={styles.phoneContainer}>
               <Image source={countryLogo} style={styles.icon} resizeMode="contain" />
               <TextInput
-                placeholder="Enter your Phone Number"
+                placeholder="98520 24 365"
                 value={number}
                 onFocus={() => setActiveInput('phone')}
                 onBlur={() => setActiveInput(null)}
@@ -270,10 +314,10 @@ export default function ServiceBookingScreen() {
                   cleaned = cleaned.slice(0, 10);
                   let formatted = cleaned;
 
-                  if (cleaned.length > 3 && cleaned.length <= 6) {
-                    formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-                  } else if (cleaned.length > 6) {
-                    formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+                  if (cleaned.length > 5 && cleaned.length <= 7) {
+                    formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+                  } else if (cleaned.length > 7) {
+                    formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
                   }
                   setNumber(formatted);
                 }}
@@ -285,15 +329,17 @@ export default function ServiceBookingScreen() {
 
             {/* Select Service */}
             <Text style={styles.label}>Select Service<Text style={{ color: 'red' }}>*</Text></Text>
-            <Dropdown
-              value={selectedService}
-              options={services}
-              placeholder="Select Services"
-              placeholderColor="#4B4B4B"
-              onSelectOption={setSelectedService}
-              onOpen={() => setActiveInput('service')}
-              onClose={() => setActiveInput(null)}
-            />
+            <View ref={serviceFieldRef}>
+              <Dropdown
+                value={selectedService}
+                options={services}
+                placeholder="Select Services"
+                placeholderColor="#4B4B4B"
+                onSelectOption={setSelectedService}
+                onOpen={() => { setActiveInput('service'); scrollToField(serviceFieldRef); }}
+                onClose={() => setActiveInput(null)}
+              />
+            </View>
 
             {/* Choose Date */}
             <Text style={styles.label}>Choose Date<Text style={{ color: 'red' }}>*</Text></Text>
@@ -333,40 +379,48 @@ export default function ServiceBookingScreen() {
 
             {/* Preferred Time */}
             <Text style={styles.label}>Preferred Time<Text style={{ color: 'red' }}>*</Text></Text>
-            <Dropdown
-              options={shifts}
-              placeholder="Choose a Shift"
-              placeholderColor="#4B4B4B"
-              onSelectOption={setSelectedShift}
-              dropdownType="shift"
-              onOpen={() => setActiveInput('shift')}
-              onClose={() => setActiveInput(null)}
-              value={selectedShift}
-            />
+            <View ref={shiftFieldRef}>
+              <Dropdown
+                options={shifts}
+                placeholder="Choose a Shift"
+                placeholderColor="#4B4B4B"
+                onSelectOption={setSelectedShift}
+                dropdownType="shift"
+                onOpen={() => { setActiveInput('shift'); scrollToField(shiftFieldRef); }}
+                onClose={() => setActiveInput(null)}
+                value={selectedShift}
+              />
+            </View>
 
             {/* City */}
             <Text style={styles.label}>City<Text style={{ color: 'red' }}>*</Text></Text>
-            <Dropdown
-              options={city}
-              placeholder="Select your city"
-              placeholderColor="#4B4B4B"
-              onSelectOption={handleCitySelect}
-              onOpen={() => setActiveInput('city')}
-              onClose={() => setActiveInput(null)}
-              value={selectedCity}
-            />
+            <View ref={cityFieldRef}>
+              <Dropdown
+                options={city}
+                placeholder="Select your city"
+                placeholderColor="#4B4B4B"
+                onSelectOption={handleCitySelect}
+                onOpen={() => { setActiveInput('city'); scrollToField(cityFieldRef); }}
+                onClose={() => setActiveInput(null)}
+                value={selectedCity}
+              />
+            </View>
 
             {/* Area with typing suggestions */}
             <Text style={styles.label}>Area<Text style={{ color: 'red' }}>*</Text></Text>
-            <View style={[styles.areaWrapper, { zIndex: showSuggestions ? 999 : 1 }]}>
+            <View ref={areaFieldRef} style={[styles.areaWrapper, { zIndex: showSuggestions ? 999 : 1 }]}>
               <TextInput
                 value={areaQuery}
                 onChangeText={(text) => {
                   setAreaQuery(text);
                   setSelectedArea(text);
-                  setShowSuggestions(text.length > 0);
+                  setShowSuggestions(true);
                 }}
-                onFocus={() => setActiveInput('area')}
+                onFocus={() => {
+                  setActiveInput('area');
+                  if (selectedCity) setShowSuggestions(true);
+                  scrollToField(areaFieldRef);
+                }}
                 onBlur={() => setTimeout(() => {
                   setShowSuggestions(false);
                   setActiveInput(null);
@@ -414,27 +468,62 @@ export default function ServiceBookingScreen() {
 
             {/* Priority */}
             <Text style={styles.label}>Priority<Text style={{ color: 'red' }}>*</Text></Text>
-            <Dropdown
-              options={priority}
-              placeholder="Select Priority"
-              placeholderColor="#4B4B4B"
-              onSelectOption={setSelectedPriority}
-              value={selectedPriority}
-              onOpen={() => setActiveInput('priority')}
-              onClose={() => setActiveInput(null)}
-            />
+            <View ref={priorityFieldRef}>
+              <Dropdown
+                options={priority}
+                placeholder="Select Priority"
+                placeholderColor="#4B4B4B"
+                onSelectOption={setSelectedPriority}
+                value={selectedPriority}
+                onOpen={() => { setActiveInput('priority'); scrollToField(priorityFieldRef); }}
+                onClose={() => setActiveInput(null)}
+              />
+            </View>
 
             {/* Select Budget */}
             <Text style={styles.label}>Select Budget<Text style={{ color: 'red' }}>*</Text></Text>
-            <Dropdown
-              value={selectedBudget}
-              options={budget}
-              placeholder="Select Budget"
-              placeholderColor="#4B4B4B"
-              onSelectOption={setSelectedBudget}
-              onOpen={() => setActiveInput('budget')}
-              onClose={() => setActiveInput(null)}
-            />
+            <View ref={budgetFieldRef}>
+              <Dropdown
+                value={selectedBudget}
+                options={budget}
+                placeholder="Select Budget"
+                placeholderColor="#4B4B4B"
+                onSelectOption={setSelectedBudget}
+                onOpen={() => { setActiveInput('budget'); scrollToField(budgetFieldRef); }}
+                onClose={() => setActiveInput(null)}
+              />
+            </View>
+
+            {/* Photos */}
+            <Text style={styles.label}>Photos <Text style={{ color: '#888', fontWeight: '400' }}>(up to 5)</Text></Text>
+            <TouchableOpacity
+              style={styles.photoDropZone}
+              onPress={photos.length < 5 ? pickPhotos : undefined}
+              activeOpacity={0.75}
+            >
+              {photos.length === 0 ? (
+                <>
+                  <Ionicons name="arrow-down-circle-outline" size={32} color="#295C59" />
+                  <Text style={styles.photoDropText}>Drop files/photos here</Text>
+                </>
+              ) : (
+                <View style={styles.photoSection}>
+                  {photos.map((uri, i) => (
+                    <View key={i} style={styles.photoThumb}>
+                      <Image source={{ uri }} style={styles.photoImg} />
+                      <TouchableOpacity style={styles.photoRemove} onPress={() => removePhoto(i)}>
+                        <Text style={styles.photoRemoveText}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {photos.length < 5 && (
+                    <TouchableOpacity style={styles.photoAdd} onPress={pickPhotos} activeOpacity={0.8}>
+                      <Text style={styles.photoAddIcon}>+</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
 
             {/* Message */}
             <Text style={styles.label}>Message<Text style={{ color: 'red' }}>*</Text></Text>
@@ -449,22 +538,22 @@ export default function ServiceBookingScreen() {
               style={activeInput === 'message' ? styles.inputActive : undefined}
             />
 
-            {/* Submit Button */}
-            <View style={styles.buttonPadding}>
+            {/* Bottom Actions: Clear left | Submit right */}
+            <View style={styles.bottomRow}>
+              <Pressable style={styles.buttonClearFlex} onPress={handleClearForm}>
+                <Image source={ClearFormIcon} style={styles.clearIcon} />
+                <Text style={styles.buttonClear}>Clear form</Text>
+              </Pressable>
+
               <Button
                 style={styles.button1}
                 textStyle={{ color: 'white', textAlign: 'center' }}
                 onPress={handleSubmit}
-                disabled={isSubmitting} // Disable during lookup to prevent spam taps
+                disabled={isSubmitting}
               >
                 {isSubmitting ? <ActivityIndicator color="#fff" size="small" /> : 'SUBMIT'}
               </Button>
             </View>
-
-            <Pressable style={styles.buttonClearFlex} onPress={handleClearForm}>
-              <Image source={ClearFormIcon} style={styles.clearIcon} />
-              <Text style={styles.buttonClear}>Clear form</Text>
-            </Pressable>
 
           </View>
         </View>
@@ -489,9 +578,20 @@ const styles = StyleSheet.create({
   label: { marginBottom: hp('0.6%'), paddingLeft: wp('1%'), fontSize: wp('3.5%'), fontWeight: '600', color: '#4A4A4A' },
   calendarIcon: { height: hp('2.5%'), width: hp('2.5%'), resizeMode: 'contain' },
   buttonPadding: { paddingBottom: 10, alignItems: 'center' },
-  button1: { width: width * 0.4, height: height * 0.06, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', borderRadius: 10, marginTop: 25 },
+  button1: { width: width * 0.4, height: height * 0.06, justifyContent: 'center', alignItems: 'center', borderRadius: 10 },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 10 },
+  photoDropZone: { borderWidth: 1.5, borderRadius: 12, borderColor: '#295C59', borderStyle: 'dashed', backgroundColor: '#fff', paddingVertical: 22, paddingHorizontal: 12, marginBottom: height * 0.02, alignItems: 'center', justifyContent: 'center' },
+  photoDropText: { fontSize: wp('3.5%'), color: '#295C59', fontWeight: '500', marginTop: 8 },
+  photoSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-start', width: '100%' },
+  photoThumb: { width: width * 0.17, height: width * 0.17, borderRadius: 10, overflow: 'hidden', position: 'relative' },
+  photoImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  photoRemove: { position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, width: 18, height: 18, justifyContent: 'center', alignItems: 'center' },
+  photoRemoveText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  photoAdd: { width: width * 0.17, height: width * 0.17, borderRadius: 10, borderWidth: 1.5, borderColor: '#295C59', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: '#EFF8F7' },
+  photoAddIcon: { fontSize: 24, color: '#295C59', lineHeight: 28, textAlign: 'center' },
+  photoAddLabel: { fontSize: wp('2.4%'), color: '#295C59', fontWeight: '600' },
   text: { color: '#fff', fontSize: width * 0.04, fontWeight: '600' },
-  buttonClearFlex: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 20, paddingRight: 10, justifyContent: 'center' },
+  buttonClearFlex: { flexDirection: 'row', alignItems: 'center', paddingRight: 10 },
   buttonClear: { color: '#0a7de1', fontSize: width * 0.038, fontWeight: '500' },
   clearIcon: { width: wp('6%'), height: hp('2.5%'), resizeMode: 'contain', marginRight: 2 },
   areaWrapper: { position: 'relative', marginBottom: 0 },

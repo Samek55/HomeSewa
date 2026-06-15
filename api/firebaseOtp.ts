@@ -1,7 +1,7 @@
-import auth from '@react-native-firebase/auth';
+import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
 
 export const sendFirebaseOtp = async (phone: string): Promise<any> => {
-  return await auth().signInWithPhoneNumber(phone);
+  return await signInWithPhoneNumber(getAuth(), phone);
 };
 
 export const verifyFirebaseOtp = async (confirmation: any, code: string): Promise<boolean> => {
