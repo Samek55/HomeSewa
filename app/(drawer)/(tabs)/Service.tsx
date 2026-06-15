@@ -5,7 +5,13 @@ import {
   Text,
   FlatList,
   StyleSheet,
+  TouchableOpacity,
+  Image,
+  Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width: SW } = Dimensions.get('window');
 
 import ServicesCards from '../../../components/services/ServicesCards';
 import ServicesDisplaycard from '../../../components/services/ServicesDisplaycard';
@@ -62,19 +68,25 @@ export default function ServiceScreen() {
     ({ item }: { item: RowItem }) => {
       if (item.type === 'featured') {
         return (
-          <View style={styles.featuredContainer}>
-            <ServicesCards
-              name={item.item.name}
-              description={item.item.description}
-              image={item.item.image}
-              onPress={() =>
-                router.push({
-                  pathname: '/service/ServiceDetail',
-                  params: { id: item.item.id.toString() },
-                })
-              }
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.featuredContainer}
+            activeOpacity={0.88}
+            onPress={() =>
+              router.push({
+                pathname: '/service/ServiceDetail',
+                params: { id: item.item.id.toString() },
+              })
+            }
+          >
+            <Image source={item.item.image} style={styles.featuredImage} resizeMode="cover" />
+            <LinearGradient
+              colors={['transparent', 'rgba(18,46,44,0.90)']}
+              style={styles.featuredGradient}
+            >
+              <Text style={styles.featuredLabel}>HomeSewa</Text>
+              <Text style={styles.featuredName}>{item.item.name}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         );
       }
       return (
@@ -104,40 +116,46 @@ export default function ServiceScreen() {
 
   const ListHeader = useCallback(() => (
     <View style={styles.headerContainer}>
-      <Header1 />
 
       <ImageBackground
-        source={require('../../../assets/header/Header.jpeg')}
+        source={require('../../../assets/header/Service Page Banner.jpg')}
         resizeMode="cover"
         style={styles.headerBackground}
         imageStyle={{ transform: [{ scale: 1.08 }] }}
       >
-        <View style={styles.headerTextContainer}>
+        <LinearGradient
+          colors={['rgba(0,0,0,0.08)', 'rgba(18,46,44,0.97)']}
+          style={styles.headerGradient}
+        >
           <Text style={styles.headerTitle}>SuperFast Services</Text>
-          <Text style={styles.headerSubtitle}>
-            Express Home Service
-          </Text>
-        </View>
+          <Text style={styles.headerSubtitle}>Express Home Service</Text>
+        </LinearGradient>
       </ImageBackground>
 
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle1}>Top Services</Text>
 
         {topServices.map((item) => (
-          <ServicesCards
+          <TouchableOpacity
             key={item.id}
-            name={item.name}
-            description={item.description}
-            image={item.image}
-            question={item.question}
-            answer={item.answer}
+            style={styles.topServiceCard}
+            activeOpacity={0.88}
             onPress={() =>
               router.push({
                 pathname: '/service/ServiceDetail',
                 params: { id: item.id.toString() },
               })
             }
-          />
+          >
+            <Image source={item.image} style={styles.featuredImage} resizeMode="cover" />
+            <LinearGradient
+              colors={['transparent', 'rgba(18,46,44,0.90)']}
+              style={styles.featuredGradient}
+            >
+              <Text style={styles.featuredLabel}>HomeSewa</Text>
+              <Text style={styles.featuredName}>{item.name}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         ))}
 
         <View style={styles.sliderCardContainer}>
@@ -154,6 +172,7 @@ export default function ServiceScreen() {
 
   return (
     <View style={{ flex: 1 }}>
+      <Header1 />
       <FlatList
         data={rows}
         keyExtractor={(item) => item.key}
@@ -183,12 +202,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  headerTextContainer: {
+  headerGradient: {
     position: 'absolute',
-    top: hp('18%'),
-    left: wp('5%'),
-    width: wp('90%'),
-    zIndex: 99,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '75%',
+    justifyContent: 'flex-end',
+    paddingHorizontal: wp('5%'),
+    paddingBottom: hp('2%'),
+    gap: 4,
   },
 
   headerTitle: {
@@ -196,21 +219,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
     lineHeight: hp('5%'),
-    flexWrap: 'wrap',
   },
 
   headerSubtitle: {
     fontSize: wp('3.8%'),
     fontWeight: '500',
-    color: '#fff',
-    lineHeight: hp('2.8%'),
-    width: wp('90%'),
-    flexWrap: 'wrap',
+    color: 'rgba(255,255,255,0.85)',
   },
 
   sectionContainer: {
     paddingHorizontal: wp('4%'),
-    paddingTop: hp('4%'),
+    paddingTop: hp('2.5%'),
   },
 
   sectionTitle1: {
@@ -233,6 +252,18 @@ const styles = StyleSheet.create({
     marginTop: hp('2%'),
   },
 
+  topServiceCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: SW * 0.45,
+    marginBottom: hp('2%'),
+    elevation: 4,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+
   pairRow: {
     flexDirection: 'row',
     paddingHorizontal: wp('4%'),
@@ -245,8 +276,41 @@ const styles = StyleSheet.create({
   },
 
   featuredContainer: {
-    paddingHorizontal: wp('4%'),
-    marginBottom: hp('1%'),
+    marginHorizontal: wp('4%'),
+    marginBottom: hp('2%'),
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: SW * 0.45,
+    elevation: 4,
+    shadowColor: '#295C59',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  featuredGradient: {
+    position: 'absolute',
+    top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 14,
+    gap: 2,
+  },
+  featuredLabel: {
+    fontSize: SW * 0.03,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.72)',
+    textAlign: 'center',
+  },
+  featuredName: {
+    fontSize: SW * 0.05,
+    fontWeight: '800',
+    color: '#fff',
+    textAlign: 'center',
   },
 
   listContent: {

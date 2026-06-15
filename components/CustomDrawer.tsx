@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+
+const { height: SCREEN_H } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +30,6 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
 
         {/* MENU */}
         <View style={styles.menu}>
-
           <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => router.push('/Home')} />
           <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => router.push('/Service')} />
           <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => router.push('/Book')} />
@@ -44,18 +45,19 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
 
           <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => router.push('/Partnership')} />
           <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => router.push('/Career')} />
-
         </View>
 
-        {/* ADMIN LOGIN BUTTON */}
-        <TouchableOpacity
-          style={styles.adminBtn}
-          onPress={() => router.push('/Admin')}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
-          <Text style={styles.adminBtnText}>Admin Login</Text>
-        </TouchableOpacity>
+        {/* ADMIN LOGIN — sleek, centered, pinned at bottom */}
+        <View style={styles.adminWrapper}>
+          <TouchableOpacity
+            style={styles.adminBtn}
+            onPress={() => router.push('/Admin')}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="shield-checkmark-outline" size={16} color="#fff" />
+            <Text style={styles.adminBtnText}>Admin Login</Text>
+          </TouchableOpacity>
+        </View>
 
       </View>
     </SafeAreaView>
@@ -70,7 +72,7 @@ function MenuItem({ icon, label, onPress, active }: any) {
       activeOpacity={0.7}
     >
       <View style={[styles.iconBox, active && styles.iconBoxActive]}>
-        <Ionicons name={icon} size={20} color={active ? '#295C59' : '#6B7280'} />
+        <Ionicons name={icon} size={22} color={active ? '#295C59' : '#6B7280'} />
       </View>
       <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
       {active && <View style={styles.activeBar} />}
@@ -82,14 +84,14 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: 'transparent',
+    justifyContent: 'center',
   },
 
-  /* FLOATING CARD */
   card: {
-    flex: 1,
+    height: SCREEN_H * 0.88,
     backgroundColor: '#fff',
     borderRadius: 30,
-    margin: 10,
+    marginHorizontal: 10,
     overflow: 'hidden',
     elevation: 10,
     shadowColor: '#000',
@@ -98,7 +100,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
 
-  /* PROFILE */
   profileHeader: {
     paddingTop: 14,
     paddingBottom: 12,
@@ -133,61 +134,41 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 4,
   },
-  tagRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  tagText: {
-    fontSize: 10,
-    color: '#d1fae5',
-    fontWeight: '600',
-  },
 
-  /* MENU */
   menu: {
+    flex: 1,
     paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingVertical: 6,
+    justifyContent: 'space-evenly',
   },
   divider: {
     borderTopWidth: 1,
     borderColor: '#eee',
-    marginVertical: 7,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 11,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 12,
-    marginBottom: 2,
+    borderRadius: 14,
   },
   itemActive: {
     backgroundColor: '#E8F4F3',
   },
   iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 11,
     backgroundColor: '#F0F4F3',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 13,
   },
   iconBoxActive: {
     backgroundColor: '#C9E8E6',
   },
   label: {
-    fontSize: 14.5,
+    fontSize: 15,
     fontWeight: '500',
     color: '#4B5563',
     flex: 1,
@@ -203,19 +184,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#295C59',
   },
 
+  adminWrapper: {
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
   adminBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 7,
     backgroundColor: '#295C59',
-    margin: 12,
-    marginTop: 8,
-    paddingVertical: 13,
-    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 28,
+    borderRadius: 20,
   },
   adminBtnText: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.3,

@@ -13,7 +13,6 @@ import {
   Image,
   Pressable,
   ActivityIndicator,
-  findNodeHandle,
 } from 'react-native';
 import Dropdown from '../../../components/bookings/Dropdown';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,24 +52,13 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
 
 export default function ServiceBookingScreen() {
   const scrollRef = useRef<any>(null);
-  const serviceFieldRef = useRef<View>(null);
-  const shiftFieldRef = useRef<View>(null);
-  const cityFieldRef = useRef<View>(null);
-  const areaFieldRef = useRef<View>(null);
-  const priorityFieldRef = useRef<View>(null);
-  const budgetFieldRef = useRef<View>(null);
+  const inputGroupY = useRef<number>(0);
+  const fieldYPositions = useRef<Partial<Record<string, number>>>({});
 
-  const scrollToField = (fieldRef: React.RefObject<View>) => {
-    if (!fieldRef.current || !scrollRef.current) return;
-    const node = findNodeHandle(scrollRef.current);
-    if (!node) return;
-    (fieldRef.current as any).measureLayout(
-      node,
-      (_x: number, y: number) => {
-        scrollRef.current?.scrollToPosition(0, Math.max(0, y - 80), true);
-      },
-      () => {}
-    );
+  const scrollToField = (key: string) => {
+    if (!scrollRef.current) return;
+    const y = inputGroupY.current + (fieldYPositions.current[key] ?? 0);
+    scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
   };
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
@@ -277,7 +265,8 @@ export default function ServiceBookingScreen() {
         ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        extraScrollHeight={80}
+        enableOnAndroid={true}
+        extraScrollHeight={120}
         keyboardShouldPersistTaps="handled"
         enableResetScrollToCoords={false}
         resetScrollToCoords={undefined}
@@ -287,9 +276,9 @@ export default function ServiceBookingScreen() {
         <View style={styles.formContainer}>
           <Text style={styles.title}>Book a Service</Text>
 
-          <View style={styles.inputGroup}>
+          <View style={styles.inputGroup} onLayout={(e) => { inputGroupY.current = e.nativeEvent.layout.y; }}>
             {/* Full Name */}
-            <Text style={styles.label}>Full Name<Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
             <TextInput
               placeholder="Enter your Full Name"
               value={name}
@@ -301,11 +290,11 @@ export default function ServiceBookingScreen() {
             />
 
             {/* Phone Number */}
-            <Text style={styles.label}>Phone Number<Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>Phone Number <Text style={{ color: 'red' }}>*</Text></Text>
             <View style={styles.phoneContainer}>
               <Image source={countryLogo} style={styles.icon} resizeMode="contain" />
               <TextInput
-                placeholder="98520 24 365"
+                placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
                 value={number}
                 onFocus={() => setActiveInput('phone')}
                 onBlur={() => setActiveInput(null)}
@@ -328,21 +317,21 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Select Service */}
-            <Text style={styles.label}>Select Service<Text style={{ color: 'red' }}>*</Text></Text>
-            <View ref={serviceFieldRef}>
+            <Text style={styles.label}>Select Service <Text style={{ color: 'red' }}>*</Text></Text>
+            <View onLayout={(e) => { fieldYPositions.current['service'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 value={selectedService}
                 options={services}
-                placeholder="Select Services"
+                placeholder="Garden Care"
                 placeholderColor="#4B4B4B"
                 onSelectOption={setSelectedService}
-                onOpen={() => { setActiveInput('service'); scrollToField(serviceFieldRef); }}
+                onOpen={() => { setActiveInput('service'); scrollToField('service'); }}
                 onClose={() => setActiveInput(null)}
               />
             </View>
 
             {/* Choose Date */}
-            <Text style={styles.label}>Choose Date<Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>Choose Date <Text style={{ color: 'red' }}>*</Text></Text>
             <View style={{ marginBottom: height * 0.025 }}>
               <TouchableOpacity
                 onPress={() => {
@@ -378,37 +367,37 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Preferred Time */}
-            <Text style={styles.label}>Preferred Time<Text style={{ color: 'red' }}>*</Text></Text>
-            <View ref={shiftFieldRef}>
+            <Text style={styles.label}>Preferred Time <Text style={{ color: 'red' }}>*</Text></Text>
+            <View onLayout={(e) => { fieldYPositions.current['shift'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 options={shifts}
                 placeholder="Choose a Shift"
                 placeholderColor="#4B4B4B"
                 onSelectOption={setSelectedShift}
                 dropdownType="shift"
-                onOpen={() => { setActiveInput('shift'); scrollToField(shiftFieldRef); }}
+                onOpen={() => { setActiveInput('shift'); scrollToField('shift'); }}
                 onClose={() => setActiveInput(null)}
                 value={selectedShift}
               />
             </View>
 
             {/* City */}
-            <Text style={styles.label}>City<Text style={{ color: 'red' }}>*</Text></Text>
-            <View ref={cityFieldRef}>
+            <Text style={styles.label}>City <Text style={{ color: 'red' }}>*</Text></Text>
+            <View onLayout={(e) => { fieldYPositions.current['city'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 options={city}
                 placeholder="Select your city"
                 placeholderColor="#4B4B4B"
                 onSelectOption={handleCitySelect}
-                onOpen={() => { setActiveInput('city'); scrollToField(cityFieldRef); }}
+                onOpen={() => { setActiveInput('city'); scrollToField('city'); }}
                 onClose={() => setActiveInput(null)}
                 value={selectedCity}
               />
             </View>
 
             {/* Area with typing suggestions */}
-            <Text style={styles.label}>Area<Text style={{ color: 'red' }}>*</Text></Text>
-            <View ref={areaFieldRef} style={[styles.areaWrapper, { zIndex: showSuggestions ? 999 : 1 }]}>
+            <Text style={styles.label}>Area <Text style={{ color: 'red' }}>*</Text></Text>
+            <View onLayout={(e) => { fieldYPositions.current['area'] = e.nativeEvent.layout.y; }} style={[styles.areaWrapper, { zIndex: showSuggestions ? 999 : 1 }]}>
               <TextInput
                 value={areaQuery}
                 onChangeText={(text) => {
@@ -419,7 +408,6 @@ export default function ServiceBookingScreen() {
                 onFocus={() => {
                   setActiveInput('area');
                   if (selectedCity) setShowSuggestions(true);
-                  scrollToField(areaFieldRef);
                 }}
                 onBlur={() => setTimeout(() => {
                   setShowSuggestions(false);
@@ -467,29 +455,29 @@ export default function ServiceBookingScreen() {
             <View style={{ height: height * 0.02 }} />
 
             {/* Priority */}
-            <Text style={styles.label}>Priority<Text style={{ color: 'red' }}>*</Text></Text>
-            <View ref={priorityFieldRef}>
+            <Text style={styles.label}>Priority <Text style={{ color: 'red' }}>*</Text></Text>
+            <View onLayout={(e) => { fieldYPositions.current['priority'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 options={priority}
                 placeholder="Select Priority"
                 placeholderColor="#4B4B4B"
                 onSelectOption={setSelectedPriority}
                 value={selectedPriority}
-                onOpen={() => { setActiveInput('priority'); scrollToField(priorityFieldRef); }}
+                onOpen={() => { setActiveInput('priority'); scrollToField('priority'); }}
                 onClose={() => setActiveInput(null)}
               />
             </View>
 
             {/* Select Budget */}
-            <Text style={styles.label}>Select Budget<Text style={{ color: 'red' }}>*</Text></Text>
-            <View ref={budgetFieldRef}>
+            <Text style={styles.label}>Select Budget <Text style={{ color: 'red' }}>*</Text></Text>
+            <View onLayout={(e) => { fieldYPositions.current['budget'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 value={selectedBudget}
                 options={budget}
                 placeholder="Select Budget"
                 placeholderColor="#4B4B4B"
                 onSelectOption={setSelectedBudget}
-                onOpen={() => { setActiveInput('budget'); scrollToField(budgetFieldRef); }}
+                onOpen={() => { setActiveInput('budget'); scrollToField('budget'); }}
                 onClose={() => setActiveInput(null)}
               />
             </View>
@@ -526,7 +514,7 @@ export default function ServiceBookingScreen() {
             </TouchableOpacity>
 
             {/* Message */}
-            <Text style={styles.label}>Message<Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>Message <Text style={{ color: 'red' }}>*</Text></Text>
             <TextArea
               value={message}
               onChangeText={setMessage}

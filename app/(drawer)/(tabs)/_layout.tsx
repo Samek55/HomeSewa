@@ -1,20 +1,19 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import CustomAddIcon from '../../../assets/booking.svg';
+import { StyleSheet } from 'react-native';
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: 'green',
+        tabBarActiveTintColor: '#295C59',
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
           backgroundColor: 'hsl(0, 0%, 95%)',
         },
       }}
-      
+
     >
       <Tabs.Screen
         name="Home"
@@ -63,26 +62,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="Book"
         options={{
-          tabBarLabel: '',
-          tabBarButton: (props) => {
-            return (
-              <View style={styles.buttonWrapper}>
-                <TouchableOpacity
-                  onPress={props.onPress}
-                  onLongPress={props.onLongPress ?? undefined}
-                  activeOpacity={0.85}
-                  style={styles.floatingButton}
-                >
-                  {/* 2. Replaced <Ionicons /> with your custom SVG Component */}
-                  <CustomAddIcon
-                    width={54}
-                    height={54}
-                    fill="#fff"
-                  />
-                </TouchableOpacity>
-              </View>
-            );
-          },
+          tabBarLabel: 'Book',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
         }}
       />
 
@@ -131,20 +114,4 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  buttonWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatingButton: {
-
-
-    justifyContent: 'center',
-    alignItems: 'center',
-
-    top: -15,
-    boxShadow: '0px 0px 0px 3px #ddd',
-    borderRadius: 400
-  },
-})
+const styles = StyleSheet.create({});

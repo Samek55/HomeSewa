@@ -30,7 +30,7 @@ export default function AboutScreen() {
           {/* BANNER */}
           <View style={styles.banner}>
             <Image
-              source={require('../../../assets/aboutUs/aboutUS.jpeg')}
+              source={require('../../../assets/header/Header.jpeg')}
               style={styles.bannerImage}
               resizeMode="cover"
               fadeDuration={0}

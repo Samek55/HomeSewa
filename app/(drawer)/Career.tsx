@@ -252,7 +252,8 @@ export default function CareerScreen() {
         ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        extraScrollHeight={80}
+        enableOnAndroid={true}
+        extraScrollHeight={120}
         keyboardShouldPersistTaps="handled"
         enableResetScrollToCoords={false}
         resetScrollToCoords={undefined}
@@ -265,7 +266,7 @@ export default function CareerScreen() {
           <View style={styles.spacerGap} />
 
           {/* Full Name */}
-          <Text style={styles.label}>Full Name<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
             placeholder="Enter your Full Name"
             value={name}
@@ -280,7 +281,7 @@ export default function CareerScreen() {
           />
 
           {/* Phone Number */}
-          <Text style={styles.label}>Phone Number<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Phone Number <Text style={{ color: 'red' }}>*</Text></Text>
           <View style={styles.phoneContainer}>
             <Image
               source={countryLogo}
@@ -297,15 +298,10 @@ export default function CareerScreen() {
                 cleaned = cleaned.slice(0, 10);
                 let formatted = cleaned;
 
-                if (cleaned.length > 3 && cleaned.length <= 6) {
-                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-                } else if (cleaned.length > 6) {
-                  formatted =
-                    cleaned.slice(0, 3) +
-                    ' ' +
-                    cleaned.slice(3, 6) +
-                    ' ' +
-                    cleaned.slice(6);
+                if (cleaned.length > 5 && cleaned.length <= 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+                } else if (cleaned.length > 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
                 }
                 setNumber(formatted);
               }}
@@ -319,21 +315,23 @@ export default function CareerScreen() {
           </View>
 
           {/* Gender */}
-          <Text style={styles.label}>Gender<Text style={{ color: 'red' }}>*</Text></Text>
-          <View style={styles.radioRow}>
-            {['Male', 'Female'].map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={styles.radioOption}
-                onPress={() => setGender(option)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.radioOuter}>
-                  {gender === option && <View style={styles.radioInner} />}
-                </View>
-                <Text style={styles.radioLabel}>{option}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.genderRow}>
+            <Text style={[styles.label, { marginBottom: 0 }]}>Gender <Text style={{ color: 'red' }}>*</Text></Text>
+            <View style={styles.radioRow}>
+              {['Male', 'Female'].map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.radioOption}
+                  onPress={() => setGender(option)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.radioOuter}>
+                    {gender === option && <View style={styles.radioInner} />}
+                  </View>
+                  <Text style={styles.radioLabel}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Headshot */}
@@ -361,7 +359,7 @@ export default function CareerScreen() {
           />
 
           {/* Your Expertise */}
-          <Text style={styles.label}>Your Expertise<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Your Expertise <Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
             options={servicesData2.map(s => s.name)}
             placeholder="Select maximum UpTo 5"
@@ -374,7 +372,7 @@ export default function CareerScreen() {
           />
 
           {/* Years of Experience */}
-          <Text style={styles.label}>Years of Experience<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Years of Experience <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
             placeholder="5"
             value={experience}
@@ -393,14 +391,14 @@ export default function CareerScreen() {
           />
 
           {/* ID Proof */}
-          <Text style={styles.label}>Citizenship / Driving Licence / NID<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Citizenship / Driving Licence / NID <Text style={{ color: 'red' }}>*</Text></Text>
           <FileUploadBox
             value={selectedID}
             onChange={setSelectedID}
           />
 
           {/* Preferred City */}
-          <Text style={styles.label}>Preferred City<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Preferred City <Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
             options={city}
             placeholder="Select your preferred city"
@@ -417,7 +415,7 @@ export default function CareerScreen() {
           />
 
           {/* Preferred Working Area */}
-          <Text style={styles.label}>Preferred Working Area<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Preferred Working Area <Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
             options={selectedCity ? (areasByCity[selectedCity] ?? []) : area}
             placeholder="Select maximum UpTo 5"
@@ -431,7 +429,7 @@ export default function CareerScreen() {
 
 
           {/* Emergency Contact Number */}
-          <Text style={styles.label}>Emergency Contact Number<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Emergency Contact Number <Text style={{ color: 'red' }}>*</Text></Text>
           <View style={styles.phoneContainer}>
             <Image
               source={countryLogo}
@@ -448,15 +446,10 @@ export default function CareerScreen() {
                 cleaned = cleaned.slice(0, 10);
                 let formatted = cleaned;
 
-                if (cleaned.length > 3 && cleaned.length <= 6) {
-                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-                } else if (cleaned.length > 6) {
-                  formatted =
-                    cleaned.slice(0, 3) +
-                    ' ' +
-                    cleaned.slice(3, 6) +
-                    ' ' +
-                    cleaned.slice(6);
+                if (cleaned.length > 5 && cleaned.length <= 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+                } else if (cleaned.length > 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
                 }
                 setEmergencyNumber(formatted);
               }}
@@ -486,10 +479,10 @@ export default function CareerScreen() {
                 let cleaned = value.replace(/[^0-9]/g, '');
                 cleaned = cleaned.slice(0, 10);
                 let formatted = cleaned;
-                if (cleaned.length > 3 && cleaned.length <= 6) {
-                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-                } else if (cleaned.length > 6) {
-                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3, 6) + ' ' + cleaned.slice(6);
+                if (cleaned.length > 5 && cleaned.length <= 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+                } else if (cleaned.length > 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
                 }
                 setReferralNumber(formatted);
               }}
@@ -503,7 +496,7 @@ export default function CareerScreen() {
           </View>
 
           {/* Message */}
-          <Text style={styles.label}>Message<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Message <Text style={{ color: 'red' }}>*</Text></Text>
           <TextArea
             value={message}
             onChangeText={setMessage}
@@ -615,11 +608,16 @@ const styles = StyleSheet.create({
     marginTop: -hp('1.5%'),
     marginBottom: hp('1.5%'),
   },
+  genderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp('2.5%'),
+    gap: wp('4%'),
+  },
   radioRow: {
     flexDirection: 'row',
     gap: wp('6%'),
     paddingHorizontal: wp('1%'),
-    marginBottom: hp('2.5%'),
   },
   radioOption: {
     flexDirection: 'row',

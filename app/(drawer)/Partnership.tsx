@@ -227,7 +227,8 @@ export default function PartnershipScreen() {
         ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        extraScrollHeight={80}
+        enableOnAndroid={true}
+        extraScrollHeight={120}
         keyboardShouldPersistTaps="handled"
         enableResetScrollToCoords={false}
         resetScrollToCoords={undefined}
@@ -241,7 +242,7 @@ export default function PartnershipScreen() {
           <View style={styles.spacerGap} />
 
           {/* Full Name */}
-          <Text style={styles.label}>Full Name<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
             placeholder="Enter your Full Name"
             value={name}
@@ -256,7 +257,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Name of Organization */}
-          <Text style={styles.label}>Name of Organization<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Name of Organization <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
             placeholder="Enter the name of your Organization"
             value={organizationName}
@@ -271,7 +272,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Phone Number */}
-          <Text style={styles.label}>Phone Number<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Phone Number <Text style={{ color: 'red' }}>*</Text></Text>
           <View style={styles.phoneContainer}>
             <Image
               source={countryLogo}
@@ -288,15 +289,10 @@ export default function PartnershipScreen() {
                 cleaned = cleaned.slice(0, 10);
                 let formatted = cleaned;
 
-                if (cleaned.length > 3 && cleaned.length <= 6) {
-                  formatted = cleaned.slice(0, 3) + ' ' + cleaned.slice(3);
-                } else if (cleaned.length > 6) {
-                  formatted =
-                    cleaned.slice(0, 3) +
-                    ' ' +
-                    cleaned.slice(3, 6) +
-                    ' ' +
-                    cleaned.slice(6);
+                if (cleaned.length > 5 && cleaned.length <= 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+                } else if (cleaned.length > 7) {
+                  formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
                 }
                 setNumber(formatted);
               }}
@@ -325,14 +321,14 @@ export default function PartnershipScreen() {
           />
 
           {/* Company Photos */}
-          <Text style={styles.label}>Company Photos<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Company Photos <Text style={{ color: 'red' }}>*</Text></Text>
           <FileUploadBox
             value={selectCompanyPhotos}
             onChange={setSelectCompanyPhotos}
           />
 
           {/* Area Dropdown */}
-          <Text style={styles.label}>Area<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Area <Text style={{ color: 'red' }}>*</Text></Text>
           <Dropdown
             options={city}
             placeholder="Select your Area"
@@ -344,7 +340,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Number of Employees */}
-          <Text style={styles.label}>Number of Employees<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Number of Employees <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
             placeholder="Enter the number of Employees"
             placeholderTextColor={'#4B4B4B'}
@@ -363,7 +359,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Business Type Dropdown */}
-          <Text style={styles.label}>Business Type<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Business Type <Text style={{ color: 'red' }}>*</Text></Text>
           <Dropdown
             options={businessType}
             placeholder="Select your Business Type"
@@ -375,7 +371,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Services Offered Dropdown Add (MultiSelect) */}
-          <Text style={styles.label}>Services Offered<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Services Offered <Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
             options={services}
             placeholder="Select the Services you offer"
@@ -387,7 +383,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Partnership Interest Dropdown */}
-          <Text style={styles.label}>Partnership Interest<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Partnership Interest <Text style={{ color: 'red' }}>*</Text></Text>
           <Dropdown
             options={partnershipInterest}
             placeholder="Select Partnership Interest"
@@ -399,14 +395,14 @@ export default function PartnershipScreen() {
           />
 
           {/* Company Registration Certificates */}
-          <Text style={styles.label}>Company Registration Certificates<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Company Registration Certificates <Text style={{ color: 'red' }}>*</Text></Text>
           <FileUploadBox
             value={selectCRCphotos}
             onChange={setSelectCRCphotos}
           />
 
           {/* How did you hear about us Dropdown */}
-          <Text style={styles.label}>How did you hear about us?<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>How did you hear about us? <Text style={{ color: 'red' }}>*</Text></Text>
           <Dropdown
             options={howduhear}
             placeholder="How did you hear about us?"
@@ -418,7 +414,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Message TextArea */}
-          <Text style={styles.label}>Message<Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Message <Text style={{ color: 'red' }}>*</Text></Text>
           <TextArea
             value={message}
             onChangeText={setMessage}

@@ -34,7 +34,7 @@ const FileUploadBox: React.FC<Props> = ({ value, onChange, label = 'Drop files/p
 
   const pickImages = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
+      mediaTypes: ['images'],
       allowsMultipleSelection: true,
       quality: 0.7,
     });
@@ -107,12 +107,6 @@ const FileUploadBox: React.FC<Props> = ({ value, onChange, label = 'Drop files/p
               </View>
             ))}
 
-            {/* SYMMETRICAL ADD MORE ATTACHMENT ACTION */}
-            <View style={styles.columnWrapper}>
-              <TouchableOpacity style={styles.addMore} onPress={pickImages} activeOpacity={0.7}>
-                <Text style={styles.addText}>+ Add more</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       )}

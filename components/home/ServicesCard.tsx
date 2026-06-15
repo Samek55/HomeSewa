@@ -25,7 +25,7 @@ const ServicesCard = ({ title, image, onPress }: Props) => {
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
-    width: wp('27%'),
+    width: wp('30%'),
     backgroundColor: '#fff',
     borderRadius: 14,
     paddingBottom: 10,
@@ -34,7 +34,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
-    overflow: 'hidden',
   },
   pressed: {
     opacity: 0.85,
@@ -53,7 +52,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   title: {
-    fontSize: wp('3.2%'),
+    fontSize: wp('3.4%'),
     fontWeight: '700',
     color: '#295C59',
     textAlign: 'center',

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  type ScrollView as ScrollViewType,
 } from 'react-native';
 
 import ServicesDisplaycard from '../../../../components/services/ServicesDisplaycard';
@@ -37,6 +38,11 @@ const Button = ({ children, onPress }: any) => {
 
 export default function SingleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const scrollRef = useRef<ScrollViewType>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [id]);
 
   const service = useMemo(() => {
     return servicesData2.find(item => item.id.toString() === id);
@@ -96,6 +102,7 @@ export default function SingleScreen() {
     <View style={{ flex: 1 }}>
       <Header2/>
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
@@ -196,6 +203,7 @@ const styles = StyleSheet.create({
 
   description: {
     fontWeight: '500',
+    textAlign: 'justify',
   },
 
   question: {
@@ -206,6 +214,7 @@ const styles = StyleSheet.create({
 
   answer: {
     fontWeight: '500',
+    textAlign: 'justify',
   },
 
   otherServicesTitle: {

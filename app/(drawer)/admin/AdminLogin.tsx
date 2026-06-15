@@ -6,91 +6,61 @@ import {
     TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
-    ScrollView,
     Platform,
     Dimensions,
     StyleSheet,
     Alert,
 } from 'react-native';
-import PhoneIcon from '../../../assets/icons/admin/phone.png';
-import EyeOffIcon from '../../../assets/icons/admin/eyeOff.png';
-import EyeOnIcon from '../../../assets/icons/admin/eyeOn.png';
-import KeyIcon from '../../../assets/icons/admin/key.png';
-
-import CustomCheckbox from '../../../components/admin/CustomCheckbox';
-
-import {
-    widthPercentageToDP as wp,
-    heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
-import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "../../../src/firebase/firebaseConfig"; // adjust path
+import { router } from 'expo-router';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from '../../../src/firebase/firebaseConfig';
 
-const { width, height } = Dimensions.get('window');
-
-const scaleFont = (size: number) => {
-    const guidelineBaseWidth = 375;
-    return (size * width) / guidelineBaseWidth;
-};
+const { width } = Dimensions.get('window');
+const scaleFont = (size: number) => (size * width) / 375;
 
 export default function AdminLogin() {
-
     const [passwordVisible, setPasswordVisible] = useState(false);
-    const [phoneNumber, setphoneNumber] = useState<any>('');
-    const [password, setPassword] = useState<any>('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [password, setPassword] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(!!auth.currentUser);
 
-    const togglePasswordVisibility = () => {
-        setPasswordVisible(!passwordVisible);
-    };
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setIsLoggedIn(!!user);
+        });
+        return unsubscribe;
+    }, []);
 
     const handleSubmit = async () => {
         try {
             if (!phoneNumber || !password) {
-                alert("Please enter phone and PIN");
+                Alert.alert('Error', 'Please enter phone and PIN');
                 return;
             }
-
-            const email = `${phoneNumber}@tackles.app`;
+            const cleaned = phoneNumber.replace(/\s/g, '');
+            const email = `${cleaned}@tackles.app`;
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            if (user) {
-                // 🟩 SET FLAG TO TRUE SO BOOKING SCREEN ALLOWS ENTRY
+            if (userCredential.user) {
                 try {
                     const AsyncStorage = require('@react-native-async-storage/async-storage').default;
                     await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
-                } catch (storageError) {
-                    console.warn('Failed to save profile setup flag:', storageError);
-                }
-
+                } catch (e) {}
                 try {
                     const { OneSignal } = require('react-native-onesignal');
-                    OneSignal.login(user.uid);
+                    OneSignal.login(userCredential.user.uid);
                     OneSignal.User.addTag('role', 'career');
-                    OneSignal.User.addTag('phone', phoneNumber);
-                } catch (e) {
-                    console.warn('OneSignal tagging failed:', e);
-                }
-
-                Alert.alert(
-                    "Login Successful",
-                    "Welcome back!",
-                    [
-                        {
-                            text: "OK",
-                            onPress: () => {
-                                router.push('/admin/BookingHistory');
-                            }
-                        }
-                    ]
-                );
+                    OneSignal.User.addTag('phone', cleaned);
+                } catch (e) {}
+                Alert.alert('Welcome back!', 'Login successful.', [
+                    { text: 'OK', onPress: () => router.push('/admin/BookingHistory') },
+                ]);
             }
-
         } catch (error: any) {
-            console.log("Login error:", error.message);
-            alert("Invalid phone or PIN");
+            Alert.alert('Login Failed', 'Invalid phone or PIN');
         }
     };
 
@@ -100,247 +70,258 @@ export default function AdminLogin() {
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.logout();
-            } catch (e) {
-                console.warn('OneSignal clean-up failure:', e);
-            }
-            setphoneNumber('');
+            } catch (e) {}
+            setPhoneNumber('');
             setPassword('');
-            Alert.alert("Success", "Logged out cleanly.");
+            Alert.alert('Logged out', 'See you soon!');
             router.push('/Home');
         } catch (error: any) {
-            alert("Logout error: " + error.message);
+            Alert.alert('Error', error.message);
         }
     };
 
     return (
-        <View style={{ flex: 1 }} >
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            >
-                <Header4 />
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled">
-                    <Text style={styles.title}>Hello! Pro</Text>
-                    <Text style={styles.subtitle}>Welcome to HomeSewa</Text>
-                    <View style={styles.formContainer}>
-                        <Text style={styles.welcomeText}>Login</Text>
+        <KeyboardAvoidingView
+            style={styles.screen}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            {/* HEADER NAV */}
+            <Header4 />
 
-                        <View style={styles.inputContainer}>
-                            <Image source={PhoneIcon} style={{ width: 30, height: 30, tintColor: '#000' }} />
-                            <TextInput
-                                placeholder="Phone Number"
-                                placeholderTextColor={'rgba(67, 67, 67,0.4)'}
-                                style={styles.textInput}
-                                keyboardType="number-pad"
-                                autoCapitalize="none"
-                                value={phoneNumber}
-                                onChangeText={(value) => {
-                                    let cleaned = value.replace(/[^0-9]/g, '');
-                                    cleaned = cleaned.slice(0, 10);
-                                    setphoneNumber(cleaned);
-                                }}
-                            />
-                        </View>
+            {/* BRAND AREA */}
+            <LinearGradient colors={['#295C59', '#1E4542']} style={styles.brandArea}>
+                <View style={styles.logoWrapper}>
+                    <Image
+                        source={require('../../../assets/images/homesewa.png')}
+                        style={styles.logo}
+                    />
+                </View>
+                <Text style={styles.brandName}>HomeSewa</Text>
+                <Text style={styles.brandTag}>Admin Portal</Text>
+            </LinearGradient>
 
-                        <View style={styles.inputContainer}>
-                            <Image source={KeyIcon} style={{ width: 30, height: 30, tintColor: '#000' }} />
-                            <TextInput
-                                placeholder="PIN"
-                                placeholderTextColor={'rgba(67, 67, 67,0.4)'}
-                                secureTextEntry={!passwordVisible}
-                                style={styles.textInput}
-                                value={password}
-                                onChangeText={(value) => {
-                                    let cleaned = value.replace(/[^0-9]/g, '');
-                                    cleaned = cleaned.slice(0, 6);
-                                    setPassword(cleaned);
-                                }}
-                                keyboardType="number-pad"
-                            />
-                            <TouchableOpacity onPress={togglePasswordVisibility}>
-                                {passwordVisible ? (
-                                    <Image source={EyeOnIcon} style={{ width: 23, height: 27, tintColor: 'hsl(0, 0%, 30%)' }} />
-                                ) : (
-                                    <Image source={EyeOffIcon} style={{ width: 22, height: 22, tintColor: 'hsl(0, 0%, 30%)' }} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
+            {/* LOGIN CARD */}
+            <View style={styles.card}>
+                <Text style={styles.cardTitle}>Sign In</Text>
 
-                        <View style={styles.btnContainerFlex}>
-                            <TouchableOpacity>
-                                <CustomCheckbox />
-                            </TouchableOpacity>
-                            <TouchableOpacity>
-                                <Text style={styles.btnText}>Forgot PIN?</Text>
-                            </TouchableOpacity>
-                        </View>
+                {/* Phone */}
+                <View style={styles.inputRow}>
+                    <Ionicons name="call-outline" size={20} color="#295C59" />
+                    <TextInput
+                        placeholder="98520 24 365"
+                        placeholderTextColor="#B0BEC5"
+                        style={styles.textInput}
+                        keyboardType="number-pad"
+                        value={phoneNumber}
+                        onChangeText={(value) => {
+                            let cleaned = value.replace(/[^0-9]/g, '').slice(0, 10);
+                            let formatted = cleaned;
+                            if (cleaned.length > 5 && cleaned.length <= 7) {
+                                formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+                            } else if (cleaned.length > 7) {
+                                formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
+                            }
+                            setPhoneNumber(formatted);
+                        }}
+                    />
+                </View>
 
-                        <TouchableOpacity style={styles.loginButton} onPress={handleSubmit}>
-                            <Text style={styles.loginButtonText}>Login</Text>
-                        </TouchableOpacity>
+                {/* PIN */}
+                <View style={styles.inputRow}>
+                    <Ionicons name="key-outline" size={20} color="#295C59" />
+                    <TextInput
+                        placeholder="PIN"
+                        placeholderTextColor="#B0BEC5"
+                        secureTextEntry={!passwordVisible}
+                        style={styles.textInput}
+                        keyboardType="number-pad"
+                        value={password}
+                        onChangeText={(value) => setPassword(value.replace(/[^0-9]/g, '').slice(0, 6))}
+                    />
+                    <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons
+                            name={passwordVisible ? 'eye-outline' : 'eye-off-outline'}
+                            size={20}
+                            color="#90A4AE"
+                        />
+                    </TouchableOpacity>
+                </View>
 
-                        <View style={styles.loginDivider} />
+                {/* Login Button */}
+                <TouchableOpacity style={styles.loginBtn} onPress={handleSubmit} activeOpacity={0.85}>
+                    <Text style={styles.loginBtnText}>Login</Text>
+                </TouchableOpacity>
 
-                        <Text style={styles.btnTextBelow}>Become a member :
-                            <Text style={{ fontWeight: '900', color: 'black' }}
-                                onPress={() => router.push('/Career')}
-                            >
-                                Join Now
-                            </Text>
+                {/* Divider */}
+                <View style={styles.divider} />
+
+                {/* Links */}
+                <View style={styles.linksBlock}>
+                    <TouchableOpacity onPress={() => router.push('/Partnership')}>
+                        <Text style={styles.linkText}>
+                            Become a Member :{' '}
+                            <Text style={styles.linkAction}>Join Now</Text>
                         </Text>
+                    </TouchableOpacity>
 
-                        <View style={{ marginTop: 2, width: '100%', alignItems: 'center', }}>
-                            <TouchableOpacity onPress={() => router.push('/AdminChangePassword')}>
-                                <Text style={styles.btnTextBelow}>Change PIN</Text>
-                            </TouchableOpacity>
+                    <TouchableOpacity onPress={() => router.push('/Career')}>
+                        <Text style={styles.linkText}>
+                            Join as Professional :{' '}
+                            <Text style={styles.linkAction}>Join Now</Text>
+                        </Text>
+                    </TouchableOpacity>
 
-                            <TouchableOpacity onPress={() => router.push('/AdminCreate')}>
+                    <TouchableOpacity style={styles.changePinRow} onPress={() => router.push('/AdminChangePassword')}>
+                        <Text style={styles.changePinText}>Change PIN</Text>
+                    </TouchableOpacity>
 
-                                <Text style={styles.btnTextBelow}>Create Account</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity onPress={handleLogout}>
-                                <Text style={[styles.btnTextBelow, { color: 'red', fontWeight: 'bold' }]}>Logout</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </View>
+                    {isLoggedIn && (
+                        <TouchableOpacity onPress={handleLogout}>
+                            <Text style={styles.logoutText}>Logout</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        </KeyboardAvoidingView>
     );
-};
+}
 
 const styles = StyleSheet.create({
-    container: {
+    screen: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#295C59',
     },
-    scrollContent: {
-        flexGrow: 1,
+
+    /* BRAND AREA */
+    brandArea: {
         alignItems: 'center',
-        paddingBottom: 0
+        paddingTop: hp('3%'),
+        paddingBottom: hp('3%'),
     },
-    header: {
-        marginTop: hp('2%'),
-        paddingHorizontal: wp('4%'),
-    },
-    divider: {
-        borderBottomWidth: 1,
-        borderColor: '#CAD2DF',
-        marginTop: 16,
-    },
-    title: {
-        fontSize: scaleFont(22),
-        fontWeight: '900',
-        marginTop: hp('10%'),
-        width: '100%',
-        color: 'green',
-        paddingLeft: hp('3%')
-    },
-    subtitle: {
-        width: '100%',
-        fontSize: hp('1.63%'),
-        paddingLeft: hp('3%'),
-        fontWeight: '500',
-        color: 'hsl(0, 0%, 20%)',
-        marginBottom: hp('5%')
-    },
-    btnContainerFlex: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingHorizontal: hp('1%')
-    },
-    btnText: {
-        color: '#333',
-        fontWeight: '500',
-        fontSize: hp('1.5%'),
-        marginBottom: hp('0.3%')
-    },
-    btnTextBelow: {
-        color: '#333',
-        fontWeight: '500',
-        fontSize: hp('1.5%'),
-    },
-    formContainer: {
-        paddingHorizontal: '10%',
-        width: '100%',
+    logoWrapper: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        backgroundColor: 'rgba(255,255,255,0.15)',
         alignItems: 'center',
-        paddingVertical: hp('3%'),
-        backgroundColor: '#ebffef',
-        paddingBottom: hp('30%'),
-        marginTop: hp('5%'),
-        borderTopLeftRadius: 25,
-        borderTopRightRadius: 25,
-        borderColor: 'rgba(0, 0, 0,0.1)',
-        borderWidth: 1
+        justifyContent: 'center',
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.3)',
+        overflow: 'hidden',
     },
-    image: {
-        width: wp('40%'),
-        height: hp('20%'),
+    logo: {
+        width: 52,
+        height: 52,
         resizeMode: 'contain',
-        borderRadius: 200
     },
-    welcomeText: {
+    brandName: {
         fontSize: scaleFont(22),
-        fontWeight: '900',
-        marginTop: height * 0.01,
-        marginBottom: height * 0.04,
-        width: '100%',
-        color: 'green',
-        paddingHorizontal: hp('1.3%')
+        fontWeight: '800',
+        color: '#fff',
+        letterSpacing: 0.4,
     },
-    inputContainer: {
+    brandTag: {
+        fontSize: scaleFont(12),
+        color: 'rgba(255,255,255,0.7)',
+        fontWeight: '400',
+        marginTop: 3,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+    },
+
+    /* CARD */
+    card: {
+        flex: 1,
+        backgroundColor: '#F5F9F8',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        paddingHorizontal: wp('8%'),
+        paddingTop: hp('3%'),
+        paddingBottom: hp('3%'),
+    },
+    cardTitle: {
+        fontSize: scaleFont(24),
+        fontWeight: '800',
+        color: '#1C2B2A',
+        marginBottom: hp('2.5%'),
+    },
+
+    /* INPUTS */
+    inputRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        borderWidth: 1,
-        width: '100%',
-        marginBottom: '5%',
-        borderRadius: 12,
-        borderColor: 'rgba(0, 0, 0,0.1)',
         alignItems: 'center',
-        height: hp('6%'),
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        paddingHorizontal: 14,
+        height: hp('6.5%'),
+        marginBottom: hp('2%'),
+        gap: 10,
     },
     textInput: {
-        fontSize: scaleFont(17),
-        fontWeight: '600',
         flex: 1,
-        paddingHorizontal: hp('2%'),
-        letterSpacing: 0.5
+        fontSize: scaleFont(15),
+        fontWeight: '500',
+        color: '#1C2B2A',
+        letterSpacing: 0.5,
     },
-    loginButton: {
-        marginTop: height * 0.07,
-        height: height * 0.06,
-        width: '95%',
-        borderRadius: 50,
-        justifyContent: 'center',
+
+    /* BUTTON */
+    loginBtn: {
+        backgroundColor: '#295C59',
+        borderRadius: 14,
+        height: hp('6.5%'),
         alignItems: 'center',
-        backgroundColor: 'green'
+        justifyContent: 'center',
+        marginTop: hp('1.5%'),
+        elevation: 4,
+        shadowColor: '#295C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
-    loginButtonText: {
-        fontSize: scaleFont(13),
-        fontWeight: '600',
+    loginBtnText: {
         color: '#fff',
+        fontSize: scaleFont(15),
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
-    loginDivider: {
-        borderWidth: 1,
-        width: '100%',
-        borderColor: 'hsl(0, 0%, 33%)',
-        marginBottom: hp('2%'),
-        marginTop: hp('7%')
+
+    /* DIVIDER */
+    divider: {
+        height: 1,
+        backgroundColor: '#D6E8E7',
+        marginVertical: hp('3.5%'),
     },
-    areaLabel: {
-        fontSize: hp('1.9%'),
+
+    /* LINKS */
+    linksBlock: {
+        alignItems: 'center',
+        gap: hp('1.6%'),
+    },
+    linkText: {
+        fontSize: scaleFont(13.5),
+        color: '#5A7270',
+        fontWeight: '500',
+    },
+    linkAction: {
+        color: '#295C59',
+        fontWeight: '800',
+    },
+    changePinRow: {
+        marginTop: hp('0.2%'),
+    },
+    changePinText: {
+        fontSize: scaleFont(13.5),
+        color: '#295C59',
         fontWeight: '600',
-        width: '100%',
-        marginBottom: hp('1%'),
-        color: 'hsl(0, 0%, 30%)',
-        paddingHorizontal: hp('1%'),
-    }
+    },
+    logoutText: {
+        fontSize: scaleFont(13.5),
+        color: '#E53935',
+        fontWeight: '700',
+        marginTop: hp('0.5%'),
+    },
 });

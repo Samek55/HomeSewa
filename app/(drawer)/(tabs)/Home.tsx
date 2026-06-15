@@ -39,7 +39,7 @@ export default function HomeScreen() {
         {/* ── HERO ─────────────────────────────────────── */}
         <View style={styles.hero}>
           <Image
-            source={require('../../../assets/header/Header.jpeg')}
+            source={require('../../../assets/header/Home Page Banner.jpg')}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   heroNumberBar: { marginTop: 2 },
 
   /* CATEGORIES */
-  section: { marginTop: hp('2.8%'), paddingHorizontal: wp('4%') },
+  section: { marginTop: hp('1.2%'), paddingHorizontal: wp('4%') },
   sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   /* FEATURED CARD */
   featuredCard: {
     width: '100%',
-    height: hp('22%'),
+    height: hp('24%'),
     borderRadius: 18,
     overflow: 'hidden',
     marginBottom: hp('1.5%'),

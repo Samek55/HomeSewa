@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-
-const DropIconAdd = require('../../assets/icons/booking/add.png');
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
   options: string[];
@@ -50,25 +49,13 @@ const DropdownAdd = ({
     }));
   }, [options]);
 
-  const getDropIcon = useCallback(() => {
-    if (dropdownType === 'shift') {
-      return require('../../assets/icons/booking/clock.png');
-    }
-    return DropIconAdd;
-  }, [dropdownType]);
-
   const renderRightIcon = useCallback(() => (
-    <Image
-      source={getDropIcon()}
-      style={[
-        { width: hp('2.2%'), height: hp('2.2%') },
-        isFocus && dropdownType !== 'shift' && {
-          transform: [{ rotate: '180deg' }],
-          tintColor: '#2F6BFF'
-        }
-      ]}
+    <Ionicons
+      name={isFocus ? 'chevron-up' : 'chevron-down'}
+      size={hp('2.2%')}
+      color={isFocus ? '#2F6BFF' : '#9CA3AF'}
     />
-  ), [isFocus, dropdownType, getDropIcon]);
+  ), [isFocus]);
 
   const renderItem = useCallback((item: any) => {
     const isSelected = selectedOptions.includes(item.value);

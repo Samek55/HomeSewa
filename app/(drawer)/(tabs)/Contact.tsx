@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, Linking, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header2 from '@/components/Header2';
@@ -23,19 +23,22 @@ export default function ContactScreen() {
           <Text style={styles.heroSub}>We are always here to help you out.</Text>
         </View>
 
-        {/* MAP CARD */}
-        <TouchableOpacity style={styles.mapWrapper} onPress={handleMapPress} activeOpacity={0.85}>
-          <View style={styles.mapPlaceholder}>
-            <View style={styles.mapPin}>
-              <Ionicons name="location" size={32} color="#295C59" />
-            </View>
-            <Text style={styles.mapAddress}>Rem.Work, Kamalpokhari{'\n'}Kathmandu, Nepal</Text>
-            <View style={styles.mapOpenBtn}>
-              <Ionicons name="map-outline" size={14} color="#fff" />
-              <Text style={styles.mapOpenText}>Open in Maps</Text>
-            </View>
+        {/* STATIC MAP CARD */}
+        <View style={styles.mapCard}>
+          <Image
+            source={require('../../../assets/header/map-kamalpokhari.png')}
+            style={styles.mapImage}
+            resizeMode="cover"
+          />
+          {/* Pin overlay */}
+          <View style={styles.pin} pointerEvents="none">
+            <Ionicons name="location" size={36} color="#E53935" />
           </View>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.mapOpenBtn} onPress={handleMapPress} activeOpacity={0.85}>
+            <Ionicons name="map-outline" size={14} color="#fff" />
+            <Text style={styles.mapOpenText}>Open in Maps</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* BRAND BLOCK */}
         <View style={styles.brandBlock}>
@@ -73,7 +76,6 @@ export default function ContactScreen() {
           />
         </View>
 
-
       </ScrollView>
     </View>
   );
@@ -110,57 +112,41 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: wp('7%'), fontWeight: '800', color: '#1C2B2A', letterSpacing: 0.3 },
   heroSub: { fontSize: wp('3.5%'), color: '#5A7270', marginTop: 6 },
 
-  mapWrapper: {
+  /* STATIC MAP */
+  mapCard: {
     marginHorizontal: wp('4%'),
     marginTop: hp('1%'),
     borderRadius: 16,
     overflow: 'hidden',
-  },
-  mapPlaceholder: {
-    height: 160,
-    backgroundColor: '#E8F4F3',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#C9E8E6',
-  },
-  mapPin: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
     elevation: 3,
     shadowColor: '#295C59',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
-  mapAddress: {
-    fontSize: wp('3.4%'),
-    color: '#1C2B2A',
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 20,
+  mapImage: {
+    width: '100%',
+    height: 180,
+  },
+  pin: {
+    position: 'absolute',
+    top: '30%',
+    left: '50%',
+    transform: [{ translateX: -18 }, { translateY: -36 }],
   },
   mapOpenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: '#295C59',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 2,
+    paddingVertical: 10,
   },
-  mapOpenText: { fontSize: wp('3%'), color: '#fff', fontWeight: '600' },
+  mapOpenText: { fontSize: wp('3.2%'), color: '#fff', fontWeight: '600' },
 
   brandBlock: {
     paddingHorizontal: wp('5%'),
-    paddingTop: hp('1%'),
+    paddingTop: hp('2%'),
     paddingBottom: hp('0.5%'),
   },
   brandName: { fontSize: wp('5%'), fontWeight: '800', color: '#1C2B2A' },
@@ -199,16 +185,4 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: wp('3.2%'), fontWeight: '600', color: '#5A7270', marginBottom: 2 },
   cardValue: { fontSize: wp('3.7%'), fontWeight: '600', color: '#1C2B2A' },
   cardValueLink: { color: '#295C59' },
-
-  hoursCard: {
-    marginHorizontal: wp('4%'),
-    marginTop: hp('1.5%'),
-    backgroundColor: '#E8F4F3',
-    borderRadius: 14,
-    padding: 16,
-  },
-  hoursHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  hoursTitle: { fontSize: wp('3.8%'), fontWeight: '700', color: '#295C59' },
-  hoursValue: { fontSize: wp('3.7%'), fontWeight: '600', color: '#1C2B2A' },
-  hoursNote: { fontSize: wp('3%'), color: '#5A7270', marginTop: 3 },
 });
