@@ -15,7 +15,6 @@ const { width: SW } = Dimensions.get('window');
 
 import ServicesCards from '../../../components/services/ServicesCards';
 import ServicesDisplaycard from '../../../components/services/ServicesDisplaycard';
-import SliderCard from '../../../components/services/SliderCard';
 
 import { servicesData2 } from '../../../src/data/ServiceData';
 
@@ -136,34 +135,21 @@ export default function ServiceScreen() {
         <Text style={styles.sectionTitle1}>Top Services</Text>
 
         {topServices.map((item) => (
-          <TouchableOpacity
+          <ServicesCards
             key={item.id}
-            style={styles.topServiceCard}
-            activeOpacity={0.88}
+            name={item.name}
+            description={item.description}
+            image={item.image}
+            question={item.question}
+            answer={item.answer}
             onPress={() =>
               router.push({
                 pathname: '/service/ServiceDetail',
                 params: { id: item.id.toString() },
               })
             }
-          >
-            <Image source={item.image} style={styles.featuredImage} resizeMode="cover" />
-            <LinearGradient
-              colors={['transparent', 'rgba(18,46,44,0.90)']}
-              style={styles.featuredGradient}
-            >
-              <Text style={styles.featuredLabel}>HomeSewa</Text>
-              <Text style={styles.featuredName}>{item.name}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
-
-        <View style={styles.sliderCardContainer}>
-          <SliderCard
-            name="Interior Designing"
-            image={require('../../../assets/images/Interior Designing.webp')}
           />
-        </View>
+        ))}
 
         <Text style={styles.sectionTitle2}>Trending Services</Text>
       </View>
@@ -245,10 +231,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#064E3B',
     marginBottom: hp('2%'),
-    marginTop: hp('2%'),
-  },
-
-  sliderCardContainer: {
     marginTop: hp('2%'),
   },
 

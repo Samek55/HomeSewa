@@ -25,8 +25,7 @@ import {
     heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-import { signOut } from "firebase/auth";
-import { auth } from '@/src/firebase/firebaseConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function BookingHistory() {
 
@@ -162,7 +161,7 @@ export default function BookingHistory() {
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
+            await AsyncStorage.removeItem('adminPhone');
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.logout();
@@ -170,9 +169,7 @@ export default function BookingHistory() {
                 console.warn('OneSignal clean-up failure:', e);
             }
 
-            Alert.alert("Logged Out", "You have been logged out successfully.", [
-                { text: "OK", onPress: () => router.replace('/admin/AdminLogin') }
-            ]);
+            router.replace('/admin/AdminLogin');
         } catch (error: any) {
             alert("Logout error: " + error.message);
         }

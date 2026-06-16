@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header2 from '@/components/Header2';
 
-const MAP_URL = 'https://maps.google.com/?q=27.7090,85.3221';
+const MAP_URL = 'https://maps.app.goo.gl/pfWTFfxpxqXRfXha7?g_st=ac';
 
 export default function ContactScreen() {
   const openWebsite = useCallback(() => { Linking.openURL('https://homesewa.app'); }, []);
@@ -30,10 +30,6 @@ export default function ContactScreen() {
             style={styles.mapImage}
             resizeMode="cover"
           />
-          {/* Pin overlay */}
-          <View style={styles.pin} pointerEvents="none">
-            <Ionicons name="location" size={36} color="#E53935" />
-          </View>
           <TouchableOpacity style={styles.mapOpenBtn} onPress={handleMapPress} activeOpacity={0.85}>
             <Ionicons name="map-outline" size={14} color="#fff" />
             <Text style={styles.mapOpenText}>Open in Maps</Text>
@@ -127,12 +123,7 @@ const styles = StyleSheet.create({
   mapImage: {
     width: '100%',
     height: 180,
-  },
-  pin: {
-    position: 'absolute',
-    top: '30%',
-    left: '50%',
-    transform: [{ translateX: -18 }, { translateY: -36 }],
+    transform: [{ scale: 1.25 }],
   },
   mapOpenBtn: {
     flexDirection: 'row',

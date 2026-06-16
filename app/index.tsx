@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { markSplashReady } from '../src/utils/splashGate';
 
 type Route = '/Home' | '/onboarding1';
 
@@ -21,7 +21,8 @@ export default function Index() {
         setRoute('/onboarding1');
       } finally {
         if (mounted) {
-          await SplashScreen.hideAsync();
+          // Report onboarding check done — splash hides once every check has reported in
+          markSplashReady();
         }
       }
     };

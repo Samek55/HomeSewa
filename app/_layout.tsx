@@ -2,8 +2,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
 import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
+import { markSplashReady } from '../src/utils/splashGate';
 
 // Prevent splash screen from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => { });
@@ -40,9 +41,9 @@ export default function RootLayout() {
     const unsubscribe = onAuthStateChanged(getAuth(), (firebaseUser) => {
       setUser(firebaseUser);
       setInitializing(false);
-      
-      // Hide Splashscreen once state evaluates on app boot
-      SplashScreen.hideAsync().catch(() => {});
+
+      // Report auth check done — splash hides once every check has reported in
+      markSplashReady();
     });
 
     return unsubscribe;
@@ -64,7 +65,30 @@ export default function RootLayout() {
     }
   }, [user, initializing, segments]);
 
-  // --- FEATURE 3: ONESIGNAL HARDWARE PROVISIONING CHANNEL ---
+  // --- FEATURE 3: HARDWARE BACK BUTTON — COLLAPSE TO HOME, THEN EXIT ---
+  useEffect(() => {
+    if (Platform.OS !== 'android' || initializing) return;
+
+    const onBackPress = () => {
+      // Outside the main drawer/tabs area (e.g. onboarding) let Android's
+      // default back behavior happen instead of forcing a jump to Home.
+      if (segments[0] !== '(drawer)') return false;
+
+      const onHome = segments[segments.length - 1] === 'Home';
+
+      if (onHome) {
+        BackHandler.exitApp();
+      } else {
+        router.replace('/Home');
+      }
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [segments, initializing]);
+
+  // --- FEATURE 4: ONESIGNAL HARDWARE PROVISIONING CHANNEL ---
   useEffect(() => {
     let isMounted = true;
 
@@ -112,13 +136,10 @@ export default function RootLayout() {
     }
   }, []);
 
-  // Show a neutral loading spinner inside safe layout context during auth evaluation shifts
+  // Stay invisible during auth evaluation — the native splash (logo) is still
+  // covering the screen at this point, so there's nothing to render here.
   if (initializing) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <ActivityIndicator size="large" color="green" />
-      </View>
-    );
+    return null;
   }
 
   return (

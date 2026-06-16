@@ -9,6 +9,7 @@ const { width } = Dimensions.get('window');
 export default function DrawerLayout() {
   return (
     <Drawer
+      initialRouteName="(tabs)"
       drawerContent={(props) => <CustomDrawer {...props} />}
 
       screenOptions={{

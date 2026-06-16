@@ -44,7 +44,9 @@
         "onesignal-expo-plugin",
         {
           "mode": "production",
-          "appId": "6088a935-58f5-4645-8290-80633f2bdbc5"
+          "smallIcons": ["./assets/icons/notification-small-icon.png"],
+          "largeIcons": ["./assets/images/homesewa.png"],
+          "smallIconAccentColor": "#295C59"
         }
       ],
       "expo-font",

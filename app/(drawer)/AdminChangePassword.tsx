@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
     View,
     Text,
-    Image,
     TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
@@ -12,8 +11,8 @@ import {
     Dimensions,
     StyleSheet,
 } from 'react-native';
-import EyeOffIcon from '../../assets/icons/admin/eyeOff.png';
-import EyeOnIcon from '../../assets/icons/admin/eyeOn.png';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
     widthPercentageToDP as wp,
@@ -22,36 +21,17 @@ import {
 import { router } from 'expo-router';
 import Header4 from '@/components/Header4Admin';
 
-// Get screen dimensions for responsive layout
-const { width, height } = Dimensions.get('window');
-
-// Font scaling utility function
-const scaleFont = (size: number) => {
-    const guidelineBaseWidth = 375; // Base screen width to scale from
-    return (size * width) / guidelineBaseWidth;
-};
+const { width } = Dimensions.get('window');
+const scaleFont = (size: number) => (size * width) / 375;
 
 export default function AdminChangePassword() {
     const [passwordVisibleOLD, setPasswordVisibleOLD] = useState(false);
     const [passwordVisibleNEW, setPasswordVisibleNEW] = useState(false);
     const [passwordVisibleCONFIRM, setPasswordVisibleCONFIRM] = useState(false);
 
-
-    const [oldPassword, setOldPassword] = useState<any>('');
-    const [newPassword, setNewPassword] = useState<any>('');
-    const [confirmNewpassword, setConfirmNewPassword] = useState<any>('');
-
-    const togglePasswordVisibilityOLD = () => {
-        setPasswordVisibleOLD(!passwordVisibleOLD);
-    };
-
-    const togglePasswordVisibilityNEW = () => {
-        setPasswordVisibleNEW(!passwordVisibleNEW);
-    }
-
-    const togglePasswordVisibilityCONFIRM = () => {
-        setPasswordVisibleCONFIRM(!passwordVisibleCONFIRM);
-    }
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewpassword, setConfirmNewPassword] = useState('');
 
     const handleSubmit = () => {
         if (!oldPassword || oldPassword.length !== 4) {
@@ -72,253 +52,211 @@ export default function AdminChangePassword() {
     };
 
     return (
-        <View style={{ flex: 1 }} >
+        <KeyboardAvoidingView
+            style={styles.screen}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
             <Header4 />
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled">
 
+            {/* BRAND AREA */}
+            <LinearGradient colors={['#295C59', '#1E4542']} style={styles.brandArea}>
+                <View style={styles.logoWrapper}>
+                    <Ionicons name="key-outline" size={32} color="#fff" />
+                </View>
+                <Text style={styles.brandName}>Reset PIN</Text>
+                <Text style={styles.brandTag}>Choose a new PIN to regain access</Text>
+            </LinearGradient>
 
-                    <View style={styles.formContainer}>
-                        <Text style={styles.title}>Change Password</Text>
+            {/* CARD */}
+            <ScrollView
+                style={styles.card}
+                contentContainerStyle={styles.cardContent}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* OLD PIN */}
+                <Text style={styles.label}>Old PIN</Text>
+                <View style={styles.inputRow}>
+                    <Ionicons name="lock-closed-outline" size={20} color="#295C59" />
+                    <TextInput
+                        style={styles.textInput}
+                        secureTextEntry={!passwordVisibleOLD}
+                        keyboardType="number-pad"
+                        maxLength={4}
+                        autoFocus
+                        value={oldPassword}
+                        onChangeText={(text) => setOldPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
+                    />
+                    <TouchableOpacity onPress={() => setPasswordVisibleOLD(!passwordVisibleOLD)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name={passwordVisibleOLD ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
+                    </TouchableOpacity>
+                </View>
 
-                        <Text style={styles.welcomeText}>Choose a New Password</Text>
-                        <Text style={styles.welcomeText2}>Enter and confirm your new password to regain access</Text>
+                {/* NEW PIN */}
+                <Text style={styles.label}>New PIN</Text>
+                <View style={styles.inputRow}>
+                    <Ionicons name="key-outline" size={20} color="#295C59" />
+                    <TextInput
+                        style={styles.textInput}
+                        secureTextEntry={!passwordVisibleNEW}
+                        keyboardType="number-pad"
+                        maxLength={4}
+                        value={newPassword}
+                        onChangeText={(text) => setNewPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
+                    />
+                    <TouchableOpacity onPress={() => setPasswordVisibleNEW(!passwordVisibleNEW)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name={passwordVisibleNEW ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
+                    </TouchableOpacity>
+                </View>
 
+                {/* CONFIRM NEW PIN */}
+                <Text style={styles.label}>Confirm New PIN</Text>
+                <View style={styles.inputRow}>
+                    <Ionicons name="checkmark-circle-outline" size={20} color="#295C59" />
+                    <TextInput
+                        style={styles.textInput}
+                        secureTextEntry={!passwordVisibleCONFIRM}
+                        keyboardType="number-pad"
+                        maxLength={4}
+                        value={confirmNewpassword}
+                        onChangeText={(text) => setConfirmNewPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
+                    />
+                    <TouchableOpacity onPress={() => setPasswordVisibleCONFIRM(!passwordVisibleCONFIRM)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name={passwordVisibleCONFIRM ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
+                    </TouchableOpacity>
+                </View>
 
-                        {/* OLD pin */}
-                        <Text style={styles.labelInput}>Old PIN</Text>
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                placeholder=""
-                                placeholderTextColor={'hsl(0, 0%, 20%)'}
-                                secureTextEntry={!passwordVisibleOLD}
-                                style={styles.textInput}
-                                value={oldPassword}
-                                maxLength={4}
-                                onChangeText={(text) =>
-                                    setOldPassword(text.replace(/[^0-9]/g, '').slice(0, 4))
-                                }
-                            />
-                            <TouchableOpacity onPress={togglePasswordVisibilityOLD}>
-                                {passwordVisibleOLD ? (
-                                    <Image source={EyeOnIcon} style={{ width: 23, height: 27, tintColor: 'hsl(0, 0%, 30%)' }} />
-
-                                ) : (
-                                    <Image source={EyeOffIcon} style={{ width: 22, height: 22, tintColor: 'hsl(0, 0%, 30%)' }} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                        {/* new password */}
-                        <Text style={styles.labelInput}>New PIN</Text>
-
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                placeholder=""
-                                placeholderTextColor={'hsl(0, 0%, 20%)'}
-                                secureTextEntry={!passwordVisibleNEW}
-                                style={styles.textInput}
-                                value={newPassword}
-                                maxLength={4}
-                                onChangeText={(text) =>
-                                    setNewPassword(text.replace(/[^0-9]/g, '').slice(0, 4))
-                                }
-                            />
-                            <TouchableOpacity onPress={togglePasswordVisibilityNEW}>
-                                {passwordVisibleNEW ? (
-                                    <Image source={EyeOnIcon} style={{ width: 23, height: 27, tintColor: 'hsl(0, 0%, 30%)' }} />
-
-                                ) : (
-                                    <Image source={EyeOffIcon} style={{ width: 22, height: 22, tintColor: 'hsl(0, 0%, 30%)' }} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                        {/* confirem new password */}
-                        <Text style={styles.labelInput}>Confirm New PIN</Text>
-
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                placeholder=""
-                                placeholderTextColor={'hsl(0, 0%, 20%)'}
-                                secureTextEntry={!passwordVisibleCONFIRM}
-                                style={styles.textInput}
-                                value={confirmNewpassword}
-                                maxLength={4}
-                                onChangeText={(text) =>
-                                    setConfirmNewPassword(text.replace(/[^0-9]/g, '').slice(0, 4))
-                                }
-                            />
-                            <TouchableOpacity onPress={togglePasswordVisibilityCONFIRM}>
-                                {passwordVisibleCONFIRM ? (
-                                    <Image source={EyeOnIcon} style={{ width: 23, height: 27, tintColor: 'hsl(0, 0%, 30%)' }} />
-
-                                ) : (
-                                    <Image source={EyeOffIcon} style={{ width: 22, height: 22, tintColor: 'hsl(0, 0%, 30%)' }} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.mainBtn}>
-                            <TouchableOpacity style={styles.CancelButton} onPress={() => router.push('/Admin')}>
-                                <Text style={styles.CancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.loginButton} onPress={handleSubmit}>
-                                <Text style={styles.loginButtonText}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-
-
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </View>
+                {/* BUTTONS */}
+                <View style={styles.btnRow}>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={() => router.push('/Admin')} activeOpacity={0.85}>
+                        <Text style={styles.cancelBtnText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit} activeOpacity={0.85}>
+                        <Text style={styles.saveBtnText}>Save</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
-};
+}
 
 const styles = StyleSheet.create({
-    container: {
+    screen: {
         flex: 1,
-        backgroundColor: '#fff',
-
+        backgroundColor: '#295C59',
     },
-    scrollContent: {
-        flexGrow: 1,
+
+    /* BRAND AREA */
+    brandArea: {
+        alignItems: 'center',
+        paddingTop: hp('3%'),
+        paddingBottom: hp('3%'),
+    },
+    logoWrapper: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        alignItems: 'center',
         justifyContent: 'center',
-        alignItems: 'center',
-        paddingBottom: hp('2%'),
-
+        marginBottom: 10,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.3)',
     },
-
-    divider: {
-        borderBottomWidth: 1,
-        borderColor: '#CAD2DF',
-        marginTop: 16,
-    },
-    btnContainer: {
-        // marginLeft: 200
-    },
-    btnText: {
-        color: '#333',
-        fontWeight: '500',
-        textDecorationLine: 'underline',
-        marginBottom: hp('0.3%')
-    },
-
-    formContainer: {
-        paddingHorizontal: '5%',
-        alignItems: 'center',
-        paddingVertical: hp('3%'),
-        width: '95%'
-    },
-    image: {
-        width: wp('40%'),
-        height: hp('15%'),
-        resizeMode: 'contain',
-        borderRadius: 200
-    },
-    title: {
-        fontSize: hp('2.8%'),
-        fontWeight: '600',
-        color: 'green',
-        width: '100%'
-
-    },
-    welcomeText: {
-        marginTop: height * 0.04,
-        fontSize: scaleFont(15),
-        fontWeight: '600',
-        width: '100%',
-        color: 'hsl(0, 0%, 30%)'
-
-    },
-    welcomeText2: {
-        fontSize: scaleFont(15),
-        fontWeight: '500',
-        marginTop: height * 0.01, // Margin adjusted based on screen height
-        marginBottom: height * 0.05, // Margin adjusted based on screen height
-        width: '100%',
-        color: 'hsl(0, 0%, 50%)'
-
-    },
-    labelInput: {
-        fontSize: hp('1.9%'),
-        fontWeight: '600',
-        width: '98%',
-        marginBottom: hp('1.5%'),
-        color: 'hsl(0, 0%, 30%)'
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: '100%',
-        height: hp('5.5%'),
-        borderWidth: 1,
-        borderRadius: 50,
-        borderColor: '#d3d3d3',
-        paddingHorizontal: 16,
-        marginBottom: '7%',
-        backgroundColor: '#f7f7f7'
-    },
-    textInput: {
-        flex: 1,              //  VERY IMPORTANT
+    brandName: {
         fontSize: scaleFont(22),
         fontWeight: '800',
-        paddingVertical: 0,
-        textAlignVertical: 'center', //  Android fix
-        letterSpacing: 3,
-        color: 'hsl(0, 0%, 20%)',
-        paddingHorizontal: 20
+        color: '#fff',
+        letterSpacing: 0.4,
+    },
+    brandTag: {
+        fontSize: scaleFont(12),
+        color: 'rgba(255,255,255,0.7)',
+        fontWeight: '400',
+        marginTop: 3,
+        letterSpacing: 0.4,
+    },
 
+    /* CARD */
+    card: {
+        flex: 1,
+        backgroundColor: '#F5F9F8',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
     },
-    mainBtn: {
-        width: '100%',
-        justifyContent: "space-between",
-        flexDirection: 'row',
-        paddingTop: height * 0.13, // Adjusted button margin based on screen height
-        marginBottom: hp('3%'),
-        paddingHorizontal: wp('2%')
+    cardContent: {
+        paddingHorizontal: wp('8%'),
+        paddingTop: hp('3%'),
+        paddingBottom: hp('4%'),
     },
-    CancelButton: {
-        height: height * 0.055,
-        width: width * 0.35, // Adjust width based on screen size
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0,0.3)'
-    },
-    CancelButtonText: {
-        fontSize: scaleFont(17),
+
+    label: {
+        fontSize: scaleFont(13.5),
         fontWeight: '700',
-        color: '#000'
+        color: '#1C2B2A',
+        marginBottom: hp('1%'),
     },
-    loginButton: {
-        height: height * 0.055,
-        width: width * 0.35, // Adjust width based on screen size
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'green'
-    },
-    loginButtonText: {
-        fontSize: scaleFont(17),
-        fontWeight: '600',
-        color: '#fff'
-    },
-    backButton: {
-        position: 'absolute',
-        top: 8,
-        left: 10,
-        zIndex: 10,
-    },
-    backBtn: {
-        width: hp('4%'),
-        height: hp('4%'),
-        tintColor: 'green'
-    }
-});
 
+    /* INPUTS */
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        paddingHorizontal: 14,
+        height: hp('6.5%'),
+        marginBottom: hp('2.5%'),
+        gap: 10,
+    },
+    textInput: {
+        flex: 1,
+        fontSize: scaleFont(20),
+        fontWeight: '800',
+        textAlign: 'center',
+        letterSpacing: 8,
+        color: '#1C2B2A',
+    },
+
+    /* BUTTONS */
+    btnRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: hp('1.5%'),
+        gap: 12,
+    },
+    cancelBtn: {
+        flex: 1,
+        height: hp('6.5%'),
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        backgroundColor: '#fff',
+    },
+    cancelBtnText: {
+        fontSize: scaleFont(15),
+        fontWeight: '700',
+        color: '#1C2B2A',
+    },
+    saveBtn: {
+        flex: 1,
+        height: hp('6.5%'),
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#295C59',
+        elevation: 4,
+        shadowColor: '#295C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
+    saveBtnText: {
+        fontSize: scaleFont(15),
+        fontWeight: '700',
+        color: '#fff',
+        letterSpacing: 0.5,
+    },
+});

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
-    Image,
     TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
@@ -12,27 +11,25 @@ import {
     Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { router } from 'expo-router';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../../../src/firebase/firebaseConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
+
+const DUMMY_ADMIN_PHONE = '9852024365';
+const DUMMY_ADMIN_PIN = '1234';
 
 export default function AdminLogin() {
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
-    const [isLoggedIn, setIsLoggedIn] = useState(!!auth.currentUser);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            setIsLoggedIn(!!user);
-        });
-        return unsubscribe;
+        AsyncStorage.getItem('adminPhone').then((phone) => setIsLoggedIn(!!phone));
     }, []);
 
     const handleSubmit = async () => {
@@ -42,23 +39,22 @@ export default function AdminLogin() {
                 return;
             }
             const cleaned = phoneNumber.replace(/\s/g, '');
-            const email = `${cleaned}@tackles.app`;
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            if (userCredential.user) {
-                try {
-                    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-                    await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
-                } catch (e) {}
-                try {
-                    const { OneSignal } = require('react-native-onesignal');
-                    OneSignal.login(userCredential.user.uid);
-                    OneSignal.User.addTag('role', 'career');
-                    OneSignal.User.addTag('phone', cleaned);
-                } catch (e) {}
-                Alert.alert('Welcome back!', 'Login successful.', [
-                    { text: 'OK', onPress: () => router.push('/admin/BookingHistory') },
-                ]);
+            if (cleaned !== DUMMY_ADMIN_PHONE || password !== DUMMY_ADMIN_PIN) {
+                Alert.alert('Login Failed', 'Invalid phone or PIN');
+                return;
             }
+            await AsyncStorage.setItem('adminPhone', cleaned);
+            await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
+            try {
+                const { OneSignal } = require('react-native-onesignal');
+                OneSignal.login(cleaned);
+                OneSignal.User.addTag('role', 'admin');
+                OneSignal.User.addTag('phone', cleaned);
+            } catch (e) {}
+            setIsLoggedIn(true);
+            Alert.alert('Welcome back!', 'Login successful.', [
+                { text: 'OK', onPress: () => router.push('/admin/BookingHistory') },
+            ]);
         } catch (error: any) {
             Alert.alert('Login Failed', 'Invalid phone or PIN');
         }
@@ -66,11 +62,12 @@ export default function AdminLogin() {
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
+            await AsyncStorage.removeItem('adminPhone');
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.logout();
             } catch (e) {}
+            setIsLoggedIn(false);
             setPhoneNumber('');
             setPassword('');
             Alert.alert('Logged out', 'See you soon!');
@@ -87,18 +84,6 @@ export default function AdminLogin() {
         >
             {/* HEADER NAV */}
             <Header4 />
-
-            {/* BRAND AREA */}
-            <LinearGradient colors={['#295C59', '#1E4542']} style={styles.brandArea}>
-                <View style={styles.logoWrapper}>
-                    <Image
-                        source={require('../../../assets/images/homesewa.png')}
-                        style={styles.logo}
-                    />
-                </View>
-                <Text style={styles.brandName}>HomeSewa</Text>
-                <Text style={styles.brandTag}>Admin Portal</Text>
-            </LinearGradient>
 
             {/* LOGIN CARD */}
             <View style={styles.card}>
@@ -157,13 +142,6 @@ export default function AdminLogin() {
 
                 {/* Links */}
                 <View style={styles.linksBlock}>
-                    <TouchableOpacity onPress={() => router.push('/Partnership')}>
-                        <Text style={styles.linkText}>
-                            Become a Member :{' '}
-                            <Text style={styles.linkAction}>Join Now</Text>
-                        </Text>
-                    </TouchableOpacity>
-
                     <TouchableOpacity onPress={() => router.push('/Career')}>
                         <Text style={styles.linkText}>
                             Join as Professional :{' '}
@@ -172,7 +150,7 @@ export default function AdminLogin() {
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.changePinRow} onPress={() => router.push('/AdminChangePassword')}>
-                        <Text style={styles.changePinText}>Change PIN</Text>
+                        <Text style={styles.changePinText}>Reset PIN</Text>
                     </TouchableOpacity>
 
                     {isLoggedIn && (
@@ -190,44 +168,6 @@ const styles = StyleSheet.create({
     screen: {
         flex: 1,
         backgroundColor: '#295C59',
-    },
-
-    /* BRAND AREA */
-    brandArea: {
-        alignItems: 'center',
-        paddingTop: hp('3%'),
-        paddingBottom: hp('3%'),
-    },
-    logoWrapper: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.3)',
-        overflow: 'hidden',
-    },
-    logo: {
-        width: 52,
-        height: 52,
-        resizeMode: 'contain',
-    },
-    brandName: {
-        fontSize: scaleFont(22),
-        fontWeight: '800',
-        color: '#fff',
-        letterSpacing: 0.4,
-    },
-    brandTag: {
-        fontSize: scaleFont(12),
-        color: 'rgba(255,255,255,0.7)',
-        fontWeight: '400',
-        marginTop: 3,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
     },
 
     /* CARD */

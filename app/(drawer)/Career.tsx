@@ -261,7 +261,7 @@ export default function CareerScreen() {
         keyboardDismissMode="on-drag"
       >
         <View style={[styles.formContainer, { marginBottom: hp('5%') }]}>
-          <Text style={styles.title}>HomeSewa - Join Now</Text>
+          <Text style={styles.title}>Join Now</Text>
 
           <View style={styles.spacerGap} />
 
