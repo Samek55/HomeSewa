@@ -22,7 +22,7 @@ const ButtonComponent = ({title, onPress}: Props) => {
 const styles = StyleSheet.create({
   button: {
     borderColor: '#000',
-    backgroundColor: 'green',
+    backgroundColor: 'gray',
 
     borderRadius: 10,
 

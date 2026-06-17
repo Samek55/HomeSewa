@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
     Dimensions,
     StyleSheet,
     Alert,
+    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -25,16 +26,35 @@ const DUMMY_ADMIN_PIN = '1234';
 export default function AdminLogin() {
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [password, setPassword] = useState('');
+    const [pin, setPin] = useState(['', '', '', '']);
+    const pinRefs = useRef<Array<TextInput | null>>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         AsyncStorage.getItem('adminPhone').then((phone) => setIsLoggedIn(!!phone));
     }, []);
 
+    const handlePinChange = (text: string, index: number) => {
+        const digit = text.replace(/[^0-9]/g, '').slice(-1);
+        const newPin = [...pin];
+        newPin[index] = digit;
+        setPin(newPin);
+
+        if (digit && index < pin.length - 1) {
+            pinRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handlePinKeyPress = (event: any, index: number) => {
+        if (event.nativeEvent.key === 'Backspace' && !pin[index] && index > 0) {
+            pinRefs.current[index - 1]?.focus();
+        }
+    };
+
     const handleSubmit = async () => {
         try {
-            if (!phoneNumber || !password) {
+            const password = pin.join('');
+            if (!phoneNumber || password.length < 4) {
                 Alert.alert('Error', 'Please enter phone and PIN');
                 return;
             }
@@ -69,7 +89,7 @@ export default function AdminLogin() {
             } catch (e) {}
             setIsLoggedIn(false);
             setPhoneNumber('');
-            setPassword('');
+            setPin(['', '', '', '']);
             Alert.alert('Logged out', 'See you soon!');
             router.push('/Home');
         } catch (error: any) {
@@ -84,6 +104,19 @@ export default function AdminLogin() {
         >
             {/* HEADER NAV */}
             <Header4 />
+
+            {/* BRANDING SECTION */}
+            <View style={styles.branding}>
+                <View style={styles.lockRing}>
+                    <Image
+                        source={require('../../../assets/icons/admin/lock.png')}
+                        style={styles.lockIcon}
+                        resizeMode="contain"
+                    />
+                </View>
+                <Text style={styles.brandName}>HomeSewa</Text>
+                <Text style={styles.brandSub}>ADMIN LOGIN</Text>
+            </View>
 
             {/* LOGIN CARD */}
             <View style={styles.card}>
@@ -112,24 +145,30 @@ export default function AdminLogin() {
                 </View>
 
                 {/* PIN */}
-                <View style={styles.inputRow}>
-                    <Ionicons name="key-outline" size={20} color="#295C59" />
-                    <TextInput
-                        placeholder="PIN"
-                        placeholderTextColor="#B0BEC5"
-                        secureTextEntry={!passwordVisible}
-                        style={styles.textInput}
-                        keyboardType="number-pad"
-                        value={password}
-                        onChangeText={(value) => setPassword(value.replace(/[^0-9]/g, '').slice(0, 6))}
-                    />
+                <View style={styles.pinRow}>
+                    <Text style={styles.pinLabel}>PIN</Text>
                     <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                         <Ionicons
                             name={passwordVisible ? 'eye-outline' : 'eye-off-outline'}
-                            size={20}
+                            size={18}
                             color="#90A4AE"
                         />
                     </TouchableOpacity>
+                </View>
+                <View style={styles.pinBoxRow}>
+                    {pin.map((digit, index) => (
+                        <TextInput
+                            key={index}
+                            ref={(ref) => { pinRefs.current[index] = ref; }}
+                            style={styles.pinBox}
+                            secureTextEntry={!passwordVisible}
+                            keyboardType="number-pad"
+                            maxLength={1}
+                            value={digit}
+                            onChangeText={(text) => handlePinChange(text, index)}
+                            onKeyPress={(event) => handlePinKeyPress(event, index)}
+                        />
+                    ))}
                 </View>
 
                 {/* Login Button */}
@@ -170,6 +209,39 @@ const styles = StyleSheet.create({
         backgroundColor: '#295C59',
     },
 
+    /* BRANDING */
+    branding: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: hp('3%'),
+        gap: hp('1%'),
+    },
+    lockRing: {
+        width: wp('22%'),
+        height: wp('22%'),
+        borderRadius: wp('11%'),
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: hp('1%'),
+    },
+    lockIcon: {
+        width: wp('14%'),
+        height: wp('14%'),
+    },
+    brandName: {
+        fontSize: scaleFont(26),
+        fontWeight: '800',
+        color: '#fff',
+        letterSpacing: 0.5,
+    },
+    brandSub: {
+        fontSize: scaleFont(12),
+        fontWeight: '600',
+        color: 'rgba(255,255,255,0.65)',
+        letterSpacing: 2,
+    },
+
     /* CARD */
     card: {
         flex: 1,
@@ -179,6 +251,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp('8%'),
         paddingTop: hp('3%'),
         paddingBottom: hp('3%'),
+        justifyContent: 'center',
     },
     cardTitle: {
         fontSize: scaleFont(24),
@@ -208,11 +281,44 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
 
+    /* PIN */
+    pinRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: hp('1%'),
+    },
+    pinLabel: {
+        fontSize: scaleFont(13),
+        fontWeight: '700',
+        color: '#5A7270',
+    },
+    pinBoxRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 12,
+        marginBottom: hp('2%'),
+    },
+    pinBox: {
+        width: wp('12%'),
+        height: hp('6.5%'),
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        backgroundColor: '#fff',
+        textAlign: 'center',
+        fontSize: scaleFont(18),
+        fontWeight: '700',
+        color: '#1C2B2A',
+    },
+
     /* BUTTON */
     loginBtn: {
         backgroundColor: '#295C59',
         borderRadius: 14,
         height: hp('6.5%'),
+        width: '60%',
+        alignSelf: 'center',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: hp('1.5%'),

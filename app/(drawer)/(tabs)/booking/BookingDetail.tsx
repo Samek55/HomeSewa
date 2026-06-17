@@ -1,27 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import Header2 from '@/components/Header2';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import { useState } from "react";
-import SubmitOverlay from "@/components/bookings/SubmitOverlay";
-
-// 1. IMPORT MODULAR FIREBASE AUTH METHODS
-import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
-
-// 2. EXPORT THE MEMORY HOLDER VARIABLE FOR SCREEN ORCHESTRATION
-export let globalBookingFirebaseConfirmation: any = null;
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,8 +17,6 @@ const Row = ({ label, value }: { label: string; value: string }) => (
 );
 
 export default function BookingDetails() {
-  const [overlayVisible, setOverlayVisible] = useState(false);
-  const [overlayStatus, setOverlayStatus] = useState<'loading' | 'success'>('loading');
   const {
     name,
     number,
@@ -45,73 +27,39 @@ export default function BookingDetails() {
     selectedBudget,
     message,
     date,
+    endDate,
   } = useLocalSearchParams();
 
-  const formattedDate = (() => {
-    if (!date) return '';
-    const d = new Date(date as string);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  })();
+  const fmtDate = (iso: any) => {
+    if (!iso) return '';
+    const d = new Date(iso as string);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  };
+  const formattedDate = fmtDate(date);
+  const formattedEndDate = fmtDate(endDate);
 
-  const handleSubmit = async () => {
-    // Aggressively clean string to extract pure digits
+  const handleSubmit = () => {
     const cleanNumber = String(number || '').replace(/[^0-9]/g, '');
-
-    if (cleanNumber.length !== 10) {
-      Alert.alert('Validation Error', 'The associated phone number must be exactly 10 digits.');
-      return;
-    }
-
-    try {
-      setOverlayStatus('loading');
-      setOverlayVisible(true);
-
-      const formattedPhone = '+977' + cleanNumber;
-      console.log("Initializing Firebase SMS to:", formattedPhone);
-
-      // 3. EXECUTE THE MODULAR API CHALLENGE SIGN-IN
-      const authInstance = getAuth();
-      const confirmation = await signInWithPhoneNumber(authInstance, formattedPhone);
-      
-      // Save verification session
-      globalBookingFirebaseConfirmation = confirmation;
-
-      setOverlayVisible(false);
-
-      router.push({
-        pathname: '/booking/BookingOtp',
-        params: {
-          name,
-          number: cleanNumber, // pass down clean string safely
-          selectedService,
-          selectedShift,
-          selectedArea,
-          selectedPriority,
-          selectedBudget,
-          message,
-          date,
-        },
-      });
-
-    } catch (error: any) {
-      setOverlayVisible(false);
-      console.log("FIREBASE BOOKING SMS ERROR:", error);
-      Alert.alert('SMS Dispatch Error', error.message || 'Something went wrong while sending the code.');
-    }
+    router.push({
+      pathname: '/booking/BookingOtp',
+      params: {
+        name,
+        number: cleanNumber,
+        selectedService,
+        selectedShift,
+        selectedArea,
+        selectedPriority,
+        selectedBudget,
+        message,
+        date,
+        endDate,
+      },
+    });
   };
 
   return (
     <View style={styles.screen}>
       <Header2 />
-      <SubmitOverlay
-        visible={overlayVisible}
-        status={overlayStatus}
-        onClose={() => setOverlayVisible(false)}
-        onClear={() => setOverlayVisible(false)}
-      />
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -131,7 +79,9 @@ export default function BookingDetails() {
           <View style={styles.divider} />
           <Row label="Service" value={selectedService as string} />
           <View style={styles.divider} />
-          <Row label="Date" value={formattedDate} />
+          <Row label="Starting Date" value={formattedDate} />
+          <View style={styles.divider} />
+          <Row label="Ending Date" value={formattedEndDate} />
           <View style={styles.divider} />
           <Row label="Preferred Time" value={selectedShift as string} />
           <View style={styles.divider} />

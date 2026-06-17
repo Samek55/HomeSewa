@@ -2,8 +2,9 @@ import { TouchableOpacity, StyleSheet, View, Image, Text, Platform, StatusBar, L
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
+import { router } from 'expo-router';
 
-const WHATSAPP_URL = "https://api.whatsapp.com/send?phone=9779852024365&text=Hello,%20I'm%20looking%20for%20Home%20Service.%20(HomeSewa%20App%20)%20Thank%20You%20";
+const WHATSAPP_URL = "https://api.whatsapp.com/send?phone=9779852024365&text=Hello,%20I'm%20looking%20for%20Home%20Service.%20(%20HomeSewa%20App%20)%20Thank%20You";
 
 export default function Header3() {
   const navigation = useNavigation<any>();
@@ -13,7 +14,15 @@ export default function Header3() {
       <StatusBar barStyle="light-content" backgroundColor="#295C59" />
       <View style={styles.wrapper}>
 
-        {/* LEFT: LOGO + BRAND */}
+        {/* LEFT: BACK ARROW + LOGO + BRAND */}
+        <TouchableOpacity
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/Home')}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={26} color="#fff" />
+        </TouchableOpacity>
+
         <View style={styles.left}>
           <View style={styles.logoWrapper}>
             <Image
@@ -58,6 +67,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 52 : 38,
     paddingBottom: 14,
     paddingHorizontal: 16,
+  },
+  backButton: {
+    marginRight: 10,
   },
   left: {
     flexDirection: 'row',

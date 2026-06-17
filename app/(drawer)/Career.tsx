@@ -581,6 +581,7 @@ const styles = StyleSheet.create({
     height: hp('2.5%'),
     resizeMode: 'contain',
     marginRight: 4,
+    tintColor: '#295C59',
   },
   phoneInput: {
     borderWidth: 1.5,

@@ -98,7 +98,7 @@ const BookingCard = ({ item, isOpen, onToggle, onPress }: Props) => {
 
       
 
-      <View style={{ borderBottomWidth: 1, borderColor: 'green', marginVertical: hp('1.5%') }} />
+      <View style={{ borderBottomWidth: 1, borderColor: '#295C59', marginVertical: hp('1.5%') }} />
     </View >
   );
 };
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 6,
     marginBottom: hp('0.5%'),
-    backgroundColor: 'green'                 // ✅ space between text & icon
+    backgroundColor: '#295C59'                 // ✅ space between text & icon
   },
   dropdownIcon: {
     height: 18,

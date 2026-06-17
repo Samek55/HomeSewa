@@ -144,7 +144,6 @@ export default function BookingDetails() {
                     ) : booking ? (
                         <View style={styles.card}>
                             <Text style={styles.heading}>{booking?.fullName}</Text>
-                            <Text style={styles.bookingId}>Booking ID : {booking?.bookingId}</Text>
 
                             <View style={styles.rowflex}>
                                 <Text style={styles.labelFlex}>Service(s)</Text>
@@ -160,7 +159,7 @@ export default function BookingDetails() {
                                 <View style={styles.rowLocationInside}>
                                     <Text style={styles.labelFlex}>Location</Text>
                                     <Text style={[styles.value, { paddingLeft: hp('3%'), flex: 1 }]}>
-                                        {booking?.area}, {booking?.city}
+                                        {[booking?.area, booking?.city].filter(Boolean).join(', ')}
                                     </Text>
                                 </View>
                                 <View>
@@ -222,6 +221,14 @@ export default function BookingDetails() {
                                             activeOpacity={1}
                                             onPress={() => setVisible(false)}
                                         />
+
+                                        {/* Close button */}
+                                        <TouchableOpacity
+                                            style={styles.closeButton}
+                                            onPress={() => setVisible(false)}
+                                        >
+                                            <Text style={styles.closeButtonText}>✕</Text>
+                                        </TouchableOpacity>
 
                                         <Image
                                             source={photos[selectedIndex]}
@@ -295,13 +302,13 @@ const styles = StyleSheet.create({
     backIcon: {
         width: hp('3.5%'),
         height: hp('3.5%'),
-        tintColor: 'green',
+        tintColor: '#295C59',
         marginRight: wp('2%'),
     },
     title: {
         fontSize: hp('2.3%'),
         fontWeight: '600',
-        color: 'green',
+        color: '#295C59',
     },
     card: {
         width: wp('90%'),
@@ -382,7 +389,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'green',
+        backgroundColor: '#295C59',
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
         elevation: 3,
@@ -426,6 +433,23 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.9)',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: hp('5%'),
+        right: wp('5%'),
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        borderRadius: 20,
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    closeButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '600',
     },
     fullImage: {
         width: '90%',

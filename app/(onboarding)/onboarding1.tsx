@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   skipbutton: {
     fontSize: 13,
     fontWeight: '600',
-    color: 'purple',
+    color: 'gray',
   },
   title: {
     paddingTop: 95,
@@ -61,14 +61,14 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: '800',
     paddingBottom: 12,
-    color: 'green',
+    color: 'gray',
   },
 
   subtitle: {
     paddingHorizontal: 21,
     fontSize: 16,
     lineHeight: 22,
-    color: 'green',
+    color: 'gray',
   },
 });
 

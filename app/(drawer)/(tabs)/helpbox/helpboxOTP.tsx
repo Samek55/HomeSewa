@@ -9,34 +9,66 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
 } from 'react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 const { width, height } = Dimensions.get('window');
 import { createHelpbox } from '../../../../api/PostApiHelpbox';
 import { router } from 'expo-router';
 import Header2 from '@/components/Header3drawer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 1. MODULAR SDK IMPORTS
-import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
-import { globalFirebaseConfirmation } from '../../../../components/home/NumberBar'; 
+const LAST_HELP_REQUEST_KEY = 'lastHelpRequestAt';
+const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 
-const scaleFont = (size: number) => {
-    const guidelineBaseWidth = 375;
-    return (size * width) / guidelineBaseWidth;
+const scaleFont = (size: number) => (size * width) / 375;
+
+const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
+
+const sendSparrowOtp = async (phone: string, otp: string) => {
+    const to = '977' + phone;
+    console.log('[Sparrow] token:', SPARROW_TOKEN);
+    console.log('[Sparrow] to:', to);
+    const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            token: SPARROW_TOKEN,
+            from: 'HomeSewa',
+            to,
+            text: `Your HomeSewa verification code is: ${otp}`,
+        }),
+    });
+    const data = await response.json().catch(() => ({}));
+    console.log('[Sparrow] response status:', response.status, 'body:', JSON.stringify(data));
+    if (!response.ok) throw new Error(`Sparrow error ${response.status}: ${JSON.stringify(data)}`);
 };
 
 export default function HelpboxOTP() {
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
+    const [sentOtp, setSentOtp] = useState('');
     const inputRefs = useRef<Array<TextInput | null>>([]);
     const route = useRoute<any>();
-
     const phone = route.params?.phone;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const sendOtp = async () => {
+        const code = generateOtp();
+        setSentOtp(code);
+        try {
+            await sendSparrowOtp(String(phone), code);
+        } catch (err: any) {
+            Alert.alert('SMS Error', err?.message || 'Could not send verification code. Please try again.');
+        }
+    };
+
+    useEffect(() => {
+        sendOtp();
+    }, []);
+
     useFocusEffect(
         React.useCallback(() => {
-            setOtp(['', '', '', '', '', '']);
+            setOtp(['', '', '', '']);
         }, []),
     );
 
@@ -44,7 +76,6 @@ export default function HelpboxOTP() {
         const newOtp = [...otp];
         newOtp[index] = text;
         setOtp(newOtp);
-
         if (text && index < otp.length - 1) {
             inputRefs.current[index + 1]?.focus();
         }
@@ -56,26 +87,16 @@ export default function HelpboxOTP() {
         }
     };
 
-    const handleResendCode = async () => {
-        if (!phone) return;
-        try {
-            Alert.alert('Resending', 'Requesting a new verification code...');
-            
-            // 2. FIX SYNC: Pass auth instance explicitly + pass boolean resend trigger
-            const authInstance = getAuth();
-            await (signInWithPhoneNumber as any)(authInstance, '+977' + phone, true);
-            
-            Alert.alert('Success', 'A new code has been successfully sent.');
-        } catch (error: any) {
-            Alert.alert('Resend Failed', error.message || 'Unable to re-send token code.');
-        }
-    };
-
     const handleNavigate = async () => {
         const enteredOtp = otp.join('');
 
-        if (enteredOtp.length < 6) {
-            Alert.alert('Validation Error', 'Please enter the complete 6-digit verification code.');
+        if (enteredOtp.length < 4) {
+            Alert.alert('Validation Error', 'Please enter the complete 4-digit verification code.');
+            return;
+        }
+
+        if (enteredOtp !== sentOtp) {
+            Alert.alert('Invalid Code', 'The code you entered is incorrect. Please try again.');
             return;
         }
 
@@ -83,27 +104,12 @@ export default function HelpboxOTP() {
         setIsSubmitting(true);
 
         try {
-            console.log(`Verifying phone: ${phone} with Firebase code: ${enteredOtp}`);
-            
-            if (!globalFirebaseConfirmation) {
-                Alert.alert('Session Expired', 'Authentication context missing. Please go back and try again.');
-                setIsSubmitting(false);
-                return;
-            }
-
-            // 3. Confirm directly invokes the confirmation session resolution handler
-            await globalFirebaseConfirmation.confirm(enteredOtp);
-
-            const booking = {
-                "Phone": phone,
-            };
-
+            const booking = { "Phone": phone };
             await createHelpbox(booking);
+            await AsyncStorage.setItem(LAST_HELP_REQUEST_KEY, String(Date.now()));
             router.push('/helpbox/otpVerifiedHB');
-
         } catch (error: any) {
-            console.log("BOOKING OR VERIFICATION ERROR:", error);
-            Alert.alert('Verification Failed', error.message || 'The code entered is invalid or has expired.');
+            Alert.alert('Submission Failed', error.message || 'Something went wrong. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -114,12 +120,10 @@ export default function HelpboxOTP() {
             <Header2 />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.container}>
-                    <Text style={styles.thankYouText}>
-                        Phone Verification
-                    </Text>
+                    <Text style={styles.thankYouText}>Phone Verification</Text>
 
                     <Text style={styles.bookingText}>
-                        Enter the 6 digits code sent to your customer number {phone ? phone : '98*****011'} below.
+                        Enter the 4 digit code sent to your number {phone ? phone : '98*****011'} below.
                     </Text>
 
                     <Text style={styles.otpPromptText}>Enter your OTP to continue.</Text>
@@ -128,9 +132,7 @@ export default function HelpboxOTP() {
                         {otp.map((_, index) => (
                             <TextInput
                                 key={index}
-                                ref={ref => {
-                                    inputRefs.current[index] = ref;
-                                }}
+                                ref={ref => { inputRefs.current[index] = ref; }}
                                 style={styles.input}
                                 keyboardType="numeric"
                                 maxLength={1}
@@ -141,9 +143,10 @@ export default function HelpboxOTP() {
                         ))}
                     </View>
 
-                    <TouchableOpacity onPress={handleResendCode}>
+                    <TouchableOpacity onPress={sendOtp}>
                         <Text style={styles.resendcode}>
-                            {`Didn't get code?`} <Text style={{ color: 'blue', fontWeight: 'bold' }}>Resend Code</Text>
+                            {`Didn't get code? `}
+                            <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Resend Code</Text>
                         </Text>
                     </TouchableOpacity>
 
@@ -168,7 +171,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: '5%',
         paddingTop: height * 0.09,
         alignItems: 'center',
-        backgroundColor:'#fff'
+        backgroundColor: '#fff',
     },
     thankYouText: {
         marginTop: hp('3%'),
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
         fontSize: scaleFont(16.5),
         marginBottom: height * 0.04,
         fontWeight: '400',
-        color: 'green',
+        color: '#295C59',
     },
     otpBox: {
         flexDirection: 'row',
@@ -197,14 +200,14 @@ const styles = StyleSheet.create({
         gap: 3,
     },
     input: {
-        width: width * 0.12,
-        height: width * 0.12,
+        width: width * 0.14,
+        height: width * 0.14,
         marginHorizontal: 5,
         borderWidth: 1,
         borderColor: 'hsl(0, 0%, 79%)',
         borderRadius: 5,
         textAlign: 'center',
-        fontSize: scaleFont(18),
+        fontSize: scaleFont(20),
         backgroundColor: '#fff',
         elevation: 3,
     },
@@ -213,12 +216,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         textAlign: 'center',
         lineHeight: 22,
-        fontSize: hp('1.5%')
+        fontSize: hp('1.5%'),
     },
     submitButton: {
-        backgroundColor: 'green',
-        height: height * 0.05,
-        width: '80%',
+        backgroundColor: '#295C59',
+        height: height * 0.07,
+        width: '60%',
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 100,

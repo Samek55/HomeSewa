@@ -1,5 +1,6 @@
 import Header2 from '@/components/Header3drawer';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { View, Text, Image, Dimensions, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -15,6 +16,11 @@ const scaleFont = (size: number) => {
 
 
 const VerifiedScreen = () => {
+  useEffect(() => {
+    const timer = setTimeout(() => router.replace('/Home'), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
 
     <TouchableWithoutFeedback onPress={() => router.push('/Home')}>

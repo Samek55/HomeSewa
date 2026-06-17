@@ -9,7 +9,20 @@ const formatDate = (dateString?: string | null) => {
   const t = Date.parse(dateString);
   if (isNaN(t)) return "";
 
-  return new Date(t).toDateString();
+  const d = new Date(t);
+  const day = d.getDate();
+  const month = d.toLocaleDateString("en-US", { month: "long" });
+  const year = d.getFullYear();
+  const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+
+  return `${day} ${month} ${year}, ${weekday}`;
+};
+
+// Older Airtable records were saved before "NPR" was added to the budget
+// options, so normalize the legacy values for display.
+const formatBudget = (budget?: string | null) => {
+  if (!budget) return "";
+  return budget.includes("NPR") ? budget : budget.replace(/(\d)/, "NPR $1");
 };
 
 export const fetchBookingsFromAirtable = async () => {
@@ -78,7 +91,7 @@ export const fetchBookingsFromAirtable = async () => {
         workForce: f["workForce"],
 
         status: f["Status"],
-        budget: f["Budget"],
+        budget: formatBudget(f["Budget"]),
         specialRequests: f["Work Description"],
       };
     }

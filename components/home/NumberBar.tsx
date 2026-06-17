@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, TextInput, Text, Alert } from 'react-native';
-import SubmitOverlay from '../../components/bookings/SubmitOverlay';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { router } from 'expo-router';
-import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export let globalFirebaseConfirmation: any = null;
+const LAST_HELP_REQUEST_KEY = 'lastHelpRequestAt';
+const HELP_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const NumberBar = ({ onFocus = () => {} }) => {
   const [phone, setPhone] = useState('');
-  const [overlayVisible, setOverlayVisible] = useState(false);
-  const [overlayStatus, setOverlayStatus] = useState<'loading' | 'success'>('loading');
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleContinue = async () => {
     const structuralClean = phone.replace(/[^0-9]/g, '');
@@ -18,30 +17,25 @@ const NumberBar = ({ onFocus = () => {} }) => {
       Alert.alert('Invalid Number', `Please enter a valid 10-digit Nepal mobile number.`);
       return;
     }
-    try {
-      setOverlayStatus('loading');
-      setOverlayVisible(true);
-      const formattedPhone = '+977' + structuralClean;
-      const authInstance = getAuth();
-      const confirmation = await signInWithPhoneNumber(authInstance, formattedPhone);
-      globalFirebaseConfirmation = confirmation;
-      setOverlayVisible(false);
-      router.push({ pathname: '/helpbox/helpboxOTP', params: { phone: structuralClean } });
-    } catch (error: any) {
-      setOverlayVisible(false);
-      Alert.alert('Error', error.message || 'Something went wrong. Please try again.');
+
+    // Block repeat submissions from this device within 24 hours to prevent spam.
+    const lastRequestRaw = await AsyncStorage.getItem(LAST_HELP_REQUEST_KEY);
+    const lastRequestAt = lastRequestRaw ? Number(lastRequestRaw) : 0;
+    const elapsed = Date.now() - lastRequestAt;
+    if (elapsed < HELP_COOLDOWN_MS) {
+      const hoursLeft = Math.ceil((HELP_COOLDOWN_MS - elapsed) / (60 * 60 * 1000));
+      Alert.alert(
+        'Please wait',
+        `You've already submitted a help request. Please try again in ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}.`
+      );
+      return;
     }
+
+    router.push({ pathname: '/helpbox/helpboxOTP', params: { phone: structuralClean } });
   };
 
   return (
     <View style={styles.container}>
-      <SubmitOverlay
-        visible={overlayVisible}
-        status={overlayStatus}
-        onClose={() => setOverlayVisible(false)}
-        onClear={() => setOverlayVisible(false)}
-      />
-
       {/* FLAG + INPUT */}
       <View style={styles.inputRow}>
         <View style={styles.flagWrapper}>
@@ -53,7 +47,8 @@ const NumberBar = ({ onFocus = () => {} }) => {
         <Text style={styles.code}>+977</Text>
         <View style={styles.dividerLine} />
         <TextInput
-          onFocus={() => onFocus?.()}
+          onFocus={() => { setIsFocused(true); onFocus?.(); }}
+          onBlur={() => setIsFocused(false)}
           value={phone}
           onChangeText={(text) => {
             let cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
@@ -65,7 +60,7 @@ const NumberBar = ({ onFocus = () => {} }) => {
             }
             setPhone(formatted);
           }}
-          placeholder="98520 24 365"
+          placeholder={isFocused ? '' : '98520 24 365'}
           placeholderTextColor="#A0BAB8"
           style={styles.input}
           keyboardType="numeric"

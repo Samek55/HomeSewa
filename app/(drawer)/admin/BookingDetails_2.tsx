@@ -25,7 +25,7 @@ import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
 import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
 
-type StatusType = 'Completed' | 'Pending' | 'Cancelled';
+type StatusType = 'Completed' | 'Pending' | 'Cancelled' | 'Dispute';
 
 export default function BookingDetails() {
     const scrollRef = useRef<any>(null);
@@ -36,7 +36,7 @@ export default function BookingDetails() {
     const [openDropdown, setOpenDropdown] = useState(false);
     const [workStatus, setWorkStatus] = useState<StatusType>('Pending');
 
-    const STATUS_OPTIONS: StatusType[] = ['Completed', 'Pending', 'Cancelled'];
+    const STATUS_OPTIONS: StatusType[] = ['Completed', 'Pending', 'Cancelled', 'Dispute'];
 
     // This fires ONLY ONCE when the component mounts
     useEffect(() => {
@@ -115,7 +115,7 @@ export default function BookingDetails() {
                     {/* BIG CARD / LOADING HANDLING */}
                     {loading ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="green" />
+                            <ActivityIndicator size="large" color="#295C59" />
                             <Text style={styles.loadingText}>Loading Details...</Text>
                         </View>
                     ) : booking ? (
@@ -148,6 +148,7 @@ export default function BookingDetails() {
                                             booking?.status?.includes('Completed') && styles.completed,
                                             booking?.status?.includes('Pending') && styles.pending,
                                             booking?.status?.includes('Cancelled') && styles.cancelled,
+                                            booking?.status?.includes('Dispute') && styles.disputed,
                                         ]}
                                     >
                                         {booking?.status}
@@ -159,7 +160,7 @@ export default function BookingDetails() {
                                 <View style={styles.rowLocationInside}>
                                     <Text style={styles.label}>Location</Text>
                                     <Text style={styles.value}>
-                                        {booking?.area}, {booking?.city}
+                                        {[booking?.area, booking?.city].filter(Boolean).join(', ')}
                                     </Text>
                                 </View>
                                 <View>
@@ -199,7 +200,7 @@ export default function BookingDetails() {
                                         <Text style={styles.dropdownTextContainer}>{workStatus}</Text>
                                         <Image
                                             source={dropdownIcon}
-                                            style={{ height: 20, width: 23, tintColor: 'green' }}
+                                            style={{ height: 20, width: 23, tintColor: '#295C59' }}
                                         />
                                     </View>
                                 </TouchableOpacity>
@@ -262,13 +263,13 @@ const styles = StyleSheet.create({
     backIcon: {
         width: hp('3.5%'),
         height: hp('3.5%'),
-        tintColor: 'green',
+        tintColor: '#295C59',
         marginRight: wp('2%'),
     },
     title: {
         fontSize: hp('2.3%'),
         fontWeight: '600',
-        color: 'green',
+        color: '#295C59',
     },
     card: {
         width: wp('90%'),
@@ -332,6 +333,10 @@ const styles = StyleSheet.create({
         color: 'red',
         fontWeight: '700',
     },
+    disputed: {
+        color: '#B8860B',
+        fontWeight: '700',
+    },
     dropdownWrapper: {
         width: '100%',
         marginTop: hp('1.5%'),
@@ -343,7 +348,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp('4%'),
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: 'green',
+        borderColor: '#295C59',
     },
     dropdownTextContainer: {
         fontWeight: '600',
@@ -393,7 +398,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'green',
+        backgroundColor: '#295C59',
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
         elevation: 3,

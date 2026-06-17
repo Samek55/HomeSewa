@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
 
-const WHATSAPP_URL = "https://api.whatsapp.com/send?phone=9779852024365&text=Hello,%20I'm%20looking%20for%20Home%20Service.%20(HomeSewa%20App%20)%20Thank%20You%20";
+const WHATSAPP_URL = "https://api.whatsapp.com/send?phone=9779852024365&text=Hello,%20I'm%20looking%20for%20Home%20Service.%20(%20HomeSewa%20App%20)%20Thank%20You";
 
 export default function Header1() {
   const navigation = useNavigation<any>();

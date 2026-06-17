@@ -33,6 +33,7 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
           <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => router.push('/Home')} />
           <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => router.push('/Service')} />
           <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => router.push('/Book')} />
+          <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => router.push('/Career')} />
 
           <View style={styles.divider} />
 
@@ -44,7 +45,6 @@ export default function CustomDrawer(_props: DrawerContentComponentProps) {
           <View style={styles.divider} />
 
           <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => router.push('/Partnership')} />
-          <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => router.push('/Career')} />
         </View>
 
         {/* ADMIN LOGIN — sleek, centered, pinned at bottom */}

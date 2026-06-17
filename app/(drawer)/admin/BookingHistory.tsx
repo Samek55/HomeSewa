@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: hp('2.3%'),
         fontWeight: '600',
-        color: 'green',
+        color: '#295C59',
         marginLeft: wp('2%')
     },
     backButton: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     backBtn: {
         width: hp('3.5%'),
         height: hp('3.5%'),
-        tintColor: 'green'
+        tintColor: '#295C59'
     },
     inputContainer: {
         flexDirection: 'row',

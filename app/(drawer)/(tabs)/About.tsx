@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 19,
     marginTop: 10,
+    textAlign: 'justify',
   },
 
   lineheighpara: {
@@ -137,6 +138,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     paddingTop: 8,
     lineHeight: 19,
+    textAlign: 'justify',
   },
 
   row: {

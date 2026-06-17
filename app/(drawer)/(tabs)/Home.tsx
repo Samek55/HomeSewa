@@ -19,13 +19,26 @@ import { useRef, useMemo } from 'react';
 import { servicesData2 } from '../../../src/data/ServiceData';
 
 
+// Fixed pool of 9 services shown on Home — order is reshuffled on every app open.
+const HOME_SERVICE_NAMES = [
+  'Garden Care',
+  'EV Charger Installation',
+  'Salon at Home',
+  'Parqueting',
+  'Physiotherapy',
+  'Massage Therapy',
+  'Geyser Repair',
+  'Chimney Repair',
+  'Indoor Planting',
+];
+
 export default function HomeScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
 
-  const shuffledServices = useMemo(
-    () => [...servicesData2].sort(() => Math.random() - 0.5).slice(0, 9),
-    []
-  );
+  const shuffledServices = useMemo(() => {
+    const pool = servicesData2.filter((service) => HOME_SERVICE_NAMES.includes(service.name));
+    return [...pool].sort(() => Math.random() - 0.5);
+  }, []);
 
   return (
     <View style={styles.screen}>
@@ -66,13 +79,6 @@ export default function HomeScreen() {
 
         {/* ── TOP SERVICES ──────────────────────────────── */}
         <View style={styles.section}>
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Top Services</Text>
-            <TouchableOpacity onPress={() => router.push('/Service')}>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
           {/* FEATURED CARD */}
           <TouchableOpacity
             style={styles.featuredCard}
@@ -97,6 +103,13 @@ export default function HomeScreen() {
               <Text style={styles.featuredSub}>Professional home cleaning service</Text>
             </LinearGradient>
           </TouchableOpacity>
+
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionTitle}>Top Services</Text>
+            <TouchableOpacity onPress={() => router.push('/Service')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* 9 SHUFFLED CARDS — refreshes each app open */}
           <ScrollView

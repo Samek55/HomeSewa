@@ -73,6 +73,8 @@ export default function ServiceBookingScreen() {
   const [message, setMessage] = useState('');
   const [date, setDate] = useState<Date | null>(null);
   const [show, setShow] = useState<boolean>(false);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [showEnd, setShowEnd] = useState<boolean>(false);
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -125,6 +127,7 @@ export default function ServiceBookingScreen() {
     setSelectedService('');
     setSelectedShift('');
     setDate(null);
+    setEndDate(null);
     setSelectedCity('');
     setSelectedArea('');
     setAreaQuery('');
@@ -213,7 +216,8 @@ export default function ServiceBookingScreen() {
     if (!name.trim()) { return Alert.alert('Validation Error', 'Full Name is required'); }
     if (!cleanNumber || cleanNumber.length !== 10) { return Alert.alert('Validation Error', 'Enter a valid 10-digit phone number'); }
     if (!selectedService) { return Alert.alert('Validation Error', 'Please select a service'); }
-    if (!date) { return Alert.alert('Validation Error', 'Please select a date'); }
+    if (!date) { return Alert.alert('Validation Error', 'Please select a starting date'); }
+    if (!endDate) { return Alert.alert('Validation Error', 'Please select a service ending date'); }
     if (!selectedShift) { return Alert.alert('Validation Error', 'Please choose a time shift'); }
     if (!selectedCity) { return Alert.alert('Validation Error', 'Please select your city'); }
     if (!selectedArea.trim()) { return Alert.alert('Validation Error', 'Please enter your area'); }
@@ -248,6 +252,7 @@ export default function ServiceBookingScreen() {
           selectedBudget,
           message: message.trim(),
           date: date.toISOString(),
+          endDate: endDate!.toISOString(),
         },
       });
     } catch (error) {
@@ -363,6 +368,35 @@ export default function ServiceBookingScreen() {
                     }}
                   />
                 </View>
+              )}
+            </View>
+
+            {/* Service Ending Date */}
+            <Text style={styles.label}>Service Ending Date <Text style={{ color: 'red' }}>*</Text></Text>
+            <View style={{ marginBottom: height * 0.025 }}>
+              <TouchableOpacity
+                onPress={() => { setShowEnd(true); setActiveInput('endDate'); }}
+                style={[styles.datePicker, activeInput === 'endDate' && styles.inputActive]}
+              >
+                <Text style={[styles.datePickerText, { color: endDate ? '#1A1A1A' : '#4B4B4B' }]}>
+                  {endDate
+                    ? `${String(endDate.getDate()).padStart(2,'0')}/${String(endDate.getMonth()+1).padStart(2,'0')}/${endDate.getFullYear()}`
+                    : 'Pick Ending Date (DD/MM/YYYY)'}
+                </Text>
+                <Image source={CalenderIcon} style={[styles.calendarIcon, activeInput === 'endDate' && { tintColor: '#295C59' }]} />
+              </TouchableOpacity>
+              {showEnd && (
+                <DateTimePicker
+                  value={endDate || date || new Date()}
+                  mode="date"
+                  display="default"
+                  minimumDate={date || new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowEnd(Platform.OS === 'ios');
+                    if (Platform.OS === 'android') { setActiveInput(null); }
+                    if (event.type === 'set' && selectedDate) { setEndDate(selectedDate); }
+                  }}
+                />
               )}
             </View>
 
@@ -580,8 +614,8 @@ const styles = StyleSheet.create({
   photoAddLabel: { fontSize: wp('2.4%'), color: '#295C59', fontWeight: '600' },
   text: { color: '#fff', fontSize: width * 0.04, fontWeight: '600' },
   buttonClearFlex: { flexDirection: 'row', alignItems: 'center', paddingRight: 10 },
-  buttonClear: { color: '#0a7de1', fontSize: width * 0.038, fontWeight: '500' },
-  clearIcon: { width: wp('6%'), height: hp('2.5%'), resizeMode: 'contain', marginRight: 2 },
+  buttonClear: { color: '#295C59', fontSize: width * 0.038, fontWeight: '500' },
+  clearIcon: { width: wp('6%'), height: hp('2.5%'), resizeMode: 'contain', marginRight: 2, tintColor: '#295C59' },
   areaWrapper: { position: 'relative', marginBottom: 0 },
   suggestionBox: {
     position: 'absolute',

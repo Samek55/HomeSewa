@@ -34,13 +34,13 @@ const styles = StyleSheet.create({
     fontSize:25,
     fontWeight:'800',
     paddingBottom:12,
-    color:'green',
+    color:'gray',
   },
   subtitle: {
     paddingHorizontal:21,
     fontSize:16,
     lineHeight:22,
-    color:'green',
+    color:'gray',
 
   },
 });
