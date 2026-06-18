@@ -9,6 +9,7 @@ import {
     Platform,
     StyleSheet,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
@@ -24,6 +25,22 @@ import {
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
 import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
+
+const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
+
+const sendCompletionOtp = async (phone: string, customerName: string, otp: string) => {
+    const to = '977' + phone.replace(/\D/g, '').slice(-10);
+    const firstName = customerName.split(' ')[0] || 'Customer';
+    const text = `Dear ${firstName}, your HomeSewa service is being marked as completed.\n\nYour completion OTP is: ${otp}\n\nShare this code with the professional to confirm.\n\nHomeSewa ( www.homesewa.app )`;
+    await fetch('https://api.sparrowsms.com/v2/sms/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
+    });
+};
 
 type StatusType = 'Completed' | 'Pending' | 'Cancelled' | 'Dispute';
 
@@ -71,17 +88,34 @@ export default function BookingDetails() {
         try {
             if (!booking?.id) return;
 
-            await updateBookingStatus(booking.id, workStatus);
+            if (workStatus === 'Completed') {
+                const otp = generateOtp();
+                const customerPhone = booking?.phone || '';
+                const customerName = booking?.fullName || 'Customer';
 
-            router.replace({
-                pathname: '/admin/BookingHistory',
-                params: {
-                    refresh: Date.now(),
-                },
-            });
+                try {
+                    await sendCompletionOtp(customerPhone, customerName, otp);
+                } catch (smsErr) {
+                    console.error('[Sparrow Completion OTP] failed:', smsErr);
+                }
+
+                await AsyncStorage.setItem('completionOtp', JSON.stringify({
+                    otp,
+                    bookingId: booking.id,
+                }));
+
+                router.push({
+                    pathname: '/admin/WorkCompletionOTP',
+                    params: { customerName, customerPhone },
+                });
+                return;
+            }
+
+            await updateBookingStatus(booking.id, workStatus);
+            router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });
         } catch (error) {
             console.error('Failed to update status:', error);
-            alert('Failed to update status');
+            Alert.alert('Error', 'Failed to update status');
         }
     };
 

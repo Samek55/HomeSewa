@@ -14,7 +14,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { createBooking } from '../../../../api/PostApiBooking';
 import { notifyProfessionals } from '../../../../api/notifications';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import base from '../../../../api/airtable';
 import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
 import { OneSignal } from 'react-native-onesignal';
@@ -25,18 +24,17 @@ const scaleFont = (size: number) => (size * width) / 375;
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 
-const sendSparrowOtp = async (phone: string, otp: string) => {
+const sendSparrowOtp = async (phone: string, otp: string, firstName: string) => {
   const to = '977' + phone;
-  console.log('[Sparrow] token:', SPARROW_TOKEN);
-  console.log('[Sparrow] to:', to);
+  const text = `Dear ${firstName}, your HomeSewa service booking OTP code is ${otp}\n\nThanks for using HomeSewa ( www.homesewa.app )`;
   const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       token: SPARROW_TOKEN,
-      from: 'HomeSewa',
+      from: 'TheAlert',
       to,
-      text: `Your HomeSewa verification code is: ${otp}`,
+      text,
     }),
   });
   const data = await response.json().catch(() => ({}));
@@ -57,19 +55,22 @@ export default function BookingOtp() {
     number,
     selectedService,
     selectedShift,
+    selectedCity,
     selectedArea,
     selectedPriority,
     selectedBudget,
     message,
     date,
     endDate,
+    photos,
   } = useLocalSearchParams();
 
   const sendOtp = async () => {
     const code = generateOtp();
     setSentOtp(code);
+    const firstName = String(name || '').split(' ')[0] || 'Customer';
     try {
-      await sendSparrowOtp(String(number), code);
+      await sendSparrowOtp(String(number), code, firstName);
     } catch (err: any) {
       Alert.alert('SMS Error', err?.message || 'Could not send verification code. Please try again.');
     }
@@ -126,23 +127,22 @@ export default function BookingOtp() {
         } catch {}
       }
 
-      const serviceRecords = await base('Services').select().all();
-      const serviceMap = serviceRecords.map((rec: any) => ({ id: rec.id, name: rec.fields.Name }));
+      const serviceNames = Array.isArray(selectedService)
+        ? selectedService.map(String)
+        : [String(selectedService)].filter(Boolean);
 
-      const serviceIds = Array.isArray(selectedService)
-        ? selectedService.map((n: string) => serviceMap.find((s: any) => s.name === n)?.id).filter(Boolean)
-        : [serviceMap.find((s: any) => s.name === selectedService)?.id].filter(Boolean);
-
-      if (serviceIds.length === 0) {
+      if (serviceNames.length === 0) {
         Alert.alert('Error', 'No valid service selected');
         setIsSubmitting(false);
         return;
       }
 
+      const photoUrls = photos ? JSON.parse(String(photos)) : [];
+
       const booking = {
         'Full name': name,
         'Phone': number,
-        'Select Services': serviceIds,
+        'City': selectedCity,
         'Area': selectedArea,
         'Priority': selectedPriority,
         'Select Shift': selectedShift,
@@ -151,6 +151,8 @@ export default function BookingOtp() {
         'Starting Date': formatDate(date),
         ...(endDate ? { 'Service Completion Date': formatDate(endDate) } : {}),
         'Status': 'New / Open',
+        'Photos': photoUrls,
+        service_names: serviceNames,
       };
 
       await createBooking(booking);

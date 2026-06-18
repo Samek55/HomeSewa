@@ -1,35 +1,32 @@
-import axios from 'axios';
+import { supabase } from '../lib/supabase';
 
-const AIRTABLE_API_URL_BOOKING=process.env.EXPO_PUBLIC_AIRTABLE_API_URL_BOOKING;
-const AIRTABLE_TOKEN = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 export const createBooking = async (data: any) => {
-  if (!AIRTABLE_TOKEN || !AIRTABLE_API_URL_BOOKING) {
-    console.error('Environment variables not loaded correctly.');
-    throw new Error('Missing configuration.');
-  }
+  const serviceNames: string[] = Array.isArray(data.service_names)
+    ? data.service_names
+    : data.service_names ? [data.service_names] : [];
 
-  try {
-    const response = await axios.post(
-      AIRTABLE_API_URL_BOOKING,
-      {
-        fields: data,
-        typecast: true,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+  const bookingFields = {
+    full_name: data['Full name'],
+    phone: data['Phone'],
+    city: data['City'] || null,
+    area: data['Area'],
+    select_shift: data['Select Shift'],
+    work_description: data['Work Description'],
+    priority: data['Priority'],
+    budget: data['Budget'],
+    starting_date: data['Starting Date'] || null,
+    service_completion_date: data['Service Completion Date'] || null,
+    status: data['Status'] || 'New / Open',
+    services: serviceNames,
+    add_photos: data['Photos']?.length ? JSON.stringify(data['Photos']) : null,
+  };
 
-    console.log('BOOKING SUCCESS:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.log(
-      'BOOKING ERROR:',
-      error?.response?.data || error.message,
-    );
-    throw error;
-  }
+  const { data: booking, error } = await supabase
+    .from('booking')
+    .insert([bookingFields])
+    .select('booking_id')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return booking;
 };

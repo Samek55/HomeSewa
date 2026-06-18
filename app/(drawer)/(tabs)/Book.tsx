@@ -29,7 +29,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import Header2 from '@/components/Header2';
-import ClearFormIcon from '../../../assets/icons/booking/clear.png'
+import ClearFormIcon from '../../../assets/icons/booking/clear.png';
+import { uploadMultipleToCloudinary } from '../../../api/uploadToCloudinary';
+import { supabase } from '../../../lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -149,62 +151,17 @@ export default function ServiceBookingScreen() {
     );
   };
 
-  // 🛠️ Function to check daily limit from Airtable
-  const BASE_URL = process.env.EXPO_PUBLIC_AIRTABLE_API_URL_BOOKING;
-  const TOKEN = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
-
-  /**
-   * Checks if a specific phone number has reached the maximum allowance 
-   * of 5 bookings for today's date.
-   */
-  /**
-   * Checks if a specific phone number has reached the maximum allowance 
-   * of 5 bookings for today's current calendar date.
-   */
   const checkDailyBookingLimit = async (phoneNumber: string): Promise<boolean> => {
     try {
-      if (!BASE_URL || !TOKEN) {
-        console.warn("Airtable environment configuration is missing.");
-        return false;
-      }
-
-      // 1. Get today's local date (ignoring UTC timezone offsets)
-      const localDate = new Date();
-      const year = localDate.getFullYear();
-      const month = String(localDate.getMonth() + 1).padStart(2, '0'); // Ensures 2 digits e.g. "06"
-      const day = String(localDate.getDate()).padStart(2, '0');        // Ensures 2 digits e.g. "13"
-
-      // Generates standard "2026-06-13" string structure accepted universally by dates
-      const todayStr = `${year}-${month}-${day}`;
-
-      // 2. Build the Airtable Formula 
-      // This looks at your exact {Phone} string and extracts the date part of {Service Booking Date & Time *} 
-      // to compare it to today's date stamp.
-      const formula = `AND({Phone} = '${phoneNumber}', DATETIME_FORMAT({Service Booking Date & Time *}, 'YYYY-MM-DD') = '${todayStr}')`;
-
-      // 3. Append the formula as a URL query parameter
-      const requestUrl = `${BASE_URL}?filterByFormula=${encodeURIComponent(formula)}`;
-
-      const response = await fetch(requestUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.log("Airtable Rate Limit Check Error:", data);
-        return false; // Fail open to keep app usable if network drops
-      }
-
-      // If Airtable returns 5 or more rows for today, block them!
-      return data.records.length >= 5;
-
-    } catch (error) {
-      console.log("Rate Limit Check Fetch Error:", error);
+      const today = new Date().toISOString().split('T')[0];
+      const { count } = await supabase
+        .from('booking')
+        .select('*', { count: 'exact', head: true })
+        .eq('phone', phoneNumber)
+        .gte('service_booking_datetime', `${today}T00:00:00`)
+        .lte('service_booking_datetime', `${today}T23:59:59`);
+      return (count ?? 0) >= 5;
+    } catch {
       return false;
     }
   };
@@ -240,6 +197,13 @@ export default function ServiceBookingScreen() {
     }
 
     try {
+      let photoUrls: string[] = [];
+      if (photos.length > 0) {
+        photoUrls = await uploadMultipleToCloudinary(
+          photos.map(uri => ({ uri, fileName: uri.split('/').pop() || 'photo.jpg' }))
+        );
+      }
+
       router.push({
         pathname: '/booking/BookingDetail',
         params: {
@@ -247,12 +211,14 @@ export default function ServiceBookingScreen() {
           number: cleanNumber,
           selectedService,
           selectedShift,
-          selectedArea: selectedArea + ', ' + selectedCity,
+          selectedCity,
+          selectedArea,
           selectedPriority,
           selectedBudget,
           message: message.trim(),
           date: date.toISOString(),
           endDate: endDate!.toISOString(),
+          photos: JSON.stringify(photoUrls),
         },
       });
     } catch (error) {

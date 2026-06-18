@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,11 +24,12 @@ import FileUploadBox from '../../components/bookings/FileUploadBox';
 import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
 import HeadshotCropModal from '../../components/bookings/HeadshotCropModal';
-import { createCareer } from '@/api/PostApiCareer';
 import Header3 from '@/components/Header3drawer';
 import { uploadMultipleToCloudinary } from '@/api/uploadToCloudinary';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router, useLocalSearchParams } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -48,6 +49,7 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 
 export default function CareerScreen() {
   const scrollRef = useRef<any>(null);
+  const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
@@ -102,6 +104,10 @@ export default function CareerScreen() {
     setSelectedArea([]);
     setActiveInput(null);
   };
+
+  useEffect(() => {
+    if (clearForm === 'true') clearAllFields();
+  }, [clearForm]);
 
   const handleClearForm = () => {
     Alert.alert(
@@ -201,7 +207,7 @@ export default function CareerScreen() {
 
       const career = {
         "Full Name": name,
-        "Phone": number,
+        "Phone": cleanNumber,
         "Gender": gender,
         "Email": email,
         ...(headshotImages.length > 0 && { "Headshot": headshotImages.map(url => ({ url })) }),
@@ -215,13 +221,14 @@ export default function CareerScreen() {
         "Citizenship / Driving Licence / NID": idProofImages.map(url => ({ url })),
       };
 
-      await createCareer(career);
-      setOverlayStatus('success');
+      await AsyncStorage.setItem('pendingCareerData', JSON.stringify(career));
+      setOverlayVisible(false);
+      router.push({ pathname: '/CareerOTP', params: { phone: cleanNumber, name } });
 
     } catch (error) {
       console.log(error);
       setOverlayVisible(false);
-      Alert.alert('Error', 'Submission failed. Please try again.');
+      Alert.alert('Error', 'Upload failed. Please try again.');
     }
   };
 

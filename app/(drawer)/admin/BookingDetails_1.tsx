@@ -15,6 +15,7 @@ import {
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import LocationPin from '../../../assets/icons/contact/location-pin.png';
 import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
+import { supabase } from '../../../lib/supabase';
 
 import {
     widthPercentageToDP as wp,
@@ -23,6 +24,38 @@ import {
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
 import { notifyUsers } from '@/api/notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
+const WORKFORCE_URL = process.env.EXPO_PUBLIC_AIRTABLE_API_URL_CAREER!;
+const AIRTABLE_TOKEN = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN!;
+
+const sendAcceptanceSms = async (customerPhone: string, customerName: string, professionalName: string, professionalPhone: string) => {
+    const to = '977' + customerPhone.replace(/\D/g, '').slice(-10);
+    const text =
+        `Dear ${customerName}, your booking request has been accepted by ${professionalName} ${professionalPhone}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
+    const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
+    });
+    const data = await response.json().catch(() => ({}));
+    console.log('[Sparrow Accept SMS] status:', response.status, 'body:', JSON.stringify(data));
+};
+
+const fetchProfessionalName = async (phone: string): Promise<string> => {
+    try {
+        const clean = phone.replace(/\D/g, '');
+        const { data } = await supabase
+            .from('workforce')
+            .select('full_name')
+            .eq('phone', clean)
+            .single();
+        return data?.full_name || 'HomeSewa Professional';
+    } catch {
+        return 'HomeSewa Professional';
+    }
+};
 
 export default function BookingDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,21 +82,15 @@ export default function BookingDetails() {
         load();
     }, [id]);
 
-    const photos = [
-        require('../../../assets/services/carpentry.jpg'),
-        require('../../../assets/services/handyman.jpg'),
-        require('../../../assets/services/electrical-repair.jpg'),
-        require('../../../assets/services/washing-machine-repair.jpg'),
-        require('../../../assets/services/masonry-repair.jpg'),
-    ];
+    const photoUrls: string[] = booking?.photos || [];
 
     const openImage = (index: number) => {
         setSelectedIndex(index);
         setVisible(true);
     };
 
-    const goPrev = () => setSelectedIndex(i => (i - 1 + photos.length) % photos.length);
-    const goNext = () => setSelectedIndex(i => (i + 1) % photos.length);
+    const goPrev = () => setSelectedIndex(i => (i - 1 + photoUrls.length) % photoUrls.length);
+    const goNext = () => setSelectedIndex(i => (i + 1) % photoUrls.length);
     useEffect(() => {
         const load = async () => {
             setLoading(true);
@@ -90,15 +117,22 @@ export default function BookingDetails() {
         if (!booking) return;
 
         try {
-            // Extract the phone string directly from your Airtable booking object log data
             const customerPhone = booking?.phone || "";
+            const customerName = booking?.fullName || "Customer";
 
             console.log("Passing customer phone directly to notification:", customerPhone);
 
-            // Trigger the push notification
             await notifyUsers(booking?.service, booking?.area, customerPhone);
 
-            // Navigate forward
+            // Send acceptance SMS to customer
+            try {
+                const adminPhone = await AsyncStorage.getItem('adminPhone') || '9852024365';
+                const professionalName = await fetchProfessionalName(adminPhone);
+                await sendAcceptanceSms(customerPhone, customerName, professionalName, adminPhone);
+            } catch (smsErr) {
+                console.error('[Sparrow Accept SMS] failed:', smsErr);
+            }
+
             router.push({
                 pathname: '/admin/BookingDetails_2',
                 params: { id: booking?.id?.toString() },
@@ -106,7 +140,6 @@ export default function BookingDetails() {
         } catch (error) {
             console.error("Failed to process order acceptance:", error);
 
-            // Navigate anyway so the UI doesn't freeze up for the admin
             router.push({
                 pathname: '/admin/BookingDetails_2',
                 params: { id: booking?.id?.toString() },
@@ -194,15 +227,16 @@ export default function BookingDetails() {
                                 </Text>
                             </View>
 
+                            {photoUrls.length > 0 && (
                             <View style={styles.row}>
                                 <Text style={styles.label}>Photos</Text>
                                 <View style={styles.photos}>
-                                    {photos.map((image, index) => (
+                                    {photoUrls.map((url, index) => (
                                         <TouchableOpacity
                                             key={index}
                                             onPress={() => openImage(index)}
                                         >
-                                            <Image source={image} style={styles.photoItem} />
+                                            <Image source={{ uri: url }} style={styles.photoItem} />
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -231,14 +265,14 @@ export default function BookingDetails() {
                                         </TouchableOpacity>
 
                                         <Image
-                                            source={photos[selectedIndex]}
+                                            source={{ uri: photoUrls[selectedIndex] }}
                                             style={styles.fullImage}
                                             resizeMode="contain"
                                         />
 
                                         {/* Counter */}
                                         <Text style={styles.photoCounter}>
-                                            {selectedIndex + 1} / {photos.length}
+                                            {selectedIndex + 1} / {photoUrls.length}
                                         </Text>
 
                                         {/* Prev / Next arrows */}
@@ -251,6 +285,7 @@ export default function BookingDetails() {
                                     </View>
                                 </Modal>
                             </View>
+                            )}
 
                             {/* ButtonContainer */}
                             <View style={styles.ButtonContainer}>

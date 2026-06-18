@@ -16,12 +16,11 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import Header4 from '@/components/Header4Admin';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../../lib/supabase';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
-const DUMMY_ADMIN_PHONE = '9852024365';
-const DUMMY_ADMIN_PIN = '1234';
 
 export default function AdminLogin() {
     const [passwordVisible, setPasswordVisible] = useState(false);
@@ -59,11 +58,33 @@ export default function AdminLogin() {
                 return;
             }
             const cleaned = phoneNumber.replace(/\s/g, '');
-            if (cleaned !== DUMMY_ADMIN_PHONE || password !== DUMMY_ADMIN_PIN) {
+
+            // Check admins table first
+            const { data: admin } = await supabase
+                .from('admins')
+                .select('id, full_name, status, pin')
+                .eq('phone', cleaned)
+                .single();
+
+            // Then check workforce table
+            const { data: worker } = await supabase
+                .from('workforce')
+                .select('uin, full_name, status, pin')
+                .eq('phone', cleaned)
+                .single();
+
+            const isAdmin = admin && admin.status === 'Active' && admin.pin === password;
+            const isWorker = worker && worker.status === 'Active' && worker.pin === password;
+
+            if (!isAdmin && !isWorker) {
                 Alert.alert('Login Failed', 'Invalid phone or PIN');
                 return;
             }
+
+            const displayName = (isAdmin ? admin?.full_name : worker?.full_name) || 'Admin';
+            const adminTable = isAdmin ? 'admins' : 'workforce';
             await AsyncStorage.setItem('adminPhone', cleaned);
+            await AsyncStorage.setItem('adminTable', adminTable);
             await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
             try {
                 const { OneSignal } = require('react-native-onesignal');
@@ -72,7 +93,7 @@ export default function AdminLogin() {
                 OneSignal.User.addTag('phone', cleaned);
             } catch (e) {}
             setIsLoggedIn(true);
-            Alert.alert('Welcome back!', 'Login successful.', [
+            Alert.alert('Welcome back!', `Hello, ${displayName.split(' ')[0]}!`, [
                 { text: 'OK', onPress: () => router.push('/admin/BookingHistory') },
             ]);
         } catch (error: any) {
@@ -192,11 +213,6 @@ export default function AdminLogin() {
                         <Text style={styles.changePinText}>Reset PIN</Text>
                     </TouchableOpacity>
 
-                    {isLoggedIn && (
-                        <TouchableOpacity onPress={handleLogout}>
-                            <Text style={styles.logoutText}>Logout</Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
             </View>
         </KeyboardAvoidingView>

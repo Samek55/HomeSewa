@@ -17,7 +17,7 @@ const scaleFont = (size: number) => {
 
 const VerifiedScreen = () => {
   useEffect(() => {
-    const timer = setTimeout(() => router.replace('/Home'), 5000);
+    const timer = setTimeout(() => router.replace('/Home'), 2000);
     return () => clearTimeout(timer);
   }, []);
 

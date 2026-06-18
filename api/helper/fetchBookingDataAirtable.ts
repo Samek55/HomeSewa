@@ -1,104 +1,56 @@
-import { fetchServicesMap } from "./fetchServicesID";
-
-const BASE_URL = process.env.EXPO_PUBLIC_AIRTABLE_API_URL_BOOKING;
-const TOKEN = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+import { supabase } from '../../lib/supabase';
 
 const formatDate = (dateString?: string | null) => {
-  if (!dateString) return "";
-
+  if (!dateString) return '';
   const t = Date.parse(dateString);
-  if (isNaN(t)) return "";
-
+  if (isNaN(t)) return '';
   const d = new Date(t);
   const day = d.getDate();
-  const month = d.toLocaleDateString("en-US", { month: "long" });
+  const month = d.toLocaleDateString('en-US', { month: 'long' });
   const year = d.getFullYear();
-  const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
-
-  return `${day} ${month} ${year}, ${weekday}`;
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+  return `${weekday} ${month} ${day} ${year}`;
 };
 
-// Older Airtable records were saved before "NPR" was added to the budget
-// options, so normalize the legacy values for display.
 const formatBudget = (budget?: string | null) => {
-  if (!budget) return "";
-  return budget.includes("NPR") ? budget : budget.replace(/(\d)/, "NPR $1");
+  if (!budget) return '';
+  return budget.includes('NPR') ? budget : budget.replace(/(\d)/, 'NPR $1');
 };
 
 export const fetchBookingsFromAirtable = async () => {
   try {
-    // 🚀 don't block booking fetch
-    const servicesMapPromise = fetchServicesMap();
+    const { data: bookings, error } = await supabase
+      .from('booking')
+      .select('*');
 
-    const response = await fetch(BASE_URL!, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
+    if (error) { console.log('Supabase fetch error:', error); return []; }
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.log("Airtable Error:", data);
-      return [];
-    }
-
-    // 🚀 wait only when needed
-    const servicesMap = await servicesMapPromise;
-
-    const records = data.records;
-
-    const result = new Array(records.length);
-
-    for (let i = 0; i < records.length; i++) {
-      const item = records[i];
-      const f = item.fields;
-
-      const services =
-        f["Select Services"]
-          ?.map((id: string) => servicesMap[id])
-          .filter(Boolean)
-          .join(", ") || "";
-
-      result[i] = {
-        id: item.id,
-        bookingId: f["bookingId"],
-
-        fullName: f["Full name"],
-        email: f["eMail"],
-        phone: f["Phone"],
-
-        city: f["City"],
-        area: f["Area"],
-        street: f["Street"],
-        zip: f["Zip"],
-        landmark: f["Nearest Landmark"],
-        propertyType: f["Property Type"],
-
-        service: services,
-
-        bookingDate: formatDate(f["Service Booking Date & Time *"]),
-        startingDate: formatDate(f["Starting Date"]),
-        completionDate: formatDate(f["Service Completion Date"]),
-        deadline: formatDate(f["Deadline"]),
-
-        shift: f["Select Shift"],
-        priority: f["Priority"],
-
-        source: f["How did you know about us?"],
-        workForce: f["workForce"],
-
-        status: f["Status"],
-        budget: formatBudget(f["Budget"]),
-        specialRequests: f["Work Description"],
-      };
-    }
-
-    return result;
+    return (bookings || []).map((item: any) => ({
+      id: String(item.booking_id),
+      bookingId: item.booking_id,
+      fullName: item.full_name,
+      phone: item.phone,
+      city: item.city,
+      area: item.area,
+      street: item.street,
+      zip: item.zip,
+      landmark: item.nearest_landmark,
+      service: Array.isArray(item.services) ? item.services.join(', ') : '',
+      bookingDate: formatDate(item.service_booking_datetime),
+      startingDate: formatDate(item.starting_date),
+      completionDate: formatDate(item.service_completion_date),
+      shift: item.select_shift,
+      priority: item.priority,
+      status: item.status,
+      budget: formatBudget(item.budget),
+      specialRequests: item.work_description,
+      photos: (() => {
+        try { return item.add_photos ? JSON.parse(item.add_photos) : []; }
+        catch { return []; }
+      })(),
+    }));
   } catch (error) {
-    console.log("Fetch Error:", error);
+    console.log('Fetch Error:', error);
     return [];
   }
 };

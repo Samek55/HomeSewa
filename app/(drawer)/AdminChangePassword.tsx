@@ -19,6 +19,8 @@ import {
     heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 
 const { width } = Dimensions.get('window');
@@ -28,12 +30,19 @@ export default function AdminChangePassword() {
     const [passwordVisibleOLD, setPasswordVisibleOLD] = useState(false);
     const [passwordVisibleNEW, setPasswordVisibleNEW] = useState(false);
     const [passwordVisibleCONFIRM, setPasswordVisibleCONFIRM] = useState(false);
+    const [loading, setLoading] = useState(false);
 
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewpassword, setConfirmNewPassword] = useState('');
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        const cleaned = phoneNumber.replace(/\s/g, '');
+        if (!cleaned || cleaned.length < 10) {
+            Alert.alert('Validation Error', 'Please enter your phone number');
+            return;
+        }
         if (!oldPassword || oldPassword.length !== 4) {
             Alert.alert('Validation Error', 'Please enter your current 4-digit PIN');
             return;
@@ -46,9 +55,40 @@ export default function AdminChangePassword() {
             Alert.alert('Validation Error', 'New PIN and confirmation do not match');
             return;
         }
-        Alert.alert('Success', 'PIN updated successfully', [
-            { text: 'OK', onPress: () => router.push('/Admin') },
-        ]);
+        setLoading(true);
+        try {
+            // Check admins table first, then workforce
+            const [{ data: adminRecord }, { data: workerRecord }] = await Promise.all([
+                supabase.from('admins').select('pin').eq('phone', cleaned).single(),
+                supabase.from('workforce').select('pin').eq('phone', cleaned).single(),
+            ]);
+
+            const matchedAdmin = adminRecord && adminRecord.pin === oldPassword;
+            const matchedWorker = workerRecord && workerRecord.pin === oldPassword;
+
+            if (!matchedAdmin && !matchedWorker) {
+                Alert.alert('Error', 'Phone number or current PIN is incorrect');
+                return;
+            }
+
+            // Update in whichever table(s) the user exists with the matching PIN
+            const updates: Promise<any>[] = [];
+            if (matchedAdmin) {
+                updates.push(supabase.from('admins').update({ pin: newPassword }).eq('phone', cleaned));
+            }
+            if (matchedWorker) {
+                updates.push(supabase.from('workforce').update({ pin: newPassword }).eq('phone', cleaned));
+            }
+            await Promise.all(updates);
+
+            Alert.alert('Success', 'PIN updated successfully', [
+                { text: 'OK', onPress: () => router.push('/Admin') },
+            ]);
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Could not update PIN. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -73,8 +113,29 @@ export default function AdminChangePassword() {
                 contentContainerStyle={styles.cardContent}
                 keyboardShouldPersistTaps="handled"
             >
+                {/* PHONE */}
+                <Text style={styles.label}>Phone Number</Text>
+                <View style={styles.inputRow}>
+                    <Ionicons name="call-outline" size={20} color="#295C59" />
+                    <TextInput
+                        style={[styles.textInput, styles.phoneInput]}
+                        keyboardType="number-pad"
+                        maxLength={13}
+                        placeholder="98XXXXXXXX"
+                        placeholderTextColor="#B0BEC5"
+                        value={phoneNumber}
+                        onChangeText={(value) => {
+                            let d = value.replace(/[^0-9]/g, '').slice(0, 10);
+                            let fmt = d;
+                            if (d.length > 5 && d.length <= 7) fmt = d.slice(0, 5) + ' ' + d.slice(5);
+                            else if (d.length > 7) fmt = d.slice(0, 5) + ' ' + d.slice(5, 7) + ' ' + d.slice(7);
+                            setPhoneNumber(fmt);
+                        }}
+                    />
+                </View>
+
                 {/* OLD PIN */}
-                <Text style={styles.label}>Old PIN</Text>
+                <Text style={styles.label}>Current PIN</Text>
                 <View style={styles.inputRow}>
                     <Ionicons name="lock-closed-outline" size={20} color="#295C59" />
                     <TextInput
@@ -82,7 +143,6 @@ export default function AdminChangePassword() {
                         secureTextEntry={!passwordVisibleOLD}
                         keyboardType="number-pad"
                         maxLength={4}
-                        autoFocus
                         value={oldPassword}
                         onChangeText={(text) => setOldPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
                     />
@@ -130,8 +190,8 @@ export default function AdminChangePassword() {
                     <TouchableOpacity style={styles.cancelBtn} onPress={() => router.push('/Admin')} activeOpacity={0.85}>
                         <Text style={styles.cancelBtnText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit} activeOpacity={0.85}>
-                        <Text style={styles.saveBtnText}>Save</Text>
+                    <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSubmit} disabled={loading} activeOpacity={0.85}>
+                        <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -216,6 +276,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 8,
         color: '#1C2B2A',
+    },
+    phoneInput: {
+        fontSize: scaleFont(15),
+        fontWeight: '500',
+        letterSpacing: 0.5,
+        textAlign: 'left',
     },
 
     /* BUTTONS */

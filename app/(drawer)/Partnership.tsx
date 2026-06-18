@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,11 +23,11 @@ import {
 import FileUploadBox from '../../components/bookings/FileUploadBox';
 import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
-import { createPartnership } from '@/api/PostApiPartnership';
-import { notifyAdmins } from '@/api/notifications';
 import Header3 from '@/components/Header3drawer';
 import { uploadMultipleToCloudinary } from '@/api/uploadToCloudinary';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router, useLocalSearchParams } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,6 +47,7 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 
 export default function PartnershipScreen() {
   const scrollRef = useRef<any>(null);
+  const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
@@ -91,6 +92,10 @@ export default function PartnershipScreen() {
     setSelectedServicesOffered([]);
     setActiveInput(null);
   };
+
+  useEffect(() => {
+    if (clearForm === 'true') clearAllFields();
+  }, [clearForm]);
 
   const handleClearForm = () => {
     Alert.alert(
@@ -174,23 +179,17 @@ export default function PartnershipScreen() {
     try {
       const [companyImages, crcImages] = await Promise.all([
         uploadMultipleToCloudinary(
-          selectCompanyPhotos.map(item => ({
-            uri: item.uri,
-            fileName: item.fileName,
-          }))
+          selectCompanyPhotos.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
         uploadMultipleToCloudinary(
-          selectCRCphotos.map(item => ({
-            uri: item.uri,
-            fileName: item.fileName,
-          }))
+          selectCRCphotos.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
       ]);
 
       const partnership = {
         "Full Name": name,
         "Name of Organisation": organizationName,
-        "Phone Number": number,
+        "Phone Number": cleanNumber,
         "eMail": email,
         "City": selectedArea,
         "Number of Employees": Number(employees),
@@ -203,14 +202,13 @@ export default function PartnershipScreen() {
         "Company Registration Certificates": crcImages.map(url => ({ url })),
       };
 
-      await createPartnership(partnership);
-      // Notify all admins about the new partnership application (fire-and-forget)
-      notifyAdmins(name.trim()).catch(() => {});
-      setOverlayStatus('success');
+      await AsyncStorage.setItem('pendingPartnershipData', JSON.stringify(partnership));
+      setOverlayVisible(false);
+      router.push({ pathname: '/PartnershipOTP', params: { phone: cleanNumber, name } });
 
     } catch (error) {
       setOverlayVisible(false);
-      Alert.alert('Error', 'Submission failed. Please try again.');
+      Alert.alert('Error', 'Upload failed. Please try again.');
     }
   };
 

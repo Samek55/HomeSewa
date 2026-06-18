@@ -7,7 +7,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const Row = ({ label, value }: { label: string; value: string }) => (
   <View style={styles.row}>
@@ -22,12 +22,14 @@ export default function BookingDetails() {
     number,
     selectedService,
     selectedShift,
+    selectedCity,
     selectedArea,
     selectedPriority,
     selectedBudget,
     message,
     date,
     endDate,
+    photos,
   } = useLocalSearchParams();
 
   const fmtDate = (iso: any) => {
@@ -47,12 +49,14 @@ export default function BookingDetails() {
         number: cleanNumber,
         selectedService,
         selectedShift,
+        selectedCity,
         selectedArea,
         selectedPriority,
         selectedBudget,
         message,
         date,
         endDate,
+        photos,
       },
     });
   };
@@ -85,7 +89,9 @@ export default function BookingDetails() {
           <View style={styles.divider} />
           <Row label="Preferred Time" value={selectedShift as string} />
           <View style={styles.divider} />
-          <Row label="Location" value={selectedArea as string} />
+          <Row label="City" value={selectedCity as string} />
+          <View style={styles.divider} />
+          <Row label="Area" value={selectedArea as string} />
           <View style={styles.divider} />
           <Row label="Priority" value={selectedPriority as string} />
           <View style={styles.divider} />

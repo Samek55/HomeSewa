@@ -1,36 +1,25 @@
-import axios from 'axios';
-
-const AIRTABLE_API_URL_PARTNERSHIP = process.env.EXPO_PUBLIC_AIRTABLE_API_URL_PARTNERSHIP
-const AIRTABLE_TOKEN = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN
+import { supabase } from '../lib/supabase';
 
 export const createPartnership = async (data: any) => {
-  if (!AIRTABLE_TOKEN || !AIRTABLE_API_URL_PARTNERSHIP) {
-    console.error('Environment variables not loaded correctly.');
-    throw new Error('Missing configuration.');
-  }
+  const partnershipFields = {
+    full_name: data['Full Name'],
+    phone_number: data['Phone Number'],
+    email: data['Email'] || null,
+    name_of_organisation: data['Name of Organisation'] || null,
+    city: data['City'] || null,
+    number_of_employees: data['Number of Employees'] || null,
+    business_type: data['Business Type'] || null,
+    partnership_interests: data['Partnership Interests'] || null,
+    how_did_you_hear: data['How did you hear about us?'] || null,
+    message: data['Message'] || null,
+  };
 
-  try {
-    const response = await axios.post(
-      AIRTABLE_API_URL_PARTNERSHIP,
-      {
-        fields: data,
-        typecast: true,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+  const { data: result, error } = await supabase
+    .from('partnership')
+    .insert([partnershipFields])
+    .select()
+    .single();
 
-    console.log('BOOKING SUCCESS:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.log(
-      'BOOKING ERROR:',
-      error?.response?.data || error.message,
-    );
-    throw error;
-  }
+  if (error) throw new Error(error.message);
+  return result;
 };
