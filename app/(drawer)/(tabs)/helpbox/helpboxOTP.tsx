@@ -36,7 +36,7 @@ const sendSparrowOtp = async (phone: string, otp: string) => {
             token: SPARROW_TOKEN,
             from: 'TheAlert',
             to,
-            text: `Your HomeSewa service booking OTP code is ${otp}\n\nThanks for using HomeSewa ( www.homesewa.app )`,
+            text: `Hi, Thank you for submitting help request. Your OTP code is ${otp}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`,
         }),
     });
     const data = await response.json().catch(() => ({}));

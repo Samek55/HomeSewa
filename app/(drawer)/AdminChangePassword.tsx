@@ -19,12 +19,23 @@ import {
     heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
+
+const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
+
+const sendPinChangeSms = async (phone: string, firstName: string) => {
+    const to = '977' + phone.replace(/\D/g, '').slice(-10);
+    const text = `Dear ${firstName}, Your HomeSewa PIN has been changed successfully.\n\nIf you did not request this change, please contact us immediately.\n(9852024365)\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
+    await fetch('https://api.sparrowsms.com/v2/sms/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
+    });
+};
 
 export default function AdminChangePassword() {
     const [passwordVisibleOLD, setPasswordVisibleOLD] = useState(false);
@@ -59,8 +70,8 @@ export default function AdminChangePassword() {
         try {
             // Check admins table first, then workforce
             const [{ data: adminRecord }, { data: workerRecord }] = await Promise.all([
-                supabase.from('admins').select('pin').eq('phone', cleaned).single(),
-                supabase.from('workforce').select('pin').eq('phone', cleaned).single(),
+                supabase.from('admins').select('pin, full_name').eq('phone', cleaned).single(),
+                supabase.from('workforce').select('pin, full_name').eq('phone', cleaned).single(),
             ]);
 
             const matchedAdmin = adminRecord && adminRecord.pin === oldPassword;
@@ -71,8 +82,7 @@ export default function AdminChangePassword() {
                 return;
             }
 
-            // Update in whichever table(s) the user exists with the matching PIN
-            const updates: Promise<any>[] = [];
+            const updates: any[] = [];
             if (matchedAdmin) {
                 updates.push(supabase.from('admins').update({ pin: newPassword }).eq('phone', cleaned));
             }
@@ -80,6 +90,10 @@ export default function AdminChangePassword() {
                 updates.push(supabase.from('workforce').update({ pin: newPassword }).eq('phone', cleaned));
             }
             await Promise.all(updates);
+
+            const fullName = (matchedWorker ? workerRecord?.full_name : adminRecord?.full_name) || '';
+            const firstName = fullName.split(' ')[0] || 'User';
+            sendPinChangeSms(cleaned, firstName).catch(() => {});
 
             Alert.alert('Success', 'PIN updated successfully', [
                 { text: 'OK', onPress: () => router.push('/Admin') },

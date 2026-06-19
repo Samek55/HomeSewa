@@ -136,6 +136,40 @@ export default function RootLayout() {
     }
   }, []);
 
+  // --- FEATURE 5: REFRESH PROFESSIONAL ONESIGNAL TAGS ON EVERY LAUNCH ---
+  useEffect(() => {
+    const refreshProfessionalTags = async () => {
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const adminPhone = await AsyncStorage.getItem('adminPhone');
+
+        if (!adminPhone) return;
+
+        const { supabase } = require('../lib/supabase');
+        const { data } = await supabase
+          .from('workforce')
+          .select('preferred_city, positions')
+          .eq('phone', adminPhone)
+          .single();
+
+        if (!data) return;
+
+        const { OneSignal } = require('react-native-onesignal');
+        OneSignal.login(adminPhone);
+        OneSignal.User.addTag('phone', adminPhone);
+        OneSignal.User.addTag('role', 'career');
+        OneSignal.User.addTag('city', data.preferred_city || '');
+        OneSignal.User.addTag('services', (data.positions || [])[0] || '');
+
+        console.log('[Tags] Professional tags refreshed on launch for:', adminPhone);
+      } catch (e) {
+        console.warn('[Tags] Could not refresh professional tags:', e);
+      }
+    };
+
+    refreshProfessionalTags();
+  }, []);
+
   // Stay invisible during auth evaluation — the native splash (logo) is still
   // covering the screen at this point, so there's nothing to render here.
   if (initializing) {

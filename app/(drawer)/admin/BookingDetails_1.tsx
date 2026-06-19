@@ -23,7 +23,7 @@ import {
 } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
-import { notifyUsers } from '@/api/notifications';
+import { notifyUsers, notifyProfessionalsAccepted } from '@/api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
@@ -124,9 +124,12 @@ export default function BookingDetails() {
 
             await notifyUsers(booking?.service, booking?.area, customerPhone);
 
+            const bookingService = String(booking?.service || '').split(',')[0].trim();
+            const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
+            notifyProfessionalsAccepted(bookingService, booking?.city || '', booking?.area || '', adminPhone).catch(() => {});
+
             // Send acceptance SMS to customer
             try {
-                const adminPhone = await AsyncStorage.getItem('adminPhone') || '9852024365';
                 const professionalName = await fetchProfessionalName(adminPhone);
                 await sendAcceptanceSms(customerPhone, customerName, professionalName, adminPhone);
             } catch (smsErr) {

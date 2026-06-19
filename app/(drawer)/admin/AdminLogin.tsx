@@ -69,7 +69,7 @@ export default function AdminLogin() {
             // Then check workforce table
             const { data: worker } = await supabase
                 .from('workforce')
-                .select('uin, full_name, status, pin')
+                .select('uin, full_name, status, pin, preferred_city, positions')
                 .eq('phone', cleaned)
                 .single();
 
@@ -82,15 +82,21 @@ export default function AdminLogin() {
             }
 
             const displayName = (isAdmin ? admin?.full_name : worker?.full_name) || 'Admin';
-            const adminTable = isAdmin ? 'admins' : 'workforce';
+            const adminTable = isWorker ? 'workforce' : 'admins';
             await AsyncStorage.setItem('adminPhone', cleaned);
             await AsyncStorage.setItem('adminTable', adminTable);
             await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.login(cleaned);
-                OneSignal.User.addTag('role', 'admin');
                 OneSignal.User.addTag('phone', cleaned);
+                if (isWorker) {
+                    OneSignal.User.addTag('role', 'career');
+                    OneSignal.User.addTag('city', worker?.preferred_city || '');
+                    OneSignal.User.addTag('services', (worker?.positions || [])[0] || '');
+                } else {
+                    OneSignal.User.addTag('role', 'admin');
+                }
             } catch (e) {}
             setIsLoggedIn(true);
             Alert.alert('Welcome back!', `Hello, ${displayName.split(' ')[0]}!`, [

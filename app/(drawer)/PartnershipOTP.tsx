@@ -21,7 +21,7 @@ const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
 
 const sendSparrowOtp = async (phone: string, otp: string, firstName: string) => {
   const to = '977' + phone.replace(/\D/g, '').slice(-10);
-  const text = `Dear ${firstName}, your HomeSewa service booking OTP code is ${otp}\n\nThanks for using HomeSewa ( www.homesewa.app )`;
+  const text = `Dear ${firstName}, Your Partnership OTP code is ${otp}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
   const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -44,7 +44,7 @@ export default function PartnershipOTP() {
   const sendOtp = async () => {
     const code = generateOtp();
     setSentOtp(code);
-    const firstName = String(name || '').split(' ')[0] || 'Customer';
+    const firstName = String(name || '').trim() || 'Partner';
     try {
       await sendSparrowOtp(String(phone), code, firstName);
     } catch (err: any) {

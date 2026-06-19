@@ -12,7 +12,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { createBooking } from '../../../../api/PostApiBooking';
-import { notifyProfessionals } from '../../../../api/notifications';
+import { pushAreaProfessionals } from '../../../../api/notifications';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
@@ -26,7 +26,7 @@ const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 
 const sendSparrowOtp = async (phone: string, otp: string, firstName: string) => {
   const to = '977' + phone;
-  const text = `Dear ${firstName}, your HomeSewa service booking OTP code is ${otp}\n\nThanks for using HomeSewa ( www.homesewa.app )`;
+  const text = `Dear ${firstName}, Your Service Booking OTP code is ${otp}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
   const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -160,7 +160,7 @@ export default function BookingOtp() {
       try {
         const targetService = Array.isArray(selectedService) ? selectedService[0] : selectedService;
         const targetArea = Array.isArray(selectedArea) ? selectedArea[0] : selectedArea;
-        await notifyProfessionals(String(targetService).trim(), String(targetArea).trim());
+        pushAreaProfessionals(String(targetService).trim(), String(targetArea).trim()).catch(() => {});
       } catch {}
 
       router.push('/booking/BookingVerify');
