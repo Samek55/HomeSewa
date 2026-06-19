@@ -39,6 +39,12 @@ export const fetchBookingsFromAirtable = async () => {
       bookingDate: formatDate(item.service_booking_datetime),
       startingDate: formatDate(item.starting_date),
       completionDate: formatDate(item.service_completion_date),
+      approxDays: (() => {
+        const start = Date.parse(item.starting_date);
+        const end = Date.parse(item.service_completion_date);
+        if (isNaN(start) || isNaN(end) || end < start) return null;
+        return Math.round((end - start) / (1000 * 60 * 60 * 24));
+      })(),
       shift: item.select_shift,
       priority: item.priority,
       status: item.status,

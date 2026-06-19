@@ -4,13 +4,12 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
     Dimensions,
     StyleSheet,
     Alert,
     Image,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
@@ -28,6 +27,7 @@ export default function AdminLogin() {
     const [pin, setPin] = useState(['', '', '', '']);
     const pinRefs = useRef<Array<TextInput | null>>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [activeInput, setActiveInput] = useState<string | null>(null);
 
     useEffect(() => {
         AsyncStorage.getItem('adminPhone').then((phone) => setIsLoggedIn(!!phone));
@@ -125,9 +125,12 @@ export default function AdminLogin() {
     };
 
     return (
-        <KeyboardAvoidingView
+        <KeyboardAwareScrollView
             style={styles.screen}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            enableOnAndroid
+            extraScrollHeight={20}
         >
             {/* HEADER NAV */}
             <Header4 />
@@ -153,11 +156,13 @@ export default function AdminLogin() {
                 <View style={styles.inputRow}>
                     <Ionicons name="call-outline" size={20} color="#295C59" />
                     <TextInput
-                        placeholder="98520 24 365"
+                        placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
                         placeholderTextColor="#B0BEC5"
                         style={styles.textInput}
                         keyboardType="number-pad"
                         value={phoneNumber}
+                        onFocus={() => setActiveInput('phone')}
+                        onBlur={() => setActiveInput(null)}
                         onChangeText={(value) => {
                             let cleaned = value.replace(/[^0-9]/g, '').slice(0, 10);
                             let formatted = cleaned;
@@ -221,7 +226,7 @@ export default function AdminLogin() {
 
                 </View>
             </View>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
     );
 }
 

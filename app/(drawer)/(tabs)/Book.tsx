@@ -251,7 +251,7 @@ export default function ServiceBookingScreen() {
             {/* Full Name */}
             <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
             <TextInput
-              placeholder="Enter your Full Name"
+              placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
               value={name}
               onChangeText={setName}
               onFocus={() => setActiveInput('name')}
@@ -413,7 +413,7 @@ export default function ServiceBookingScreen() {
                   setShowSuggestions(false);
                   setActiveInput(null);
                 }, 200)}
-                placeholder={selectedCity ? 'Type your area...' : 'Select a city first'}
+                placeholder={activeInput === 'area' ? '' : (selectedCity ? 'Type your area...' : 'Select a city first')}
                 placeholderTextColor="#4B4B4B"
                 editable={!!selectedCity}
                 style={[

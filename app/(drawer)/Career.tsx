@@ -275,7 +275,7 @@ export default function CareerScreen() {
           {/* Full Name */}
           <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
-            placeholder="Enter your Full Name"
+            placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
             value={name}
             onChangeText={setName}
             onFocus={() => setActiveInput('name')}
@@ -296,7 +296,7 @@ export default function CareerScreen() {
               resizeMode="contain"
             />
             <TextInput
-              placeholder="98520 24 365"
+              placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
               value={number}
               onFocus={() => setActiveInput('phone')}
               onBlur={() => setActiveInput(null)}
@@ -353,7 +353,7 @@ export default function CareerScreen() {
           {/* Email */}
           <Text style={styles.label}>Email</Text>
           <TextInput
-            placeholder="Enter your email address"
+            placeholder={activeInput === 'email' ? '' : 'Enter your email address'}
             value={email}
             onChangeText={setEmail}
             onFocus={() => setActiveInput('email')}
@@ -381,7 +381,7 @@ export default function CareerScreen() {
           {/* Years of Experience */}
           <Text style={styles.label}>Years of Experience <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
-            placeholder="5"
+            placeholder={activeInput === 'experience' ? '' : '5'}
             value={experience}
             onFocus={() => setActiveInput('experience')}
             onBlur={() => setActiveInput(null)}
@@ -444,7 +444,7 @@ export default function CareerScreen() {
               resizeMode="contain"
             />
             <TextInput
-              placeholder="98520 24 365"
+              placeholder={activeInput === 'emergencyPhone' ? '' : '98520 24 365'}
               value={emergencyNumber}
               onFocus={() => setActiveInput('emergencyPhone')}
               onBlur={() => setActiveInput(null)}
@@ -478,7 +478,7 @@ export default function CareerScreen() {
               resizeMode="contain"
             />
             <TextInput
-              placeholder="Enter referral phone number"
+              placeholder={activeInput === 'referralPhone' ? '' : 'Enter referral phone number'}
               value={referralNumber}
               onFocus={() => setActiveInput('referralPhone')}
               onBlur={() => setActiveInput(null)}

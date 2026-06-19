@@ -242,7 +242,7 @@ export default function PartnershipScreen() {
           {/* Full Name */}
           <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
-            placeholder="Enter your Full Name"
+            placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
             value={name}
             onChangeText={setName}
             onFocus={() => setActiveInput('name')}
@@ -257,7 +257,7 @@ export default function PartnershipScreen() {
           {/* Name of Organization */}
           <Text style={styles.label}>Name of Organization <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
-            placeholder="Enter the name of your Organization"
+            placeholder={activeInput === 'organization' ? '' : 'Enter the name of your Organization'}
             value={organizationName}
             onChangeText={setOrganizationName}
             onFocus={() => setActiveInput('organization')}
@@ -278,7 +278,7 @@ export default function PartnershipScreen() {
               resizeMode="contain"
             />
             <TextInput
-              placeholder="Enter your Phone Number"
+              placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
               value={number}
               onFocus={() => setActiveInput('phone')}
               onBlur={() => setActiveInput(null)}
@@ -306,7 +306,7 @@ export default function PartnershipScreen() {
           {/* Email */}
           <Text style={styles.label}>Email</Text>
           <TextInput
-            placeholder="Enter your Email Address"
+            placeholder={activeInput === 'email' ? '' : 'Enter your Email Address'}
             value={email}
             onChangeText={setEmail}
             onFocus={() => setActiveInput('email')}
@@ -340,7 +340,7 @@ export default function PartnershipScreen() {
           {/* Number of Employees */}
           <Text style={styles.label}>Number of Employees <Text style={{ color: 'red' }}>*</Text></Text>
           <TextInput
-            placeholder="Enter the number of Employees"
+            placeholder={activeInput === 'employees' ? '' : 'Enter the number of Employees'}
             placeholderTextColor={'#4B4B4B'}
             keyboardType="numeric"
             value={employees}

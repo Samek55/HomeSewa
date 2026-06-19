@@ -203,12 +203,12 @@ export default function BookingDetails() {
                             </View>
 
                             <View style={styles.row}>
-                                <Text style={styles.label}>Booking Date & Time</Text>
+                                <Text style={styles.label}>Booking Date</Text>
                                 <Text style={styles.value}>{booking?.bookingDate}</Text>
                             </View>
 
                             <View style={styles.row}>
-                                <Text style={styles.label}>Service Date & Time</Text>
+                                <Text style={styles.label}>Service Starting Date</Text>
                                 <Text style={styles.value}>{booking?.startingDate}</Text>
                             </View>
 

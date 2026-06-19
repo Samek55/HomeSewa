@@ -204,23 +204,25 @@ export default function BookingDetails() {
                             </View>
 
                             <View style={styles.row}>
-                                <Text style={styles.label}>Booking Date & Time</Text>
+                                <Text style={styles.label}>Booking Date</Text>
                                 <Text style={styles.value}>{booking?.bookingDate}</Text>
                             </View>
 
                             <View style={styles.row}>
-                                <Text style={styles.label}>Service Starting Date & Time</Text>
+                                <Text style={styles.label}>Service Starting Date</Text>
                                 <Text style={styles.value}>{booking?.startingDate}</Text>
                             </View>
 
                             <View style={styles.row}>
-                                <Text style={styles.label}>Service Ending Date & Time</Text>
+                                <Text style={styles.label}>Service Ending Date</Text>
                                 <Text style={styles.value}>{booking?.completionDate}</Text>
                             </View>
 
                             <View style={styles.rowflex}>
                                 <Text style={styles.labelFlex}>Approx Days to complete</Text>
-                                <Text style={styles.valueFlex}>10 Days</Text>
+                                <Text style={styles.valueFlex}>
+                                    {booking?.approxDays != null ? `${booking.approxDays} Day${booking.approxDays !== 1 ? 's' : ''}` : 'N/A'}
+                                </Text>
                             </View>
 
                             <View style={styles.row}>

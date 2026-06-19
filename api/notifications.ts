@@ -59,7 +59,7 @@ export async function notifyProfessionals(service: string, bookingArea: string) 
           { field: 'tag', key: 'role', relation: '=', value: 'career' },
           { field: 'tag', key: 'services', relation: '=', value: cleanService }, // No Area Filter
         ],
-        headings: { en: 'New Job Available!' },
+        headings: { en: 'HomeSewa Service Request' },
         contents: { en: `New "${cleanService}" booking in ${cleanArea}. Open HomeSewa to respond.` },
       });
       console.log(`Push notification broadcast successfully queued for all "${cleanService}" providers`);
@@ -153,7 +153,7 @@ export async function notifyProfessionalsInCity(service: string, city: string) {
     await sendNotification({
       include_aliases: { external_id: phones },
       target_channel: 'push',
-      headings: { en: 'New Job Available!' },
+      headings: { en: 'HomeSewa Service Request' },
       contents: { en: `New ${service} booking in ${city}. Open HomeSewa to respond.` },
     });
 
@@ -186,7 +186,7 @@ export async function pushAreaProfessionals(service: string, area: string) {
       await sendNotification({
         include_aliases: { external_id: [phone] },
         target_channel: 'push',
-        headings: { en: 'New Job Available!' },
+        headings: { en: 'HomeSewa Service Request' },
         contents: { en: `Dear ${firstName}, a new ${service} service request is available in ${area}. Open HomeSewa to accept the booking!` },
       });
     }));

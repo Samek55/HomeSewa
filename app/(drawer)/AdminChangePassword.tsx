@@ -4,13 +4,11 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    KeyboardAvoidingView,
-    ScrollView,
-    Platform,
     Alert,
     Dimensions,
     StyleSheet,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -47,6 +45,7 @@ export default function AdminChangePassword() {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewpassword, setConfirmNewPassword] = useState('');
+    const [activeInput, setActiveInput] = useState<string | null>(null);
 
     const handleSubmit = async () => {
         const cleaned = phoneNumber.replace(/\s/g, '');
@@ -106,9 +105,12 @@ export default function AdminChangePassword() {
     };
 
     return (
-        <KeyboardAvoidingView
+        <KeyboardAwareScrollView
             style={styles.screen}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            enableOnAndroid
+            extraScrollHeight={20}
         >
             <Header4 />
 
@@ -122,10 +124,8 @@ export default function AdminChangePassword() {
             </LinearGradient>
 
             {/* CARD */}
-            <ScrollView
-                style={styles.card}
-                contentContainerStyle={styles.cardContent}
-                keyboardShouldPersistTaps="handled"
+            <View
+                style={[styles.card, styles.cardContent]}
             >
                 {/* PHONE */}
                 <Text style={styles.label}>Phone Number</Text>
@@ -135,9 +135,11 @@ export default function AdminChangePassword() {
                         style={[styles.textInput, styles.phoneInput]}
                         keyboardType="number-pad"
                         maxLength={13}
-                        placeholder="98XXXXXXXX"
+                        placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
                         placeholderTextColor="#B0BEC5"
                         value={phoneNumber}
+                        onFocus={() => setActiveInput('phone')}
+                        onBlur={() => setActiveInput(null)}
                         onChangeText={(value) => {
                             let d = value.replace(/[^0-9]/g, '').slice(0, 10);
                             let fmt = d;
@@ -208,8 +210,8 @@ export default function AdminChangePassword() {
                         <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text>
                     </TouchableOpacity>
                 </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </View>
+        </KeyboardAwareScrollView>
     );
 }
 
