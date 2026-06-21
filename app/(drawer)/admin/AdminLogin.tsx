@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { router } from 'expo-router';
+import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../../lib/supabase';
 
@@ -154,7 +155,7 @@ export default function AdminLogin() {
 
                 {/* Phone */}
                 <View style={styles.inputRow}>
-                    <Ionicons name="call-outline" size={20} color="#295C59" />
+                    <Image source={countryLogo} style={{ width: 28, height: 18 }} resizeMode="contain" />
                     <TextInput
                         placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
                         placeholderTextColor="#B0BEC5"

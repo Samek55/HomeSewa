@@ -44,7 +44,6 @@ const NumberBar = ({ onFocus = () => {} }) => {
             style={styles.flag}
           />
         </View>
-        <Text style={styles.code}>+977</Text>
         <View style={styles.dividerLine} />
         <TextInput
           onFocus={() => { setIsFocused(true); onFocus?.(); }}

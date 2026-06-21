@@ -11,7 +11,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { area, city, areasByCity } from '../../src/data/Data';
+import { area, city } from '../../src/data/Data';
 import { servicesData2 } from '../../src/data/ServiceData';
 import TextArea from '../../components/bookings/TextArea';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
@@ -25,7 +25,7 @@ import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
 import HeadshotCropModal from '../../components/bookings/HeadshotCropModal';
 import Header3 from '@/components/Header3drawer';
-import { uploadMultipleToCloudinary } from '@/api/uploadToCloudinary';
+import { uploadMultipleToStorage } from '@/api/uploadToStorage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -197,11 +197,11 @@ export default function CareerScreen() {
 
     try {
       const [idProofImages, headshotImages] = await Promise.all([
-        uploadMultipleToCloudinary(
+        uploadMultipleToStorage(
           selectedID.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
         selectedHeadshot.length > 0
-          ? uploadMultipleToCloudinary(selectedHeadshot.map(item => ({ uri: item.uri, fileName: item.fileName })))
+          ? uploadMultipleToStorage(selectedHeadshot.map(item => ({ uri: item.uri, fileName: item.fileName })))
           : Promise.resolve([]),
       ]);
 
@@ -210,7 +210,7 @@ export default function CareerScreen() {
         "Phone": cleanNumber,
         "Gender": gender,
         "Email": email,
-        ...(headshotImages.length > 0 && { "Headshot": headshotImages.map(url => ({ url })) }),
+        ...(headshotImages.length > 0 && { "Headshot": headshotImages.map((url: string) => ({ url })) }),
         "Your Expertise": selectedExpertise,
         "Years of Experience": experience,
         "Preferred City": selectedCity,
@@ -218,7 +218,7 @@ export default function CareerScreen() {
         "Emergency Contact Number": emergencyNumber,
         "Referral Phone Number": referralNumber,
         "Message": message,
-        "Citizenship / Driving Licence / NID": idProofImages.map(url => ({ url })),
+        "Citizenship / Driving Licence / NID": idProofImages.map((url: string) => ({ url })),
       };
 
       await AsyncStorage.setItem('pendingCareerData', JSON.stringify(career));
@@ -234,7 +234,7 @@ export default function CareerScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <Header3 />
+      <Header3 goHome />
       <SubmitOverlay
         visible={overlayVisible}
         status={overlayStatus}
@@ -346,7 +346,7 @@ export default function CareerScreen() {
           <FileUploadBox
             value={selectedHeadshot}
             onChange={setSelectedHeadshot}
-            label="Drop Headshot / Profile Picture"
+            label="Upload Profile Picture"
             onPressOverride={pickHeadshot}
           />
 
@@ -424,7 +424,7 @@ export default function CareerScreen() {
           {/* Preferred Working Area */}
           <Text style={styles.label}>Preferred Working Area <Text style={{ color: 'red' }}>*</Text></Text>
           <DropdownAdd
-            options={selectedCity ? (areasByCity[selectedCity] ?? []) : area}
+            options={area}
             placeholder="Select maximum UpTo 5"
             placeholderColor="#4B4B4B"
             value={selectedArea}

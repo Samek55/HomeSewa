@@ -13,7 +13,7 @@ export default function FaqsScreen() {
 
   return (
     <View style={styles.screen}>
-      <Header3 />
+      <Header3 goHome />
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* HERO */}

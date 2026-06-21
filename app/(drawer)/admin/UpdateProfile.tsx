@@ -1,0 +1,359 @@
+import React, { useEffect, useState } from 'react';
+import {
+    View, Text, Image, TouchableOpacity,
+    StyleSheet, TextInput, Alert, ActivityIndicator,
+    ScrollView, Dimensions,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../../lib/supabase';
+import { uploadToStorage } from '../../../api/uploadToStorage';
+import Header4 from '@/components/Header4Admin';
+import HeadshotCropModal from '../../../components/bookings/HeadshotCropModal';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
+const { width } = Dimensions.get('window');
+const scaleFont = (s: number) => (s * width) / 375;
+
+export default function UpdateProfile() {
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [phone, setPhone] = useState('');
+    const [adminTable, setAdminTable] = useState('workforce');
+
+    // Editable fields
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [gender, setGender] = useState('');
+    const [city, setCity] = useState('');
+    const [area, setArea] = useState('');
+    const [experience, setExperience] = useState('');
+    const [positions, setPositions] = useState('');
+
+    // Photo
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const [tempUri, setTempUri] = useState<string | null>(null);
+    const [showCrop, setShowCrop] = useState(false);
+
+    // Stats
+    const [uin, setUin] = useState('');
+    const [status, setStatus] = useState('');
+
+    useEffect(() => {
+        const load = async () => {
+            const p = await AsyncStorage.getItem('adminPhone') || '';
+            const t = await AsyncStorage.getItem('adminTable') || 'workforce';
+            setPhone(p);
+            setAdminTable(t);
+            try {
+                const { data } = await supabase
+                    .from(t)
+                    .select('full_name, photo_url, email, gender, preferred_city, preferred_area, years_experience, positions, uin, status')
+                    .eq('phone', p)
+                    .single();
+                if (data) {
+                    setFullName(data.full_name || '');
+                    setPhotoUrl(data.photo_url || null);
+                    setEmail(data.email || '');
+                    setGender(data.gender || '');
+                    setCity(data.preferred_city || '');
+                    setArea(data.preferred_area || '');
+                    setExperience(String(data.years_experience || ''));
+                    setPositions(Array.isArray(data.positions) ? data.positions.join(', ') : (data.positions || ''));
+                    setUin(data.uin || '');
+                    setStatus(data.status || '');
+                }
+            } catch {}
+            setLoading(false);
+        };
+        load();
+    }, []);
+
+    const pickPhoto = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: false,
+            quality: 0.85,
+        });
+        if (!result.canceled && result.assets?.[0]) {
+            setTempUri(result.assets[0].uri);
+            setShowCrop(true);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!fullName.trim()) {
+            Alert.alert('Validation', 'Name cannot be empty.');
+            return;
+        }
+        setSaving(true);
+        try {
+            let newPhotoUrl = photoUrl;
+            if (tempUri) {
+                newPhotoUrl = await uploadToStorage(tempUri, `profile_${phone}.jpg`);
+                setPhotoUrl(newPhotoUrl);
+                setTempUri(null);
+            }
+            const { error } = await supabase
+                .from(adminTable)
+                .update({
+                    full_name: fullName.trim(),
+                    photo_url: newPhotoUrl,
+                    email: email.trim(),
+                    gender: gender.trim(),
+                    preferred_city: city.trim(),
+                    preferred_area: area.trim(),
+                    years_experience: experience ? Number(experience) : null,
+                })
+                .eq('phone', phone);
+            if (error) throw error;
+            Alert.alert('Saved', 'Profile updated successfully!', [
+                { text: 'OK', onPress: () => router.back() },
+            ]);
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Could not save profile.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        Alert.alert('Logout', 'Are you sure you want to logout?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Logout', style: 'destructive', onPress: async () => {
+                    await AsyncStorage.multiRemove(['adminPhone', 'adminTable']);
+                    try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
+                    router.replace('/Home');
+                }
+            },
+        ]);
+    };
+
+    const displayPhoto = tempUri || photoUrl;
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#295C59' }}>
+                <ActivityIndicator size="large" color="#fff" />
+            </View>
+        );
+    }
+
+    return (
+        <View style={{ flex: 1, backgroundColor: '#295C59' }}>
+            <Header4 />
+
+            {tempUri && (
+                <HeadshotCropModal
+                    visible={showCrop}
+                    imageUri={tempUri}
+                    onSave={() => setShowCrop(false)}
+                    onCancel={() => { setTempUri(null); setShowCrop(false); }}
+                />
+            )}
+
+            {/* ── TOP HERO ── */}
+            <View style={styles.hero}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.screenTitle}>Update Profile</Text>
+
+                <TouchableOpacity onPress={pickPhoto} style={styles.avatarWrapper} activeOpacity={0.8}>
+                    {displayPhoto ? (
+                        <Image source={{ uri: displayPhoto }} style={styles.avatar} resizeMode="cover" />
+                    ) : (
+                        <View style={styles.avatarPlaceholder}>
+                            <Ionicons name="person" size={44} color="#9BBAB8" />
+                        </View>
+                    )}
+                    <View style={styles.cameraChip}>
+                        <Ionicons name="camera" size={13} color="#fff" />
+                    </View>
+                </TouchableOpacity>
+
+                <Text style={styles.heroName}>{fullName || 'Your Name'}</Text>
+                <Text style={styles.heroPhone}>+977 {phone}</Text>
+
+                {/* Stats row */}
+                <View style={styles.statsRow}>
+                    {uin ? (
+                        <View style={styles.statChip}>
+                            <Ionicons name="id-card-outline" size={13} color="rgba(255,255,255,0.8)" />
+                            <Text style={styles.statText}>UIN: {uin}</Text>
+                        </View>
+                    ) : null}
+                    {status ? (
+                        <View style={[styles.statChip, { backgroundColor: status === 'Active' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)' }]}>
+                            <Ionicons name="ellipse" size={8} color={status === 'Active' ? '#4ade80' : '#f87171'} />
+                            <Text style={styles.statText}>{status}</Text>
+                        </View>
+                    ) : null}
+                    {city ? (
+                        <View style={styles.statChip}>
+                            <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.8)" />
+                            <Text style={styles.statText}>{city}</Text>
+                        </View>
+                    ) : null}
+                </View>
+            </View>
+
+            {/* ── FORM CARD ── */}
+            <ScrollView style={styles.card} contentContainerStyle={{ paddingBottom: hp('8%') }} showsVerticalScrollIndicator={false}>
+
+                {/* Personal Info */}
+                <SectionHeader icon="person-outline" title="Personal Information" />
+
+                <Field label="Full Name">
+                    <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="Enter your full name" placeholderTextColor="#B0BEC5" />
+                </Field>
+
+                <Field label="Phone Number">
+                    <View style={styles.inputReadonly}>
+                        <Text style={styles.inputReadonlyText}>+977 {phone}</Text>
+                        <Ionicons name="lock-closed-outline" size={15} color="#9BBAB8" />
+                    </View>
+                </Field>
+
+                <Field label="Email">
+                    <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#B0BEC5" keyboardType="email-address" autoCapitalize="none" />
+                </Field>
+
+                <Field label="Gender">
+                    <View style={styles.genderRow}>
+                        {['Male', 'Female', 'Other'].map(g => (
+                            <TouchableOpacity
+                                key={g}
+                                style={[styles.genderPill, gender === g && styles.genderPillActive]}
+                                onPress={() => setGender(g)}
+                            >
+                                <Text style={[styles.genderText, gender === g && styles.genderTextActive]}>{g}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </Field>
+
+                {/* Professional Info */}
+                <SectionHeader icon="briefcase-outline" title="Professional Information" />
+
+                <Field label="Services / Expertise">
+                    <TextInput style={styles.input} value={positions} onChangeText={setPositions} placeholder="e.g. Plumbing, Electrical" placeholderTextColor="#B0BEC5" />
+                </Field>
+
+                <Field label="Years of Experience">
+                    <TextInput style={styles.input} value={experience} onChangeText={setExperience} placeholder="e.g. 5" placeholderTextColor="#B0BEC5" keyboardType="numeric" />
+                </Field>
+
+                <Field label="Preferred City">
+                    <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="e.g. Kathmandu" placeholderTextColor="#B0BEC5" />
+                </Field>
+
+                <Field label="Preferred Working Area">
+                    <TextInput style={styles.input} value={area} onChangeText={setArea} placeholder="e.g. Thamel, Lalitpur" placeholderTextColor="#B0BEC5" />
+                </Field>
+
+                {/* Account */}
+                <SectionHeader icon="settings-outline" title="Account" />
+
+                <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/AdminChangePassword')} activeOpacity={0.75}>
+                    <View style={styles.actionIcon}>
+                        <Ionicons name="key-outline" size={19} color="#295C59" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.actionLabel}>Change PIN</Text>
+                        <Text style={styles.actionSub}>Update your 4-digit login PIN</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={17} color="#9BBAB8" />
+                </TouchableOpacity>
+
+                {/* Save */}
+                <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving} activeOpacity={0.85}>
+                    {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
+                </TouchableOpacity>
+
+                {/* Logout */}
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                    <Ionicons name="log-out-outline" size={17} color="#ef4444" />
+                    <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+
+            </ScrollView>
+        </View>
+    );
+}
+
+function SectionHeader({ icon, title }: { icon: any; title: string }) {
+    return (
+        <View style={sectionStyles.row}>
+            <Ionicons name={icon} size={15} color="#295C59" />
+            <Text style={sectionStyles.text}>{title}</Text>
+        </View>
+    );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <View style={{ marginBottom: hp('1.6%') }}>
+            <Text style={fieldStyles.label}>{label}</Text>
+            {children}
+        </View>
+    );
+}
+
+const sectionStyles = StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: hp('2.5%'), marginBottom: hp('1.2%') },
+    text: { fontSize: scaleFont(11), fontWeight: '800', color: '#295C59', textTransform: 'uppercase', letterSpacing: 0.6 },
+});
+
+const fieldStyles = StyleSheet.create({
+    label: { fontSize: scaleFont(11.5), fontWeight: '700', color: '#5A7270', marginBottom: hp('0.6%'), textTransform: 'uppercase', letterSpacing: 0.4 },
+});
+
+const styles = StyleSheet.create({
+    hero: {
+        backgroundColor: '#295C59',
+        alignItems: 'center',
+        paddingBottom: hp('2.5%'),
+        paddingTop: hp('0.5%'),
+    },
+    backBtn: { position: 'absolute', left: wp('4%'), top: hp('0.5%'), padding: 6 },
+    screenTitle: { fontSize: scaleFont(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: hp('1.5%'), letterSpacing: 1.2 },
+
+    avatarWrapper: { width: wp('24%'), height: wp('24%'), borderRadius: wp('12%'), borderWidth: 3, borderColor: 'rgba(255,255,255,0.55)', overflow: 'visible', marginBottom: hp('1.2%'), position: 'relative' },
+    avatar: { width: '100%', height: '100%', borderRadius: wp('12%') },
+    avatarPlaceholder: { width: '100%', height: '100%', borderRadius: wp('12%'), backgroundColor: '#1E4542', alignItems: 'center', justifyContent: 'center' },
+    cameraChip: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#295C59', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
+
+    heroName: { fontSize: scaleFont(18), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
+    heroPhone: { fontSize: scaleFont(12), color: 'rgba(255,255,255,0.65)', marginTop: 2, marginBottom: hp('1.2%') },
+
+    statsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center', paddingHorizontal: wp('4%') },
+    statChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    statText: { fontSize: scaleFont(11), color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
+
+    card: { flex: 1, backgroundColor: '#F5F9F8', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
+
+    input: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#D6E8E7', paddingHorizontal: wp('4%'), height: hp('6%'), fontSize: scaleFont(14), fontWeight: '500', color: '#1C2B2A' },
+    inputReadonly: { backgroundColor: '#EEF5F4', borderRadius: 12, borderWidth: 1.5, borderColor: '#D6E8E7', paddingHorizontal: wp('4%'), height: hp('6%'), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    inputReadonlyText: { fontSize: scaleFont(14), fontWeight: '500', color: '#9BBAB8' },
+
+    genderRow: { flexDirection: 'row', gap: 10 },
+    genderPill: { flex: 1, paddingVertical: hp('1.2%'), borderRadius: 10, borderWidth: 1.5, borderColor: '#D6E8E7', alignItems: 'center', backgroundColor: '#fff' },
+    genderPillActive: { backgroundColor: '#295C59', borderColor: '#295C59' },
+    genderText: { fontSize: scaleFont(13), fontWeight: '600', color: '#9BBAB8' },
+    genderTextActive: { color: '#fff' },
+
+    actionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: wp('4%'), gap: wp('3%'), marginBottom: hp('0.8%'), elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
+    actionIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center' },
+    actionLabel: { fontSize: scaleFont(14), fontWeight: '700', color: '#1C2B2A' },
+    actionSub: { fontSize: scaleFont(11), color: '#9BBAB8', marginTop: 2 },
+
+    saveBtn: { backgroundColor: '#295C59', borderRadius: 14, height: hp('6.5%'), alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#295C59', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, marginTop: hp('2.5%'), marginBottom: hp('1.5%') },
+    saveBtnText: { color: '#fff', fontSize: scaleFont(15), fontWeight: '700', letterSpacing: 0.4 },
+
+    logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: hp('1.5%') },
+    logoutText: { fontSize: scaleFont(14), fontWeight: '700', color: '#ef4444' },
+});

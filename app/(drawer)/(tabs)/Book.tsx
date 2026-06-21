@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import {
   View,
@@ -27,10 +27,10 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
 import ClearFormIcon from '../../../assets/icons/booking/clear.png';
-import { uploadMultipleToCloudinary } from '../../../api/uploadToCloudinary';
+import { uploadMultipleToStorage } from '../../../api/uploadToStorage';
 import { supabase } from '../../../lib/supabase';
 
 const { width, height } = Dimensions.get('window');
@@ -64,7 +64,12 @@ export default function ServiceBookingScreen() {
   };
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-  const [selectedService, setSelectedService] = useState('');
+  const { preSelectedService } = useLocalSearchParams<{ preSelectedService?: string }>();
+  const [selectedService, setSelectedService] = useState(preSelectedService ?? '');
+
+  useEffect(() => {
+    if (preSelectedService) setSelectedService(preSelectedService);
+  }, [preSelectedService]);
   const [selectedShift, setSelectedShift] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedArea, setSelectedArea] = useState('');
@@ -180,7 +185,7 @@ export default function ServiceBookingScreen() {
     if (!selectedArea.trim()) { return Alert.alert('Validation Error', 'Please enter your area'); }
     if (!selectedBudget.trim()) { return Alert.alert('Validation Error', 'Budget cannot be empty'); }
     if (!selectedPriority.trim()) { return Alert.alert('Validation Error', 'Please choose a Priority'); }
-    if (!message.trim()) { return Alert.alert('Validation Error', 'Message cannot be empty'); }
+
 
     setIsSubmitting(true);
 
@@ -199,7 +204,7 @@ export default function ServiceBookingScreen() {
     try {
       let photoUrls: string[] = [];
       if (photos.length > 0) {
-        photoUrls = await uploadMultipleToCloudinary(
+        photoUrls = await uploadMultipleToStorage(
           photos.map(uri => ({ uri, fileName: uri.split('/').pop() || 'photo.jpg' }))
         );
       }
@@ -413,7 +418,7 @@ export default function ServiceBookingScreen() {
                   setShowSuggestions(false);
                   setActiveInput(null);
                 }, 200)}
-                placeholder={activeInput === 'area' ? '' : (selectedCity ? 'Type your area...' : 'Select a city first')}
+                placeholder={activeInput === 'area' ? '' : (selectedCity ? 'Find your area...' : 'Select a city first')}
                 placeholderTextColor="#4B4B4B"
                 editable={!!selectedCity}
                 style={[
@@ -514,7 +519,7 @@ export default function ServiceBookingScreen() {
             </TouchableOpacity>
 
             {/* Message */}
-            <Text style={styles.label}>Message <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>Message</Text>
             <TextArea
               value={message}
               onChangeText={setMessage}

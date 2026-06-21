@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     marginBottom: hp('3%'),
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: hp('1.8%') },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: hp('1%') },
   rowLabel: { fontSize: wp('3.4%'), color: '#9BBAB8', fontWeight: '500', flex: 1 },
   rowValue: { fontSize: wp('3.5%'), color: '#1C2B2A', fontWeight: '700', flex: 1.6, textAlign: 'right' },
   messageBlock: { paddingVertical: hp('1.8%'), gap: 6 },

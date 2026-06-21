@@ -30,7 +30,7 @@ export default function GlossaryScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Header3 />
+      <Header3 goHome />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 

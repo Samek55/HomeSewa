@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 
 const WHATSAPP_URL = "https://api.whatsapp.com/send?phone=9779852024365&text=Hello,%20I'm%20looking%20for%20Home%20Service.%20(%20HomeSewa%20App%20)%20Thank%20You";
 
-export default function Header3() {
+export default function Header3({ goHome = false }: { goHome?: boolean }) {
   const navigation = useNavigation<any>();
 
   return (
@@ -17,7 +17,7 @@ export default function Header3() {
         {/* LEFT: BACK ARROW + LOGO + BRAND */}
         <TouchableOpacity
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          onPress={() => router.canGoBack() ? router.back() : router.replace('/Home')}
+          onPress={() => goHome ? router.replace('/Home') : (router.canGoBack() ? router.back() : router.replace('/Home'))}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={26} color="#fff" />

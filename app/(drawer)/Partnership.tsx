@@ -24,7 +24,7 @@ import FileUploadBox from '../../components/bookings/FileUploadBox';
 import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
 import Header3 from '@/components/Header3drawer';
-import { uploadMultipleToCloudinary } from '@/api/uploadToCloudinary';
+import { uploadMultipleToStorage } from '@/api/uploadToStorage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -178,10 +178,10 @@ export default function PartnershipScreen() {
 
     try {
       const [companyImages, crcImages] = await Promise.all([
-        uploadMultipleToCloudinary(
+        uploadMultipleToStorage(
           selectCompanyPhotos.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
-        uploadMultipleToCloudinary(
+        uploadMultipleToStorage(
           selectCRCphotos.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
       ]);
@@ -198,8 +198,8 @@ export default function PartnershipScreen() {
         "Partnership Interests": selectedPartnership,
         "How did you hear about us?": selectedHowHeard,
         "Message": message,
-        "Company Photos": companyImages.map(url => ({ url })),
-        "Company Registration Certificates": crcImages.map(url => ({ url })),
+        "Company Photos": companyImages.map((url: string) => ({ url })),
+        "Company Registration Certificates": crcImages.map((url: string) => ({ url })),
       };
 
       await AsyncStorage.setItem('pendingPartnershipData', JSON.stringify(partnership));
@@ -214,7 +214,7 @@ export default function PartnershipScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <Header3 />
+      <Header3 goHome />
       <SubmitOverlay
         visible={overlayVisible}
         status={overlayStatus}

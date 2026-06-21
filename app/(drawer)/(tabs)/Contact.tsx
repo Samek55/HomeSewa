@@ -52,7 +52,7 @@ export default function ContactScreen() {
           <ContactCard
             icon="call-outline"
             title="Call / WhatsApp"
-            value="+977-98520 24 365"
+            value="+977 - 98520 24 365"
             onPress={handlePhonePress}
             tappable
           />

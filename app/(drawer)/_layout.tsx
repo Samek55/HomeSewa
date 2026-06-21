@@ -73,6 +73,10 @@ export default function DrawerLayout() {
         name="AdminChangePassword"
         options={{ drawerItemStyle: { display: 'none' } }}
       />
+      <Drawer.Screen
+        name="admin/UpdateProfile"
+        options={{ drawerItemStyle: { display: 'none' } }}
+      />
     </Drawer>
   );
 }

@@ -9,46 +9,60 @@ import {
     StyleSheet,
     TextInput,
     FlatList,
-    Alert
+    ScrollView,
 } from 'react-native';
-
+import { Ionicons } from '@expo/vector-icons';
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import SearchIcon from '../../../assets/images/TabIcon/searchbar.png';
-
 import BookingCard from '../../../components/admin/BookingCard';
 import Header4 from '@/components/Header4Admin';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
-
-import {
-    widthPercentageToDP as wp,
-    heightPercentageToDP as hp,
-} from 'react-native-responsive-screen';
-
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function BookingHistory() {
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 
+const parseToYMD = (dateStr: string): string | null => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return null;
+};
+
+const todayYMD = (): string => new Date().toISOString().split('T')[0];
+
+export default function BookingHistory() {
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [openId, setOpenId] = useState<string | null>(null);
     const [filter, setFilter] = useState('New / Open');
     const [searchQuery, setSearchQuery] = useState('');
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [calendarMonth, setCalendarMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     const lastDataRef = useRef<string>('');
     const intervalRef = useRef<any>(null);
 
-    // FETCH BOOKINGS
+    const FILTERS = [
+        { label: 'New',       value: 'New / Open' },
+        { label: 'Cancelled', value: 'Cancelled'  },
+        { label: 'OnGoing',   value: 'Pending'    },
+        { label: 'Dispute',   value: 'Dispute'    },
+        { label: 'Completed', value: 'Completed'  },
+        { label: 'All',       value: 'All'        },
+    ];
+
     const loadBookings = useCallback(async () => {
         try {
             const data = await fetchBookingsFromAirtable();
             const serialized = JSON.stringify(data);
-
             if (serialized === lastDataRef.current) return;
-
             lastDataRef.current = serialized;
             setBookings(data || []);
-
         } catch (error) {
             console.error('Failed to load bookings:', error);
         } finally {
@@ -59,14 +73,9 @@ export default function BookingHistory() {
     useFocusEffect(
         useCallback(() => {
             loadBookings();
-
-            intervalRef.current = setInterval(() => {
-                loadBookings();
-            }, 15000);
-
-            return () => {
-                clearInterval(intervalRef.current);
-            };
+            AsyncStorage.getItem('adminTable').then(t => setIsSuperAdmin(t === 'admins'));
+            intervalRef.current = setInterval(loadBookings, 15000);
+            return () => clearInterval(intervalRef.current);
         }, [loadBookings])
     );
 
@@ -75,180 +84,290 @@ export default function BookingHistory() {
     }, []);
 
     const handlePress = useCallback((id: string) => {
-        const selectedBooking = bookings.find(b => b.id === id);
-        const currentStatus = selectedBooking?.status?.toLowerCase()?.trim() || '';
-
-        if (
-            currentStatus.includes('completed') ||
-            currentStatus.includes('pending') ||
-            currentStatus.includes('cancel')
-        ) {
-            router.push({
-                pathname: '/admin/BookingDetails_2',
-                params: { id },
-            });
+        const b = bookings.find(b => b.id === id);
+        const s = (b?.status || '').toLowerCase().trim();
+        if (s.includes('new') || s.includes('open')) {
+            router.push({ pathname: '/admin/BookingDetails_1', params: { id } });
         } else {
-            router.push({
-                pathname: '/admin/BookingDetails_1',
-                params: { id },
-            });
+            router.push({ pathname: '/admin/BookingDetails_2', params: { id } });
         }
     }, [bookings]);
 
-    // SORT BOOKINGS
     const sortedBookings = useMemo(() => {
-        return [...bookings].sort((a, b) => {
-      
-
-            const aId = Number(a.bookingId) || 0;
-            const bId = Number(b.bookingId) || 0;
-            return bId - aId;
-        });
+        return [...bookings].sort((a, b) => (Number(b.bookingId) || 0) - (Number(a.bookingId) || 0));
     }, [bookings]);
 
-    // FILTER & SEARCH BOOKINGS (FIXED)
-    // -----------------------------
-    // FILTER & SEARCH BOOKINGS (FIXED DATA KEYS)
-    // -----------------------------
+    // Count bookings per YYYY-MM-DD using startingDate
+    const countsByDate = useMemo(() => {
+        const counts: Record<string, number> = {};
+        bookings.forEach(b => {
+            const ymd = parseToYMD(b.startingDate || b.bookingDate || '');
+            if (ymd) counts[ymd] = (counts[ymd] || 0) + 1;
+        });
+        return counts;
+    }, [bookings]);
+
     const filteredData = useMemo(() => {
         let data = sortedBookings;
 
-        // 1. Apply Status Filter
         if (filter !== 'All') {
             data = data.filter(item => {
                 const status = (item.status || '').toLowerCase().trim();
-
-                if (filter === 'Cancelled') {
-                    return status.includes('cancel');
-                }
-                if (filter === 'New / Open') {
-                    return status.includes('new') || status.includes('open');
-                }
-
+                if (filter === 'Cancelled') return status.includes('cancel');
+                if (filter === 'New / Open') return status.includes('new') || status.includes('open');
+                if (filter === 'Dispute') return status.includes('dispute');
                 return status.includes(filter.toLowerCase());
             });
         }
 
-        // 2. Apply Text Search Filter
-        if (searchQuery.trim() !== '') {
-            const query = searchQuery.toLowerCase().trim();
+        if (selectedDate) {
             data = data.filter(item => {
-                // ✅ MATCHED TO YOUR ACTUAL TYPE DEFINITIONS
-                const bookingId = String(item.bookingId || '').toLowerCase();
-                const customerName = String(item.fullName || '').toLowerCase(); // Fixed from item.customerName
-                const phoneNumber = String(item.phone || '').toLowerCase();     // Fixed from item.phoneNumber
-
-                return (
-                    bookingId.includes(query) ||
-                    customerName.includes(query) ||
-                    phoneNumber.includes(query)
-                );
+                const ymd = parseToYMD(item.startingDate || item.bookingDate || '');
+                return ymd === selectedDate;
             });
         }
 
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
+            data = data.filter(item =>
+                String(item.bookingId || '').toLowerCase().includes(q) ||
+                String(item.fullName || '').toLowerCase().includes(q) ||
+                String(item.phone || '').toLowerCase().includes(q)
+            );
+        }
         return data;
-    }, [filter, searchQuery, sortedBookings]);
-    const renderItem = useCallback(({ item }: any) => {
-        return (
-            <BookingCard
-                item={item}
-                isOpen={openId === item.id}
-                onToggle={() => toggleCard(item.id)}
-                onPress={() => handlePress(item.id)}
-            />
-        );
-    }, [openId, toggleCard, handlePress]);
+    }, [filter, searchQuery, sortedBookings, selectedDate]);
+
+    const renderItem = useCallback(({ item }: any) => (
+        <BookingCard
+            item={item}
+            isOpen={openId === item.id}
+            onToggle={() => toggleCard(item.id)}
+            onPress={() => handlePress(item.id)}
+        />
+    ), [openId, toggleCard, handlePress]);
 
     const handleLogout = async () => {
         try {
             await AsyncStorage.removeItem('adminPhone');
-            try {
-                const { OneSignal } = require('react-native-onesignal');
-                OneSignal.logout();
-            } catch (e) {
-                console.warn('OneSignal clean-up failure:', e);
-            }
-
+            try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
             router.replace('/admin/AdminLogin');
-        } catch (error: any) {
-            alert("Logout error: " + error.message);
-        }
+        } catch (e: any) { alert('Logout error: ' + e.message); }
+    };
+
+    // ── Calendar helpers ──────────────────────────────────────
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfWeek = new Date(year, month, 1).getDay();
+    const today = todayYMD();
+
+    const flatCells: (number | null)[] = [
+        ...Array(firstDayOfWeek).fill(null),
+        ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ];
+    while (flatCells.length % 7 !== 0) flatCells.push(null);
+    // Split into rows of 7 to guarantee Saturday always appears
+    const calendarWeeks: (number | null)[][] = [];
+    for (let i = 0; i < flatCells.length; i += 7) calendarWeeks.push(flatCells.slice(i, i + 7));
+
+    const prevMonth = () => setCalendarMonth(new Date(year, month - 1, 1));
+    const nextMonth = () => setCalendarMonth(new Date(year, month + 1, 1));
+
+    const cellDateYMD = (day: number) =>
+        `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    const handleDayPress = (day: number) => {
+        const ymd = cellDateYMD(day);
+        setSelectedDate(prev => (prev === ymd ? null : ymd));
     };
 
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <Header4 />
-
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
             >
-                {/* HEADER (No longer absolute layout to prevent tap overlapping) */}
+                {/* HEADER */}
                 <View style={styles.headerRow}>
                     <TouchableOpacity style={styles.backButton} onPress={handleLogout}>
                         <Image source={leftArrowIcon} style={styles.backBtn} />
                     </TouchableOpacity>
                     <Text style={styles.title}>Booking History</Text>
-                </View>
-
-                {/* SEARCH */}
-                <View style={styles.inputContainer}>
-                    <Image source={SearchIcon} style={{ height: 20, width: 20 }} />
-                    <TextInput
-                        placeholder="Search"
-                        placeholderTextColor={'rgba(67, 67, 67,0.8)'}
-                        style={styles.textInput}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        clearButtonMode="while-editing"
-                        autoCapitalize="none"
-                    />
-                </View>
-
-                {/* FILTERS */}
-                <View style={styles.mainBtns}>
-                    {['All', 'New / Open', 'Completed', 'Pending', 'Cancelled'].map((f) => (
+                    {isSuperAdmin && (
                         <TouchableOpacity
-                            key={f}
-                            style={[
-                                styles.btn,
-                                filter === f && styles.activeBtn
-                            ]}
-                            onPress={() => setFilter(f)}
+                            style={styles.superAdminBtn}
+                            onPress={() => router.push('/admin/SuperAdminHistory')}
                         >
-                            <Text style={styles.btnText}>{f}</Text>
+                            <Ionicons name="shield-outline" size={20} color="#295C59" />
                         </TouchableOpacity>
-                    ))}
+                    )}
+                    <TouchableOpacity
+                        style={styles.calendarIconBtn}
+                        onPress={() => {
+                            setShowCalendar(prev => !prev);
+                            setSelectedDate(null);
+                        }}
+                    >
+                        <Ionicons
+                            name={showCalendar ? 'list-outline' : 'calendar-outline'}
+                            size={22}
+                            color="#295C59"
+                        />
+                    </TouchableOpacity>
                 </View>
 
-                {/* LIST */}
-                <FlatList
-                    data={filteredData}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id.toString()}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={{ paddingBottom: hp('15%') }}
-                    initialNumToRender={8}
-                    maxToRenderPerBatch={6}
-                    windowSize={7}
-                    removeClippedSubviews={true}
-                    updateCellsBatchingPeriod={50}
+                {showCalendar ? (
+                    <ScrollView contentContainerStyle={{ paddingBottom: hp('5%') }}>
+                        {/* CALENDAR */}
+                        <View style={styles.calendarCard}>
+                            {/* Month nav */}
+                            <View style={styles.calMonthRow}>
+                                <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                    <Ionicons name="chevron-back" size={20} color="#295C59" />
+                                </TouchableOpacity>
+                                <Text style={styles.calMonthLabel}>
+                                    {MONTH_NAMES[month]}, <Text style={{ fontWeight: '800' }}>{year}</Text>
+                                </Text>
+                                <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                    <Ionicons name="chevron-forward" size={20} color="#295C59" />
+                                </TouchableOpacity>
+                            </View>
 
-                    keyboardDismissMode="on-drag"
-                />
+                            {/* Day headers */}
+                            <View style={styles.calDayHeaderRow}>
+                                {DAY_NAMES.map(d => (
+                                    <Text key={d} style={styles.calDayHeader}>{d}</Text>
+                                ))}
+                            </View>
 
+                            {/* Grid — rendered as explicit rows so Saturday never disappears */}
+                            <View>
+                                {calendarWeeks.map((week, wi) => (
+                                    <View key={wi} style={styles.calWeekRow}>
+                                        {week.map((day, di) => {
+                                            if (!day) return <View key={di} style={styles.calCell} />;
+                                            const ymd = cellDateYMD(day);
+                                            const count = countsByDate[ymd] || 0;
+                                            const isToday = ymd === today;
+                                            const isSelected = ymd === selectedDate;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={ymd}
+                                                    style={[
+                                                        styles.calCell,
+                                                        isToday && styles.calCellToday,
+                                                        isSelected && styles.calCellSelected,
+                                                    ]}
+                                                    onPress={() => handleDayPress(day)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Text style={[
+                                                        styles.calDayNum,
+                                                        isToday && styles.calDayNumToday,
+                                                        isSelected && styles.calDayNumSelected,
+                                                    ]}>
+                                                        {day}
+                                                    </Text>
+                                                    {count > 0 && (
+                                                        <Text style={[
+                                                            styles.calCount,
+                                                            isSelected && { color: '#fff' },
+                                                        ]}>
+                                                            {count}
+                                                        </Text>
+                                                    )}
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                ))}
+                            </View>
+
+                            {selectedDate && (
+                                <TouchableOpacity onPress={() => setSelectedDate(null)} style={styles.clearDateBtn}>
+                                    <Text style={styles.clearDateText}>Clear date filter</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        {/* Bookings for selected date */}
+                        {selectedDate && (
+                            <View style={{ paddingHorizontal: wp('4%') }}>
+                                <Text style={styles.selectedDateLabel}>
+                                    {new Date(selectedDate + 'T00:00:00').toDateString()}
+                                    {' — '}{filteredData.length} booking{filteredData.length !== 1 ? 's' : ''}
+                                </Text>
+                                {filteredData.map(item => (
+                                    <BookingCard
+                                        key={item.id}
+                                        item={item}
+                                        isOpen={openId === item.id}
+                                        onToggle={() => toggleCard(item.id)}
+                                        onPress={() => handlePress(item.id)}
+                                    />
+                                ))}
+                                {filteredData.length === 0 && (
+                                    <Text style={styles.noBookingsText}>No bookings on this date.</Text>
+                                )}
+                            </View>
+                        )}
+                    </ScrollView>
+                ) : (
+                    <>
+                        {/* SEARCH */}
+                        <View style={styles.inputContainer}>
+                            <Image source={SearchIcon} style={{ height: 20, width: 20 }} />
+                            <TextInput
+                                placeholder="Search"
+                                placeholderTextColor={'rgba(67,67,67,0.8)'}
+                                style={styles.textInput}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                clearButtonMode="while-editing"
+                                autoCapitalize="none"
+                            />
+                        </View>
+
+                        {/* FILTERS */}
+                        <View style={styles.mainBtns}>
+                            {FILTERS.map(f => (
+                                <TouchableOpacity
+                                    key={f.value}
+                                    style={[styles.btn, filter === f.value && styles.activeBtn]}
+                                    onPress={() => setFilter(f.value)}
+                                >
+                                    <Text style={[styles.btnText, filter === f.value && { color: '#fff' }]}>{f.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* LIST */}
+                        <FlatList
+                            data={filteredData}
+                            renderItem={renderItem}
+                            keyExtractor={item => item.id.toString()}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            contentContainerStyle={{ paddingBottom: hp('15%') }}
+                            initialNumToRender={8}
+                            maxToRenderPerBatch={6}
+                            windowSize={7}
+                            removeClippedSubviews
+                            updateCellsBatchingPeriod={50}
+                            keyboardDismissMode="on-drag"
+                        />
+                    </>
+                )}
             </KeyboardAvoidingView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
+    container: { flex: 1, backgroundColor: '#fff' },
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -257,19 +376,18 @@ const styles = StyleSheet.create({
         height: hp('5%'),
     },
     title: {
+        flex: 1,
         fontSize: hp('2.3%'),
         fontWeight: '600',
         color: '#295C59',
-        marginLeft: wp('2%')
+        marginLeft: wp('2%'),
     },
-    backButton: {
-        padding: 4,
-    },
-    backBtn: {
-        width: hp('3.5%'),
-        height: hp('3.5%'),
-        tintColor: '#295C59'
-    },
+    backButton: { padding: 4 },
+    backBtn: { width: hp('3.5%'), height: hp('3.5%'), tintColor: '#295C59' },
+    calendarIconBtn: { padding: 4 },
+    superAdminBtn: { padding: 4, marginRight: wp('2%') },
+
+    /* Search */
     inputContainer: {
         flexDirection: 'row',
         paddingHorizontal: hp('2%'),
@@ -277,9 +395,9 @@ const styles = StyleSheet.create({
         width: '90%',
         marginBottom: '5%',
         borderRadius: 200,
-        borderColor: 'rgba(0, 0, 0,0.3)',
+        borderColor: 'rgba(0,0,0,0.3)',
         height: hp('5%'),
-        marginTop: hp('2%'), // Reduced from 8% now that layout elements flow safely
+        marginTop: hp('2%'),
         alignItems: 'center',
         alignSelf: 'center',
     },
@@ -291,6 +409,8 @@ const styles = StyleSheet.create({
         paddingLeft: 8,
         letterSpacing: 0.3,
     },
+
+    /* Filter pills */
     mainBtns: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -299,7 +419,7 @@ const styles = StyleSheet.create({
         paddingBottom: hp('3%'),
     },
     btn: {
-        backgroundColor: '#d7edd7',
+        backgroundColor: '#E8F4F3',
         paddingHorizontal: wp('4%'),
         paddingVertical: hp('0.8%'),
         borderRadius: 20,
@@ -307,12 +427,103 @@ const styles = StyleSheet.create({
         marginRight: wp('2%'),
         marginBottom: hp('1.5%'),
     },
-    activeBtn: {
-        backgroundColor: '#b3dbb3',
+    activeBtn: { backgroundColor: '#295C59' },
+    btnText: { fontSize: wp('3.4%'), fontWeight: '600', color: '#295C59' },
+
+    /* Calendar */
+    calendarCard: {
+        margin: wp('4%'),
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: wp('4%'),
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
     },
-    btnText: {
-        fontSize: wp('3.4%'),
+    calMonthRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: hp('2%'),
+    },
+    calMonthLabel: {
+        fontSize: hp('2%'),
         fontWeight: '500',
-        color: 'rgba(0,0,0,0.7)',
-    }
+        color: '#1C2B2A',
+    },
+    calDayHeaderRow: {
+        flexDirection: 'row',
+        marginBottom: hp('1%'),
+    },
+    calDayHeader: {
+        flex: 1,
+        textAlign: 'center',
+        fontSize: hp('1.4%'),
+        fontWeight: '600',
+        color: '#9BBAB8',
+    },
+    calWeekRow: {
+        flexDirection: 'row',
+    },
+    calCell: {
+        flex: 1,
+        aspectRatio: 0.9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 8,
+        paddingVertical: 2,
+    },
+    calCellToday: {
+        backgroundColor: '#E8F4F3',
+    },
+    calCellSelected: {
+        backgroundColor: '#295C59',
+    },
+    calDayNum: {
+        fontSize: hp('2%'),
+        fontWeight: '500',
+        color: '#1C2B2A',
+    },
+    calDayNumToday: {
+        color: '#295C59',
+        fontWeight: '800',
+    },
+    calDayNumSelected: {
+        color: '#fff',
+        fontWeight: '800',
+    },
+    calCount: {
+        fontSize: hp('1.2%'),
+        fontWeight: '700',
+        color: '#295C59',
+        marginTop: 1,
+    },
+    clearDateBtn: {
+        alignSelf: 'center',
+        marginTop: hp('1.5%'),
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        backgroundColor: '#E8F4F3',
+        borderRadius: 20,
+    },
+    clearDateText: {
+        fontSize: hp('1.5%'),
+        color: '#295C59',
+        fontWeight: '600',
+    },
+    selectedDateLabel: {
+        fontSize: hp('1.8%'),
+        fontWeight: '700',
+        color: '#295C59',
+        marginBottom: hp('1.5%'),
+        marginTop: hp('0.5%'),
+    },
+    noBookingsText: {
+        textAlign: 'center',
+        color: '#9BBAB8',
+        fontSize: hp('1.8%'),
+        marginTop: hp('3%'),
+    },
 });

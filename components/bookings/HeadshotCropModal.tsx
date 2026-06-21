@@ -25,7 +25,7 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <Text style={styles.title}>Crop Your Profile Image</Text>
+          <Text style={styles.title}>Crop Your Profile Picture</Text>
 
           {/* Circular crop preview with grid */}
           <View style={styles.cropWrapper}>
