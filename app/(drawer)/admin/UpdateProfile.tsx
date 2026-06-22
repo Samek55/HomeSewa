@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     View, Text, Image, TouchableOpacity,
     StyleSheet, TextInput, Alert, ActivityIndicator,
-    ScrollView, Dimensions,
+    ScrollView, Dimensions, DeviceEventEmitter,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,6 +13,9 @@ import { uploadToStorage } from '../../../api/uploadToStorage';
 import Header4 from '@/components/Header4Admin';
 import HeadshotCropModal from '../../../components/bookings/HeadshotCropModal';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { city as CITY_OPTIONS, area as AREA_OPTIONS } from '../../../src/data/Data';
+import { servicesData2 } from '../../../src/data/ServiceData';
+import DropdownAdd from '../../../components/bookings/DropdownAdd';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (s: number) => (s * width) / 375;
@@ -28,9 +31,9 @@ export default function UpdateProfile() {
     const [email, setEmail] = useState('');
     const [gender, setGender] = useState('');
     const [city, setCity] = useState('');
-    const [area, setArea] = useState('');
+    const [area, setArea] = useState<string[]>([]);
     const [experience, setExperience] = useState('');
-    const [positions, setPositions] = useState('');
+    const [positions, setPositions] = useState<string[]>([]);
 
     // Photo
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -40,6 +43,8 @@ export default function UpdateProfile() {
     // Stats
     const [uin, setUin] = useState('');
     const [status, setStatus] = useState('');
+
+    const [activeInput, setActiveInput] = useState<string | null>(null);
 
     useEffect(() => {
         const load = async () => {
@@ -59,9 +64,21 @@ export default function UpdateProfile() {
                     setEmail(data.email || '');
                     setGender(data.gender || '');
                     setCity(data.preferred_city || '');
-                    setArea(data.preferred_area || '');
+                    setArea(
+                        Array.isArray(data.preferred_area)
+                            ? data.preferred_area
+                            : data.preferred_area
+                                ? data.preferred_area.split(',').map((s: string) => s.trim()).filter(Boolean)
+                                : []
+                    );
                     setExperience(String(data.years_experience || ''));
-                    setPositions(Array.isArray(data.positions) ? data.positions.join(', ') : (data.positions || ''));
+                    setPositions(
+                        Array.isArray(data.positions)
+                            ? data.positions
+                            : data.positions
+                                ? data.positions.split(',').map((s: string) => s.trim()).filter(Boolean)
+                                : []
+                    );
                     setUin(data.uin || '');
                     setStatus(data.status || '');
                 }
@@ -75,10 +92,20 @@ export default function UpdateProfile() {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: false,
-            quality: 0.85,
+            quality: 0.88,
         });
         if (!result.canceled && result.assets?.[0]) {
-            setTempUri(result.assets[0].uri);
+            let uri = result.assets[0].uri;
+            // Copy content:// URIs (Android) to a local cache file so Animated.Image can read them
+            if (uri.startsWith('content://')) {
+                try {
+                    const FileSystem = require('expo-file-system');
+                    const dest = FileSystem.cacheDirectory + `pick_${Date.now()}.jpg`;
+                    await FileSystem.copyAsync({ from: uri, to: dest });
+                    uri = dest;
+                } catch {}
+            }
+            setTempUri(uri);
             setShowCrop(true);
         }
     };
@@ -104,8 +131,9 @@ export default function UpdateProfile() {
                     email: email.trim(),
                     gender: gender.trim(),
                     preferred_city: city.trim(),
-                    preferred_area: area.trim(),
+                    preferred_area: area,
                     years_experience: experience ? Number(experience) : null,
+                    positions: positions,
                 })
                 .eq('phone', phone);
             if (error) throw error;
@@ -126,6 +154,7 @@ export default function UpdateProfile() {
                 text: 'Logout', style: 'destructive', onPress: async () => {
                     await AsyncStorage.multiRemove(['adminPhone', 'adminTable']);
                     try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
+                    DeviceEventEmitter.emit('authChanged');
                     router.replace('/Home');
                 }
             },
@@ -150,7 +179,7 @@ export default function UpdateProfile() {
                 <HeadshotCropModal
                     visible={showCrop}
                     imageUri={tempUri}
-                    onSave={() => setShowCrop(false)}
+                    onSave={(croppedUri: string) => { setTempUri(croppedUri); setShowCrop(false); }}
                     onCancel={() => { setTempUri(null); setShowCrop(false); }}
                 />
             )}
@@ -202,13 +231,21 @@ export default function UpdateProfile() {
             </View>
 
             {/* ── FORM CARD ── */}
-            <ScrollView style={styles.card} contentContainerStyle={{ paddingBottom: hp('8%') }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.card} contentContainerStyle={{ paddingBottom: hp('8%') }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                 {/* Personal Info */}
                 <SectionHeader icon="person-outline" title="Personal Information" />
 
                 <Field label="Full Name">
-                    <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="Enter your full name" placeholderTextColor="#B0BEC5" />
+                    <TextInput
+                        style={[styles.input, activeInput === 'name' && styles.inputActive]}
+                        value={fullName}
+                        onChangeText={setFullName}
+                        placeholder="Enter your Full Name"
+                        placeholderTextColor="#4B4B4B"
+                        onFocus={() => setActiveInput('name')}
+                        onBlur={() => setActiveInput(null)}
+                    />
                 </Field>
 
                 <Field label="Phone Number">
@@ -219,18 +256,27 @@ export default function UpdateProfile() {
                 </Field>
 
                 <Field label="Email">
-                    <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#B0BEC5" keyboardType="email-address" autoCapitalize="none" />
+                    <TextInput
+                        style={[styles.input, activeInput === 'email' && styles.inputActive]}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="Enter your email address"
+                        placeholderTextColor="#4B4B4B"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        onFocus={() => setActiveInput('email')}
+                        onBlur={() => setActiveInput(null)}
+                    />
                 </Field>
 
                 <Field label="Gender">
-                    <View style={styles.genderRow}>
+                    <View style={styles.radioRow}>
                         {['Male', 'Female', 'Other'].map(g => (
-                            <TouchableOpacity
-                                key={g}
-                                style={[styles.genderPill, gender === g && styles.genderPillActive]}
-                                onPress={() => setGender(g)}
-                            >
-                                <Text style={[styles.genderText, gender === g && styles.genderTextActive]}>{g}</Text>
+                            <TouchableOpacity key={g} style={styles.radioOption} onPress={() => setGender(g)} activeOpacity={0.7}>
+                                <View style={styles.radioOuter}>
+                                    {gender === g && <View style={styles.radioInner} />}
+                                </View>
+                                <Text style={styles.radioLabel}>{g}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -239,26 +285,62 @@ export default function UpdateProfile() {
                 {/* Professional Info */}
                 <SectionHeader icon="briefcase-outline" title="Professional Information" />
 
-                <Field label="Services / Expertise">
-                    <TextInput style={styles.input} value={positions} onChangeText={setPositions} placeholder="e.g. Plumbing, Electrical" placeholderTextColor="#B0BEC5" />
+                <Field label="Your Expertise">
+                    <DropdownAdd
+                        options={servicesData2.map(s => s.name)}
+                        placeholder="Select maximum UpTo 5"
+                        placeholderColor="#4B4B4B"
+                        value={positions}
+                        onSelectOption={setPositions}
+                        onOpen={() => setActiveInput('expertise')}
+                        onClose={() => setActiveInput(null)}
+                        maxSelections={5}
+                    />
                 </Field>
 
                 <Field label="Years of Experience">
-                    <TextInput style={styles.input} value={experience} onChangeText={setExperience} placeholder="e.g. 5" placeholderTextColor="#B0BEC5" keyboardType="numeric" />
+                    <TextInput
+                        style={[styles.input, activeInput === 'experience' && styles.inputActive]}
+                        value={experience}
+                        onChangeText={t => setExperience(t.replace(/[^0-9]/g, ''))}
+                        placeholder="5"
+                        placeholderTextColor="#4B4B4B"
+                        keyboardType="numeric"
+                        onFocus={() => setActiveInput('experience')}
+                        onBlur={() => setActiveInput(null)}
+                    />
                 </Field>
 
                 <Field label="Preferred City">
-                    <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="e.g. Kathmandu" placeholderTextColor="#B0BEC5" />
+                    <DropdownAdd
+                        options={CITY_OPTIONS}
+                        placeholder="Select your preferred city"
+                        placeholderColor="#4B4B4B"
+                        value={city ? [city] : []}
+                        onSelectOption={vals => { setCity(vals[vals.length - 1] ?? ''); setArea([]); }}
+                        onOpen={() => setActiveInput('city')}
+                        onClose={() => setActiveInput(null)}
+                        maxSelections={1}
+                    />
                 </Field>
 
                 <Field label="Preferred Working Area">
-                    <TextInput style={styles.input} value={area} onChangeText={setArea} placeholder="e.g. Thamel, Lalitpur" placeholderTextColor="#B0BEC5" />
+                    <DropdownAdd
+                        options={AREA_OPTIONS}
+                        placeholder="Select maximum UpTo 5"
+                        placeholderColor="#4B4B4B"
+                        value={area}
+                        onSelectOption={setArea}
+                        onOpen={() => setActiveInput('workingArea')}
+                        onClose={() => setActiveInput(null)}
+                        maxSelections={5}
+                    />
                 </Field>
 
                 {/* Account */}
                 <SectionHeader icon="settings-outline" title="Account" />
 
-                <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/AdminChangePassword')} activeOpacity={0.75}>
+                <TouchableOpacity style={styles.actionRow} onPress={() => router.push({ pathname: '/AdminChangePassword', params: { mode: 'change' } } as any)} activeOpacity={0.75}>
                     <View style={styles.actionIcon}>
                         <Ionicons name="key-outline" size={19} color="#295C59" />
                     </View>
@@ -296,7 +378,7 @@ function SectionHeader({ icon, title }: { icon: any; title: string }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <View style={{ marginBottom: hp('1.6%') }}>
+        <View>
             <Text style={fieldStyles.label}>{label}</Text>
             {children}
         </View>
@@ -305,11 +387,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const sectionStyles = StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: hp('2.5%'), marginBottom: hp('1.2%') },
-    text: { fontSize: scaleFont(11), fontWeight: '800', color: '#295C59', textTransform: 'uppercase', letterSpacing: 0.6 },
+    text: { fontSize: scaleFont(12), fontWeight: '800', color: '#295C59', letterSpacing: 0.3 },
 });
 
 const fieldStyles = StyleSheet.create({
-    label: { fontSize: scaleFont(11.5), fontWeight: '700', color: '#5A7270', marginBottom: hp('0.6%'), textTransform: 'uppercase', letterSpacing: 0.4 },
+    label: { fontSize: wp('3.6%'), fontWeight: '600', color: '#4A4A4A', marginBottom: 6, paddingLeft: 4 },
 });
 
 const styles = StyleSheet.create({
@@ -336,15 +418,16 @@ const styles = StyleSheet.create({
 
     card: { flex: 1, backgroundColor: '#F5F9F8', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
 
-    input: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#D6E8E7', paddingHorizontal: wp('4%'), height: hp('6%'), fontSize: scaleFont(14), fontWeight: '500', color: '#1C2B2A' },
-    inputReadonly: { backgroundColor: '#EEF5F4', borderRadius: 12, borderWidth: 1.5, borderColor: '#D6E8E7', paddingHorizontal: wp('4%'), height: hp('6%'), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    inputReadonlyText: { fontSize: scaleFont(14), fontWeight: '500', color: '#9BBAB8' },
+    input: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: wp('3.5%'), height: hp('6%'), fontSize: wp('3.5%'), fontWeight: '500', color: '#1A1A1A', marginBottom: hp('2%') },
+    inputActive: { borderColor: '#295C59', backgroundColor: '#EFF8F7' },
+    inputReadonly: { backgroundColor: '#EEF5F4', borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: wp('3.5%'), height: hp('6%'), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp('2%') },
+    inputReadonlyText: { fontSize: wp('3.5%'), fontWeight: '500', color: '#9BBAB8' },
 
-    genderRow: { flexDirection: 'row', gap: 10 },
-    genderPill: { flex: 1, paddingVertical: hp('1.2%'), borderRadius: 10, borderWidth: 1.5, borderColor: '#D6E8E7', alignItems: 'center', backgroundColor: '#fff' },
-    genderPillActive: { backgroundColor: '#295C59', borderColor: '#295C59' },
-    genderText: { fontSize: scaleFont(13), fontWeight: '600', color: '#9BBAB8' },
-    genderTextActive: { color: '#fff' },
+    radioRow: { flexDirection: 'row', alignItems: 'center', gap: wp('6%'), paddingLeft: 4, marginBottom: hp('2%') },
+    radioOption: { flexDirection: 'row', alignItems: 'center', gap: wp('2%') },
+    radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#295C59', alignItems: 'center', justifyContent: 'center' },
+    radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#295C59' },
+    radioLabel: { fontSize: wp('3.6%'), color: '#4A4A4A', fontWeight: '500' },
 
     actionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: wp('4%'), gap: wp('3%'), marginBottom: hp('0.8%'), elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
     actionIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center' },
@@ -356,4 +439,5 @@ const styles = StyleSheet.create({
 
     logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: hp('1.5%') },
     logoutText: { fontSize: scaleFont(14), fontWeight: '700', color: '#ef4444' },
+
 });

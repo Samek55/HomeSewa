@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -16,7 +16,8 @@ import {
     widthPercentageToDP as wp,
     heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 
@@ -36,45 +37,66 @@ const sendPinChangeSms = async (phone: string, firstName: string) => {
 };
 
 export default function AdminChangePassword() {
-    const [passwordVisibleOLD, setPasswordVisibleOLD] = useState(false);
-    const [passwordVisibleNEW, setPasswordVisibleNEW] = useState(false);
-    const [passwordVisibleCONFIRM, setPasswordVisibleCONFIRM] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { mode } = useLocalSearchParams<{ mode?: string }>();
+    // 'change' = logged-in user updating PIN (no phone needed)
+    // 'reset'  = forgot PIN, phone number required
+    const isChangePinMode = mode === 'change';
 
+    const [loading, setLoading] = useState(false);
+    const [loggedInPhone, setLoggedInPhone] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [oldPassword, setOldPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmNewpassword, setConfirmNewPassword] = useState('');
     const [activeInput, setActiveInput] = useState<string | null>(null);
+    const [pinVisible, setPinVisible] = useState(false);
+
+    // 4-box PIN state — used by both modes
+    const [oldBoxes, setOldBoxes] = useState(['', '', '', '']);
+    const [newBoxes, setNewBoxes] = useState(['', '', '', '']);
+    const [confirmBoxes, setConfirmBoxes] = useState(['', '', '', '']);
+    const oldRefs = useRef<Array<TextInput | null>>([]);
+    const newRefs = useRef<Array<TextInput | null>>([]);
+    const confirmRefs = useRef<Array<TextInput | null>>([]);
+
+    useEffect(() => {
+        if (isChangePinMode) {
+            AsyncStorage.getItem('adminPhone').then(p => setLoggedInPhone(p));
+        }
+    }, [isChangePinMode]);
 
     const handleSubmit = async () => {
-        const cleaned = phoneNumber.replace(/\s/g, '');
-        if (!cleaned || cleaned.length < 10) {
-            Alert.alert('Validation Error', 'Please enter your phone number');
-            return;
-        }
-        if (!oldPassword || oldPassword.length !== 4) {
+        const resolvedOld     = oldBoxes.join('');
+        const resolvedNew     = newBoxes.join('');
+        const resolvedConfirm = confirmBoxes.join('');
+
+        if (!resolvedOld || resolvedOld.length !== 4) {
             Alert.alert('Validation Error', 'Please enter your current 4-digit PIN');
             return;
         }
-        if (!newPassword || newPassword.length !== 4) {
+        if (!resolvedNew || resolvedNew.length !== 4) {
             Alert.alert('Validation Error', 'Please enter a new 4-digit PIN');
             return;
         }
-        if (newPassword !== confirmNewpassword) {
+        if (resolvedNew !== resolvedConfirm) {
             Alert.alert('Validation Error', 'New PIN and confirmation do not match');
             return;
         }
+        const cleaned = isChangePinMode
+            ? loggedInPhone!.replace(/\s/g, '')
+            : phoneNumber.replace(/\s/g, '');
+
+        if (!isChangePinMode && (!cleaned || cleaned.length < 10)) {
+            Alert.alert('Validation Error', 'Please enter your phone number');
+            return;
+        }
+
         setLoading(true);
         try {
-            // Check admins table first, then workforce
             const [{ data: adminRecord }, { data: workerRecord }] = await Promise.all([
                 supabase.from('admins').select('pin, full_name').eq('phone', cleaned).single(),
                 supabase.from('workforce').select('pin, full_name').eq('phone', cleaned).single(),
             ]);
 
-            const matchedAdmin = adminRecord && adminRecord.pin === oldPassword;
-            const matchedWorker = workerRecord && workerRecord.pin === oldPassword;
+            const matchedAdmin = adminRecord && adminRecord.pin === resolvedOld;
+            const matchedWorker = workerRecord && workerRecord.pin === resolvedOld;
 
             if (!matchedAdmin && !matchedWorker) {
                 Alert.alert('Error', 'Phone number or current PIN is incorrect');
@@ -83,10 +105,10 @@ export default function AdminChangePassword() {
 
             const updates: any[] = [];
             if (matchedAdmin) {
-                updates.push(supabase.from('admins').update({ pin: newPassword }).eq('phone', cleaned));
+                updates.push(supabase.from('admins').update({ pin: resolvedNew }).eq('phone', cleaned));
             }
             if (matchedWorker) {
-                updates.push(supabase.from('workforce').update({ pin: newPassword }).eq('phone', cleaned));
+                updates.push(supabase.from('workforce').update({ pin: resolvedNew }).eq('phone', cleaned));
             }
             await Promise.all(updates);
 
@@ -95,7 +117,7 @@ export default function AdminChangePassword() {
             sendPinChangeSms(cleaned, firstName).catch(() => {});
 
             Alert.alert('Success', 'PIN updated successfully', [
-                { text: 'OK', onPress: () => router.push('/Admin') },
+                { text: 'OK', onPress: () => isChangePinMode ? router.back() : router.push('/Admin') },
             ]);
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Could not update PIN. Please try again.');
@@ -119,91 +141,115 @@ export default function AdminChangePassword() {
                 <View style={styles.logoWrapper}>
                     <Ionicons name="key-outline" size={32} color="#fff" />
                 </View>
-                <Text style={styles.brandName}>Reset PIN</Text>
-                <Text style={styles.brandTag}>Choose a new PIN to regain access</Text>
+                <Text style={styles.brandName}>{isChangePinMode ? 'Change PIN' : 'Reset PIN'}</Text>
+                <Text style={styles.brandTag}>{isChangePinMode ? 'Update your 4-digit login PIN' : 'Choose a new PIN to regain access'}</Text>
             </LinearGradient>
 
             {/* CARD */}
             <View
                 style={[styles.card, styles.cardContent]}
             >
-                {/* PHONE */}
-                <Text style={styles.label}>Phone Number</Text>
-                <View style={styles.inputRow}>
-                    <Ionicons name="call-outline" size={20} color="#295C59" />
-                    <TextInput
-                        style={[styles.textInput, styles.phoneInput]}
-                        keyboardType="number-pad"
-                        maxLength={13}
-                        placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
-                        placeholderTextColor="#B0BEC5"
-                        value={phoneNumber}
-                        onFocus={() => setActiveInput('phone')}
-                        onBlur={() => setActiveInput(null)}
-                        onChangeText={(value) => {
-                            let d = value.replace(/[^0-9]/g, '').slice(0, 10);
-                            let fmt = d;
-                            if (d.length > 5 && d.length <= 7) fmt = d.slice(0, 5) + ' ' + d.slice(5);
-                            else if (d.length > 7) fmt = d.slice(0, 5) + ' ' + d.slice(5, 7) + ' ' + d.slice(7);
-                            setPhoneNumber(fmt);
-                        }}
-                    />
-                </View>
+                {/* PHONE — only shown when not logged in (Reset PIN) */}
+                {!isChangePinMode && (
+                    <>
+                        <Text style={styles.label}>Phone Number</Text>
+                        <View style={styles.inputRow}>
+                            <Ionicons name="call-outline" size={20} color="#295C59" />
+                            <TextInput
+                                style={[styles.textInput, styles.phoneInput]}
+                                keyboardType="number-pad"
+                                maxLength={13}
+                                placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
+                                placeholderTextColor="#B0BEC5"
+                                value={phoneNumber}
+                                onFocus={() => setActiveInput('phone')}
+                                onBlur={() => setActiveInput(null)}
+                                onChangeText={(value) => {
+                                    let d = value.replace(/[^0-9]/g, '').slice(0, 10);
+                                    let fmt = d;
+                                    if (d.length > 5 && d.length <= 7) fmt = d.slice(0, 5) + ' ' + d.slice(5);
+                                    else if (d.length > 7) fmt = d.slice(0, 5) + ' ' + d.slice(5, 7) + ' ' + d.slice(7);
+                                    setPhoneNumber(fmt);
+                                }}
+                            />
+                        </View>
+                    </>
+                )}
 
-                {/* OLD PIN */}
-                <Text style={styles.label}>Current PIN</Text>
-                <View style={styles.inputRow}>
-                    <Ionicons name="lock-closed-outline" size={20} color="#295C59" />
-                    <TextInput
-                        style={styles.textInput}
-                        secureTextEntry={!passwordVisibleOLD}
-                        keyboardType="number-pad"
-                        maxLength={4}
-                        value={oldPassword}
-                        onChangeText={(text) => setOldPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
-                    />
-                    <TouchableOpacity onPress={() => setPasswordVisibleOLD(!passwordVisibleOLD)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name={passwordVisibleOLD ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
+                {/* Current PIN */}
+                <View style={styles.pinLabelRow}>
+                    <Text style={styles.label}>Current PIN</Text>
+                    <TouchableOpacity onPress={() => setPinVisible(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
                     </TouchableOpacity>
                 </View>
+                <View style={styles.pinBoxRow}>
+                    {oldBoxes.map((d, i) => (
+                        <TextInput
+                            key={i}
+                            ref={r => { oldRefs.current[i] = r; }}
+                            style={styles.pinBox}
+                            secureTextEntry={!pinVisible}
+                            keyboardType="number-pad"
+                            maxLength={1}
+                            value={d}
+                            onChangeText={t => {
+                                const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                const next = [...oldBoxes]; next[i] = digit; setOldBoxes(next);
+                                if (digit && i < 3) oldRefs.current[i + 1]?.focus();
+                            }}
+                            onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) oldRefs.current[i - 1]?.focus(); }}
+                        />
+                    ))}
+                </View>
 
-                {/* NEW PIN */}
+                {/* New PIN */}
                 <Text style={styles.label}>New PIN</Text>
-                <View style={styles.inputRow}>
-                    <Ionicons name="key-outline" size={20} color="#295C59" />
-                    <TextInput
-                        style={styles.textInput}
-                        secureTextEntry={!passwordVisibleNEW}
-                        keyboardType="number-pad"
-                        maxLength={4}
-                        value={newPassword}
-                        onChangeText={(text) => setNewPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
-                    />
-                    <TouchableOpacity onPress={() => setPasswordVisibleNEW(!passwordVisibleNEW)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name={passwordVisibleNEW ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
-                    </TouchableOpacity>
+                <View style={styles.pinBoxRow}>
+                    {newBoxes.map((d, i) => (
+                        <TextInput
+                            key={i}
+                            ref={r => { newRefs.current[i] = r; }}
+                            style={styles.pinBox}
+                            secureTextEntry={!pinVisible}
+                            keyboardType="number-pad"
+                            maxLength={1}
+                            value={d}
+                            onChangeText={t => {
+                                const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                const next = [...newBoxes]; next[i] = digit; setNewBoxes(next);
+                                if (digit && i < 3) newRefs.current[i + 1]?.focus();
+                            }}
+                            onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) newRefs.current[i - 1]?.focus(); }}
+                        />
+                    ))}
                 </View>
 
-                {/* CONFIRM NEW PIN */}
+                {/* Confirm New PIN */}
                 <Text style={styles.label}>Confirm New PIN</Text>
-                <View style={styles.inputRow}>
-                    <Ionicons name="checkmark-circle-outline" size={20} color="#295C59" />
-                    <TextInput
-                        style={styles.textInput}
-                        secureTextEntry={!passwordVisibleCONFIRM}
-                        keyboardType="number-pad"
-                        maxLength={4}
-                        value={confirmNewpassword}
-                        onChangeText={(text) => setConfirmNewPassword(text.replace(/[^0-9]/g, '').slice(0, 4))}
-                    />
-                    <TouchableOpacity onPress={() => setPasswordVisibleCONFIRM(!passwordVisibleCONFIRM)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name={passwordVisibleCONFIRM ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
-                    </TouchableOpacity>
+                <View style={styles.pinBoxRow}>
+                    {confirmBoxes.map((d, i) => (
+                        <TextInput
+                            key={i}
+                            ref={r => { confirmRefs.current[i] = r; }}
+                            style={styles.pinBox}
+                            secureTextEntry={!pinVisible}
+                            keyboardType="number-pad"
+                            maxLength={1}
+                            value={d}
+                            onChangeText={t => {
+                                const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                const next = [...confirmBoxes]; next[i] = digit; setConfirmBoxes(next);
+                                if (digit && i < 3) confirmRefs.current[i + 1]?.focus();
+                            }}
+                            onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) confirmRefs.current[i - 1]?.focus(); }}
+                        />
+                    ))}
                 </View>
 
                 {/* BUTTONS */}
                 <View style={styles.btnRow}>
-                    <TouchableOpacity style={styles.cancelBtn} onPress={() => router.push('/Admin')} activeOpacity={0.85}>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={() => isChangePinMode ? router.back() : router.push('/Admin')} activeOpacity={0.85}>
                         <Text style={styles.cancelBtnText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSubmit} disabled={loading} activeOpacity={0.85}>
@@ -298,6 +344,32 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         letterSpacing: 0.5,
         textAlign: 'left',
+    },
+
+    /* 4-BOX PIN (Reset PIN mode) */
+    pinLabelRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: hp('1%'),
+    },
+    pinBoxRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 12,
+        marginBottom: hp('2.5%'),
+    },
+    pinBox: {
+        width: wp('12%'),
+        height: hp('6.5%'),
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        backgroundColor: '#fff',
+        textAlign: 'center',
+        fontSize: scaleFont(18),
+        fontWeight: '700',
+        color: '#1C2B2A',
     },
 
     /* BUTTONS */

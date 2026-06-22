@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../../lib/supabase';
+import { DeviceEventEmitter } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
@@ -100,6 +101,7 @@ export default function AdminLogin() {
                 }
             } catch (e) {}
             setIsLoggedIn(true);
+            DeviceEventEmitter.emit('authChanged');
             Alert.alert('Welcome back!', `Hello, ${displayName.split(' ')[0]}!`, [
                 { text: 'OK', onPress: () => router.push('/admin/BookingHistory') },
             ]);
@@ -115,6 +117,7 @@ export default function AdminLogin() {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.logout();
             } catch (e) {}
+            DeviceEventEmitter.emit('authChanged');
             setIsLoggedIn(false);
             setPhoneNumber('');
             setPin(['', '', '', '']);
@@ -221,7 +224,7 @@ export default function AdminLogin() {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.changePinRow} onPress={() => router.push('/AdminChangePassword')}>
+                    <TouchableOpacity style={styles.changePinRow} onPress={() => router.push({ pathname: '/AdminChangePassword', params: { mode: 'reset' } } as any)}>
                         <Text style={styles.changePinText}>Reset PIN</Text>
                     </TouchableOpacity>
 

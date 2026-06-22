@@ -185,7 +185,7 @@ export default function SuperAdminHistory() {
 
             {/* COUNT */}
             <Text style={styles.countLabel}>
-                {loading ? 'Loading...' : `${filteredData.length} booking${filteredData.length !== 1 ? 's' : ''}`}
+                {loading ? 'Loading...' : `${filteredData.length} Booking${filteredData.length !== 1 ? 's' : ''}`}
             </Text>
 
             {/* LIST */}

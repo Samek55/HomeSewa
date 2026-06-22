@@ -27,11 +27,20 @@ const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 const parseToYMD = (dateStr: string): string | null => {
     if (!dateStr) return null;
     const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-    return null;
+    if (isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
 };
 
-const todayYMD = (): string => new Date().toISOString().split('T')[0];
+const todayYMD = (): string => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
 
 export default function BookingHistory() {
     const [bookings, setBookings] = useState<any[]>([]);
@@ -110,6 +119,15 @@ export default function BookingHistory() {
     const filteredData = useMemo(() => {
         let data = sortedBookings;
 
+        // When a calendar date is selected, show ALL bookings for that date
+        // (ignore the status filter so completed/cancelled bookings aren't hidden)
+        if (selectedDate) {
+            return data.filter(item => {
+                const ymd = parseToYMD(item.startingDate || item.bookingDate || '');
+                return ymd === selectedDate;
+            });
+        }
+
         if (filter !== 'All') {
             data = data.filter(item => {
                 const status = (item.status || '').toLowerCase().trim();
@@ -117,13 +135,6 @@ export default function BookingHistory() {
                 if (filter === 'New / Open') return status.includes('new') || status.includes('open');
                 if (filter === 'Dispute') return status.includes('dispute');
                 return status.includes(filter.toLowerCase());
-            });
-        }
-
-        if (selectedDate) {
-            data = data.filter(item => {
-                const ymd = parseToYMD(item.startingDate || item.bookingDate || '');
-                return ymd === selectedDate;
             });
         }
 
@@ -298,7 +309,7 @@ export default function BookingHistory() {
                             <View style={{ paddingHorizontal: wp('4%') }}>
                                 <Text style={styles.selectedDateLabel}>
                                     {new Date(selectedDate + 'T00:00:00').toDateString()}
-                                    {' — '}{filteredData.length} booking{filteredData.length !== 1 ? 's' : ''}
+                                    {' — '}{filteredData.length} Booking{filteredData.length !== 1 ? 's' : ''}
                                 </Text>
                                 {filteredData.map(item => (
                                     <BookingCard

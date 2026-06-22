@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, DeviceEventEmitter } from 'react-native';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
@@ -67,13 +67,18 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
     useEffect(() => { loadProfile(); }, [loadProfile]);
 
-    // Refresh whenever the drawer state changes (e.g. after login)
+    // Refresh whenever login or logout happens
     useEffect(() => {
-        const unsubscribe = props.navigation.addListener('state', loadProfile);
-        return unsubscribe;
-    }, [props.navigation, loadProfile]);
+        const sub = DeviceEventEmitter.addListener('authChanged', loadProfile);
+        return () => sub.remove();
+    }, [loadProfile]);
 
     const isLoggedIn = !!adminPhone;
+
+    const navigate = (path: string) => {
+        props.navigation.closeDrawer();
+        router.push(path as any);
+    };
 
     return (
         <SafeAreaView style={styles.wrapper} edges={['top', 'bottom']}>
@@ -103,34 +108,40 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
                 {/* MENU */}
                 <View style={styles.menu}>
-                    <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => router.push('/Home')} />
-                    <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => router.push('/Service')} />
+                    <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => navigate('/Home')} />
+                    <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => navigate('/Service')} />
+                    {isLoggedIn && (
+                        <MenuItem icon="time-outline" label="Booking History" active={isActive('/admin/BookingHistory')} onPress={() => navigate('/admin/BookingHistory')} />
+                    )}
 
                     {/* Hide Book a Service and Join as Professional when logged in as professional */}
                     {!isLoggedIn && (
-                        <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => router.push('/Book')} />
+                        <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => navigate('/Book')} />
                     )}
                     {!isLoggedIn && (
-                        <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => router.push('/Career')} />
+                        <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => navigate('/Career')} />
                     )}
 
                     <View style={styles.divider} />
 
-                    <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => router.push('/About')} />
-                    <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => router.push('/Contact')} />
-                    <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => router.push('/FAQs')} />
-                    <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => router.push('/Glossary')} />
+                    <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => navigate('/About')} />
+                    <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => navigate('/Contact')} />
+                    <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => navigate('/FAQs')} />
+                    {adminTable === 'admins'
+                        ? <MenuItem icon="chatbox-ellipses-outline" label="Help Box" active={isActive('/admin/HelpBox')} onPress={() => navigate('/admin/HelpBox')} />
+                        : <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} />
+                    }
 
                     <View style={styles.divider} />
 
                     {/* Hide Become a Partner when logged in */}
                     {!isLoggedIn && (
-                        <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => router.push('/Partnership')} />
+                        <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => navigate('/Partnership')} />
                     )}
 
                     {/* Change PIN — only visible when logged in */}
                     {isLoggedIn && (
-                        <MenuItem icon="key-outline" label="Change PIN" active={isActive('/AdminChangePassword')} onPress={() => router.push('/AdminChangePassword')} />
+                        <MenuItem icon="key-outline" label="Change PIN" active={isActive('/AdminChangePassword')} onPress={() => { props.navigation.closeDrawer(); router.push({ pathname: '/AdminChangePassword', params: { mode: 'change' } } as any); }} />
                     )}
                 </View>
 
@@ -138,7 +149,7 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                 <View style={styles.adminWrapper}>
                     <TouchableOpacity
                         style={styles.adminBtn}
-                        onPress={() => router.push(isLoggedIn ? '/admin/UpdateProfile' : '/Admin')}
+                        onPress={() => navigate(isLoggedIn ? '/admin/UpdateProfile' : '/Admin')}
                         activeOpacity={0.85}
                     >
                         <Ionicons

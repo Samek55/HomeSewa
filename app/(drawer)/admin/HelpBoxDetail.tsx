@@ -1,0 +1,187 @@
+import React, { useState } from 'react';
+import {
+    View, Text, TextInput, TouchableOpacity, StyleSheet,
+    Alert, ActivityIndicator, ScrollView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { supabase } from '../../../lib/supabase';
+import Header4 from '@/components/Header4Admin';
+
+export default function HelpBoxDetail() {
+    const { entry } = useLocalSearchParams<{ entry: string }>();
+    const item = JSON.parse(entry || '{}');
+
+    const [reply, setReply] = useState(item.reply || '');
+    const [saving, setSaving] = useState(false);
+
+    const formatDate = (iso: string) => {
+        try { return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+        catch { return iso; }
+    };
+
+    const handleSave = async (newStatus: 'solved' | 'open') => {
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from('help_messages')
+                .update({ reply: reply.trim(), status: newStatus })
+                .eq('id', item.id);
+            if (error) throw error;
+            Alert.alert('Saved', `Ticket marked as ${newStatus}.`, [
+                { text: 'OK', onPress: () => router.back() },
+            ]);
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Could not save.');
+        }
+        setSaving(false);
+    };
+
+    const isSolved = item.status === 'solved';
+
+    return (
+        <View style={styles.screen}>
+            <Header4 />
+
+            {/* HEADER */}
+            <View style={styles.headerRow}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                </TouchableOpacity>
+                <View>
+                    <Text style={styles.headerTitle}>Ticket #{item.ticket_id || item.id?.slice(0, 6).toUpperCase()}</Text>
+                    <Text style={styles.headerSub}>{formatDate(item.created_at)}</Text>
+                </View>
+                <View style={[styles.statusPill, { backgroundColor: isSolved ? '#dcfce7' : '#fee2e2' }]}>
+                    <Text style={[styles.statusPillText, { color: isSolved ? '#16a34a' : '#ef4444' }]}>
+                        {isSolved ? 'Solved' : 'Open'}
+                    </Text>
+                </View>
+            </View>
+
+            <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: hp('10%') }} showsVerticalScrollIndicator={false}>
+
+                {/* SENDER INFO */}
+                <View style={styles.card}>
+                    <Text style={styles.sectionLabel}>Sender</Text>
+                    <Text style={styles.senderName}>{item.sender_name || 'Anonymous'}</Text>
+                    <Text style={styles.senderPhone}>+977 {item.sender_phone}</Text>
+                </View>
+
+                {/* MESSAGE */}
+                <View style={styles.card}>
+                    <Text style={styles.sectionLabel}>Message</Text>
+                    <Text style={styles.messageText}>{item.message}</Text>
+                </View>
+
+                {/* REPLY */}
+                <View style={styles.card}>
+                    <Text style={styles.sectionLabel}>Reply</Text>
+                    <TextInput
+                        style={styles.replyInput}
+                        value={reply}
+                        onChangeText={setReply}
+                        placeholder="Type your reply here…"
+                        placeholderTextColor="#B0BEC5"
+                        multiline
+                        textAlignVertical="top"
+                        editable={!isSolved}
+                    />
+                </View>
+
+                {/* ACTION BUTTONS */}
+                {!isSolved && (
+                    <View style={styles.btnRow}>
+                        <TouchableOpacity
+                            style={[styles.btn, styles.btnOutline, saving && { opacity: 0.6 }]}
+                            onPress={() => handleSave('open')}
+                            disabled={saving}
+                        >
+                            <Text style={styles.btnOutlineText}>Save Draft</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.btn, styles.btnSolve, saving && { opacity: 0.6 }]}
+                            onPress={() => handleSave('solved')}
+                            disabled={saving}
+                        >
+                            {saving
+                                ? <ActivityIndicator color="#fff" size="small" />
+                                : <>
+                                    <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
+                                    <Text style={styles.btnSolveText}>Mark as Solved</Text>
+                                </>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {isSolved && (
+                    <View style={styles.solvedNote}>
+                        <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+                        <Text style={styles.solvedNoteText}>This ticket has been resolved.</Text>
+                    </View>
+                )}
+            </ScrollView>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+
+    headerRow: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#295C59',
+        paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
+    },
+    backBtn: { padding: 4 },
+    headerTitle: { fontSize: 16, fontWeight: '800', color: '#fff' },
+    headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+    statusPill: {
+        marginLeft: 'auto', paddingHorizontal: 12, paddingVertical: 5,
+        borderRadius: 20,
+    },
+    statusPillText: { fontSize: 12, fontWeight: '700' },
+
+    content: { flex: 1, padding: wp('4%') },
+
+    card: {
+        backgroundColor: '#fff', borderRadius: 16,
+        padding: wp('4%'), marginBottom: hp('1.5%'),
+        elevation: 2, shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
+    },
+    sectionLabel: {
+        fontSize: 11, fontWeight: '800', color: '#295C59',
+        textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8,
+    },
+    senderName: { fontSize: 16, fontWeight: '700', color: '#1C2B2A' },
+    senderPhone: { fontSize: 13, color: '#9BBAB8', marginTop: 3 },
+    messageText: { fontSize: 14, color: '#333', lineHeight: 22 },
+
+    replyInput: {
+        fontSize: 14, color: '#1C2B2A', lineHeight: 22,
+        minHeight: hp('15%'), backgroundColor: '#F5F9F8',
+        borderRadius: 10, borderWidth: 1.5, borderColor: '#D6E8E7',
+        padding: wp('3%'),
+    },
+
+    btnRow: { flexDirection: 'row', gap: 12 },
+    btn: {
+        flex: 1, flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'center', borderRadius: 14,
+        paddingVertical: hp('1.8%'), gap: 6,
+    },
+    btnOutline: { borderWidth: 1.5, borderColor: '#D6E8E7', backgroundColor: '#fff' },
+    btnOutlineText: { fontSize: 14, fontWeight: '700', color: '#1C2B2A' },
+    btnSolve: { backgroundColor: '#295C59', elevation: 3 },
+    btnSolveText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+
+    solvedNote: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: '#dcfce7', borderRadius: 12,
+        padding: wp('4%'),
+    },
+    solvedNoteText: { fontSize: 14, fontWeight: '600', color: '#16a34a' },
+});
