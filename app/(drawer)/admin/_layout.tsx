@@ -10,6 +10,7 @@ export default function AdminLayout() {
       <Stack.Screen name="BookingDetails_2" />
       <Stack.Screen name="BookingHistory" />
       <Stack.Screen name="HelpBox" />
+      <Stack.Screen name="UpdateProfile" />
       <Stack.Screen name="HelpBoxDetail" />
       <Stack.Screen name="SuperAdminHistory" />
       <Stack.Screen name="WorkCompletionOTP" />

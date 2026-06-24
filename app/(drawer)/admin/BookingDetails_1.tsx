@@ -161,7 +161,11 @@ export default function BookingDetails() {
             const Sharing = require('expo-sharing');
             const html = buildBookingPdfHtml(booking);
             const { uri } = await Print.printToFileAsync({ html, width: 810, height: 1440 });
-            await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Booking #${booking.bookingId}` });
+            const FileSystem = require('expo-file-system');
+            const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
+            const namedUri = `${dir}HomeSewa-${booking.bookingId}.pdf`;
+            await FileSystem.moveAsync({ from: uri, to: namedUri });
+            await Sharing.shareAsync(namedUri, { mimeType: 'application/pdf', dialogTitle: `Booking #${booking.bookingId}` });
             return;
         } catch {
             // Expo Go fallback — text share

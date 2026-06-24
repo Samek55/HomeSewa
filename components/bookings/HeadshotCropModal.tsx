@@ -16,6 +16,9 @@ import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 const { width: SW } = Dimensions.get('window');
 const CIRCLE = SW * 0.72;
+const MIN_SCALE = 0.8;
+const MAX_SCALE = 6;
+const STEP = 0.4;
 
 type Props = {
   visible: boolean;
@@ -25,14 +28,13 @@ type Props = {
 };
 
 export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel }: Props) {
-  const scale     = useSharedValue(1);
+  const scale      = useSharedValue(1);
   const savedScale = useSharedValue(1);
-  const tx        = useSharedValue(0);
-  const ty        = useSharedValue(0);
-  const savedTx   = useSharedValue(0);
-  const savedTy   = useSharedValue(0);
+  const tx         = useSharedValue(0);
+  const ty         = useSharedValue(0);
+  const savedTx    = useSharedValue(0);
+  const savedTy    = useSharedValue(0);
 
-  // Reset transforms when modal opens
   useEffect(() => {
     if (visible) {
       scale.value = 1;
@@ -46,7 +48,7 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
 
   const pinch = Gesture.Pinch()
     .onUpdate((e) => {
-      scale.value = Math.max(0.8, Math.min(savedScale.value * e.scale, 6));
+      scale.value = Math.max(MIN_SCALE, Math.min(savedScale.value * e.scale, MAX_SCALE));
     })
     .onEnd(() => {
       savedScale.value = scale.value;
@@ -71,6 +73,26 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
       { scale: scale.value },
     ],
   }));
+
+  const thumbStyle = useAnimatedStyle(() => {
+    const pct = (scale.value - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
+    return {
+      left: `${pct * 100}%` as any,
+      transform: [{ translateX: -7 }],
+    };
+  });
+
+  const zoomOut = () => {
+    const next = Math.max(scale.value - STEP, MIN_SCALE);
+    scale.value = next;
+    savedScale.value = next;
+  };
+
+  const zoomIn = () => {
+    const next = Math.min(scale.value + STEP, MAX_SCALE);
+    scale.value = next;
+    savedScale.value = next;
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
@@ -100,13 +122,17 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
             <View pointerEvents="none" style={styles.circleBorder} />
           </View>
 
-          {/* Zoom hint bar */}
+          {/* Zoom slider */}
           <View style={styles.zoomRow}>
-            <Text style={styles.zoomIcon}>−</Text>
+            <TouchableOpacity onPress={zoomOut} hitSlop={12} activeOpacity={0.6}>
+              <Text style={styles.zoomIcon}>−</Text>
+            </TouchableOpacity>
             <View style={styles.zoomTrack}>
-              <View style={styles.zoomThumb} />
+              <Animated.View style={[styles.zoomThumb, thumbStyle]} />
             </View>
-            <Text style={styles.zoomIcon}>+</Text>
+            <TouchableOpacity onPress={zoomIn} hitSlop={12} activeOpacity={0.6}>
+              <Text style={styles.zoomIcon}>+</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Buttons */}
@@ -215,14 +241,15 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: '#E8F4F3',
     borderRadius: 2,
-    justifyContent: 'center',
+    position: 'relative',
   },
   zoomThumb: {
+    position: 'absolute',
+    top: -5,
     width: 14,
     height: 14,
     borderRadius: 7,
     backgroundColor: '#295C59',
-    alignSelf: 'center',
   },
   btnRow: {
     flexDirection: 'row',

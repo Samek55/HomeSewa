@@ -172,7 +172,7 @@ export default function UpdateProfile() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#295C59' }}>
+        <View style={{ flex: 1, backgroundColor: '#F5F9F8' }}>
             <Header4 />
 
             {tempUri && (
@@ -184,7 +184,14 @@ export default function UpdateProfile() {
                 />
             )}
 
-            {/* ── TOP HERO ── */}
+            <ScrollView
+                style={{ flex: 1 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: hp('8%') }}
+            >
+
+            {/* ── HERO ── */}
             <View style={styles.hero}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -206,32 +213,10 @@ export default function UpdateProfile() {
 
                 <Text style={styles.heroName}>{fullName || 'Your Name'}</Text>
                 <Text style={styles.heroPhone}>+977 {phone}</Text>
-
-                {/* Stats row */}
-                <View style={styles.statsRow}>
-                    {uin ? (
-                        <View style={styles.statChip}>
-                            <Ionicons name="id-card-outline" size={13} color="rgba(255,255,255,0.8)" />
-                            <Text style={styles.statText}>UIN: {uin}</Text>
-                        </View>
-                    ) : null}
-                    {status ? (
-                        <View style={[styles.statChip, { backgroundColor: status === 'Active' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.2)' }]}>
-                            <Ionicons name="ellipse" size={8} color={status === 'Active' ? '#4ade80' : '#f87171'} />
-                            <Text style={styles.statText}>{status}</Text>
-                        </View>
-                    ) : null}
-                    {city ? (
-                        <View style={styles.statChip}>
-                            <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.8)" />
-                            <Text style={styles.statText}>{city}</Text>
-                        </View>
-                    ) : null}
-                </View>
             </View>
 
             {/* ── FORM CARD ── */}
-            <ScrollView style={styles.card} contentContainerStyle={{ paddingBottom: hp('8%') }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.card}>
 
                 {/* Personal Info */}
                 <SectionHeader icon="person-outline" title="Personal Information" />
@@ -362,6 +347,8 @@ export default function UpdateProfile() {
                     <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>
 
+            </View>
+
             </ScrollView>
         </View>
     );
@@ -403,20 +390,14 @@ const styles = StyleSheet.create({
     },
     backBtn: { position: 'absolute', left: wp('4%'), top: hp('0.5%'), padding: 6 },
     screenTitle: { fontSize: scaleFont(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: hp('1.5%'), letterSpacing: 1.2 },
-
     avatarWrapper: { width: wp('24%'), height: wp('24%'), borderRadius: wp('12%'), borderWidth: 3, borderColor: 'rgba(255,255,255,0.55)', overflow: 'visible', marginBottom: hp('1.2%'), position: 'relative' },
     avatar: { width: '100%', height: '100%', borderRadius: wp('12%') },
     avatarPlaceholder: { width: '100%', height: '100%', borderRadius: wp('12%'), backgroundColor: '#1E4542', alignItems: 'center', justifyContent: 'center' },
     cameraChip: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#295C59', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
-
     heroName: { fontSize: scaleFont(18), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
-    heroPhone: { fontSize: scaleFont(12), color: 'rgba(255,255,255,0.65)', marginTop: 2, marginBottom: hp('1.2%') },
+    heroPhone: { fontSize: scaleFont(12), color: 'rgba(255,255,255,0.65)', marginTop: 2 },
 
-    statsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center', paddingHorizontal: wp('4%') },
-    statChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-    statText: { fontSize: scaleFont(11), color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
-
-    card: { flex: 1, backgroundColor: '#F5F9F8', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
+    card: { backgroundColor: '#F5F9F8', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
 
     input: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: wp('3.5%'), height: hp('6%'), fontSize: wp('3.5%'), fontWeight: '500', color: '#1A1A1A', marginBottom: hp('2%') },
     inputActive: { borderColor: '#295C59', backgroundColor: '#EFF8F7' },

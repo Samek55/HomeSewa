@@ -25,7 +25,7 @@ export default function HelpBoxDetail() {
         setSaving(true);
         try {
             const { error } = await supabase
-                .from('help_messages')
+                .from('helpbox')
                 .update({ reply: reply.trim(), status: newStatus })
                 .eq('id', item.id);
             if (error) throw error;
@@ -44,14 +44,13 @@ export default function HelpBoxDetail() {
         <View style={styles.screen}>
             <Header4 />
 
-            {/* HEADER */}
             <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={22} color="#fff" />
                 </TouchableOpacity>
-                <View>
-                    <Text style={styles.headerTitle}>Ticket #{item.ticket_id || item.id?.slice(0, 6).toUpperCase()}</Text>
-                    <Text style={styles.headerSub}>{formatDate(item.created_at)}</Text>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.headerTitle}>#{item.id?.slice(0, 6).toUpperCase()}</Text>
+                    {item.created_at ? <Text style={styles.headerSub}>{formatDate(item.created_at)}</Text> : null}
                 </View>
                 <View style={[styles.statusPill, { backgroundColor: isSolved ? '#dcfce7' : '#fee2e2' }]}>
                     <Text style={[styles.statusPillText, { color: isSolved ? '#16a34a' : '#ef4444' }]}>
@@ -62,27 +61,18 @@ export default function HelpBoxDetail() {
 
             <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: hp('10%') }} showsVerticalScrollIndicator={false}>
 
-                {/* SENDER INFO */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionLabel}>Sender</Text>
-                    <Text style={styles.senderName}>{item.sender_name || 'Anonymous'}</Text>
-                    <Text style={styles.senderPhone}>+977 {item.sender_phone}</Text>
+                    <Text style={styles.sectionLabel}>Phone Number</Text>
+                    <Text style={styles.phoneText}>+977 {item.phone}</Text>
                 </View>
 
-                {/* MESSAGE */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionLabel}>Message</Text>
-                    <Text style={styles.messageText}>{item.message}</Text>
-                </View>
-
-                {/* REPLY */}
-                <View style={styles.card}>
-                    <Text style={styles.sectionLabel}>Reply</Text>
+                    <Text style={styles.sectionLabel}>Note</Text>
                     <TextInput
                         style={styles.replyInput}
                         value={reply}
                         onChangeText={setReply}
-                        placeholder="Type your reply here…"
+                        placeholder="Add a note or reply…"
                         placeholderTextColor="#B0BEC5"
                         multiline
                         textAlignVertical="top"
@@ -90,7 +80,6 @@ export default function HelpBoxDetail() {
                     />
                 </View>
 
-                {/* ACTION BUTTONS */}
                 {!isSolved && (
                     <View style={styles.btnRow}>
                         <TouchableOpacity
@@ -98,11 +87,20 @@ export default function HelpBoxDetail() {
                             onPress={() => handleSave('open')}
                             disabled={saving}
                         >
-                            <Text style={styles.btnOutlineText}>Save Draft</Text>
+                            <Text style={styles.btnOutlineText}>Save Note</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.btn, styles.btnSolve, saving && { opacity: 0.6 }]}
-                            onPress={() => handleSave('solved')}
+                            onPress={() =>
+                                Alert.alert(
+                                    'Mark as Solved',
+                                    'Are you sure you want to close this request?',
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        { text: 'Confirm', onPress: () => handleSave('solved') },
+                                    ]
+                                )
+                            }
                             disabled={saving}
                         >
                             {saving
@@ -119,7 +117,7 @@ export default function HelpBoxDetail() {
                 {isSolved && (
                     <View style={styles.solvedNote}>
                         <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
-                        <Text style={styles.solvedNoteText}>This ticket has been resolved.</Text>
+                        <Text style={styles.solvedNoteText}>This request has been resolved.</Text>
                     </View>
                 )}
             </ScrollView>
@@ -139,8 +137,7 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 16, fontWeight: '800', color: '#fff' },
     headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
     statusPill: {
-        marginLeft: 'auto', paddingHorizontal: 12, paddingVertical: 5,
-        borderRadius: 20,
+        paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
     },
     statusPillText: { fontSize: 12, fontWeight: '700' },
 
@@ -156,13 +153,11 @@ const styles = StyleSheet.create({
         fontSize: 11, fontWeight: '800', color: '#295C59',
         textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8,
     },
-    senderName: { fontSize: 16, fontWeight: '700', color: '#1C2B2A' },
-    senderPhone: { fontSize: 13, color: '#9BBAB8', marginTop: 3 },
-    messageText: { fontSize: 14, color: '#333', lineHeight: 22 },
+    phoneText: { fontSize: 20, fontWeight: '700', color: '#1C2B2A' },
 
     replyInput: {
         fontSize: 14, color: '#1C2B2A', lineHeight: 22,
-        minHeight: hp('15%'), backgroundColor: '#F5F9F8',
+        minHeight: hp('12%'), backgroundColor: '#F5F9F8',
         borderRadius: 10, borderWidth: 1.5, borderColor: '#D6E8E7',
         padding: wp('3%'),
     },
@@ -180,8 +175,7 @@ const styles = StyleSheet.create({
 
     solvedNote: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#dcfce7', borderRadius: 12,
-        padding: wp('4%'),
+        backgroundColor: '#dcfce7', borderRadius: 12, padding: wp('4%'),
     },
     solvedNoteText: { fontSize: 14, fontWeight: '600', color: '#16a34a' },
 });

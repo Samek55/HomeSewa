@@ -31,7 +31,17 @@ const NumberBar = ({ onFocus = () => {} }) => {
       return;
     }
 
-    router.push({ pathname: '/helpbox/helpboxOTP', params: { phone: structuralClean } });
+    Alert.alert(
+      'Confirm Help Request',
+      `Send a help request from +977 ${structuralClean}? Our team will contact you shortly.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: () => router.push({ pathname: '/helpbox/helpboxOTP', params: { phone: structuralClean } }),
+        },
+      ]
+    );
   };
 
   return (

@@ -23,6 +23,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const FULL_DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const formatGroupDate = (ymd: string) => {
+    const d = new Date(ymd + 'T00:00:00');
+    return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}, ${FULL_DAY_NAMES[d.getDay()]}`;
+};
 
 const parseToYMD = (dateStr: string): string | null => {
     if (!dateStr) return null;
@@ -308,7 +313,7 @@ export default function BookingHistory() {
                         {selectedDate && (
                             <View style={{ paddingHorizontal: wp('4%') }}>
                                 <Text style={styles.selectedDateLabel}>
-                                    {new Date(selectedDate + 'T00:00:00').toDateString()}
+                                    {formatGroupDate(selectedDate)}
                                     {' — '}{filteredData.length} Booking{filteredData.length !== 1 ? 's' : ''}
                                 </Text>
                                 {filteredData.map(item => (

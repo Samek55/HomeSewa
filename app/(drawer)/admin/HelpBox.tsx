@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
-    ActivityIndicator, ScrollView,
+    ActivityIndicator, ScrollView, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -11,13 +11,9 @@ import Header4 from '@/components/Header4Admin';
 
 type HelpEntry = {
     id: string;
-    ticket_id: string;
-    sender_phone: string;
-    sender_name: string;
-    message: string;
-    reply: string | null;
-    status: 'open' | 'solved';
+    phone: string;
     created_at: string;
+    status: 'open' | 'solved';
 };
 
 const DURATIONS = ['Today', 'Yesterday', 'This Week', 'This Month', '3 Months', '6 Months', '1 Year', 'All'] as const;
@@ -25,25 +21,22 @@ type Duration = typeof DURATIONS[number];
 
 function filterByDuration(data: HelpEntry[], duration: Duration): HelpEntry[] {
     if (duration === 'All') return data;
+    // created_at may not exist in the table yet — skip date filtering if missing
+    if (!data[0]?.created_at) return data;
     const now = new Date();
     const startOf = (unit: 'day' | 'week' | 'month') => {
         const d = new Date(now);
-        if (unit === 'day') { d.setHours(0, 0, 0, 0); }
+        if (unit === 'day') d.setHours(0, 0, 0, 0);
         else if (unit === 'week') { d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - d.getDay()); }
         else if (unit === 'month') { d.setHours(0, 0, 0, 0); d.setDate(1); }
         return d;
     };
     return data.filter(item => {
+        if (!item.created_at) return true;
         const d = new Date(item.created_at);
         const todayStart = startOf('day');
-        if (duration === 'Today') {
-            const end = new Date(todayStart); end.setDate(end.getDate() + 1);
-            return d >= todayStart && d < end;
-        }
-        if (duration === 'Yesterday') {
-            const yStart = new Date(todayStart); yStart.setDate(yStart.getDate() - 1);
-            return d >= yStart && d < todayStart;
-        }
+        if (duration === 'Today') { const end = new Date(todayStart); end.setDate(end.getDate() + 1); return d >= todayStart && d < end; }
+        if (duration === 'Yesterday') { const y = new Date(todayStart); y.setDate(y.getDate() - 1); return d >= y && d < todayStart; }
         if (duration === 'This Week') return d >= startOf('week');
         if (duration === 'This Month') return d >= startOf('month');
         if (duration === '3 Months') { const c = new Date(now); c.setMonth(c.getMonth() - 3); return d >= c; }
@@ -65,12 +58,14 @@ export default function HelpBox() {
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const { data } = await supabase
-                .from('help_messages')
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (data) setEntries(data);
-        } catch {}
+            const { data, error } = await supabase
+                .from('helpbox')
+                .select('*');
+            if (error) throw error;
+            if (data) setEntries(data as HelpEntry[]);
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Could not load help requests.');
+        }
         setLoading(false);
     }, []);
 
@@ -79,29 +74,14 @@ export default function HelpBox() {
     const filtered = useMemo(() => {
         let data = filterByDuration(entries, duration);
         if (statusFilter !== 'All') data = data.filter(e => e.status === statusFilter);
-        if (search.trim()) data = data.filter(e => e.sender_phone?.includes(search.trim()));
+        if (search.trim()) data = data.filter(e => e.phone?.includes(search.trim()));
         return data;
     }, [entries, duration, statusFilter, search]);
-
-    const formatDate = (iso: string) => {
-        try { return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
-        catch { return iso; }
-    };
 
     return (
         <View style={styles.screen}>
             <Header4 />
 
-            {/* HEADER */}
-            <View style={styles.headerRow}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Help Box</Text>
-                <TouchableOpacity onPress={load} style={styles.refreshBtn}>
-                    <Ionicons name="refresh-outline" size={22} color="#fff" />
-                </TouchableOpacity>
-            </View>
 
             <ScrollView
                 style={styles.content}
@@ -130,7 +110,7 @@ export default function HelpBox() {
                 {/* FILTERS */}
                 <View style={styles.filtersRow}>
                     {/* Duration */}
-                    <View style={styles.filterGroup}>
+                    <View style={[styles.filterGroup, { zIndex: 20 }]}>
                         <Text style={styles.filterLabel}>Duration</Text>
                         <TouchableOpacity
                             style={styles.dropBtn}
@@ -155,7 +135,7 @@ export default function HelpBox() {
                     </View>
 
                     {/* Status */}
-                    <View style={styles.filterGroup}>
+                    <View style={[styles.filterGroup, { zIndex: 20 }]}>
                         <Text style={styles.filterLabel}>Status</Text>
                         <TouchableOpacity
                             style={styles.dropBtn}
@@ -168,7 +148,7 @@ export default function HelpBox() {
                         </TouchableOpacity>
                         {showStatusDrop && (
                             <View style={styles.dropMenu}>
-                                {(['All', 'solved', 'open'] as const).map(s => (
+                                {(['All', 'open', 'solved'] as const).map(s => (
                                     <TouchableOpacity
                                         key={s}
                                         style={[styles.dropItem, statusFilter === s && styles.dropItemActive]}
@@ -192,20 +172,19 @@ export default function HelpBox() {
                 ) : filtered.length === 0 ? (
                     <View style={styles.center}>
                         <Ionicons name="chatbox-ellipses-outline" size={44} color="#D6E8E7" />
-                        <Text style={styles.emptyText}>No messages found</Text>
+                        <Text style={styles.emptyText}>No help requests found</Text>
                     </View>
                 ) : (
                     <View style={styles.table}>
-                        {/* Table header */}
                         <View style={styles.tableHeader}>
-                            <Text style={[styles.colHeader, { flex: 1.2 }]}>Ticket ID</Text>
-                            <Text style={[styles.colHeader, { flex: 2 }]}>Phone Number</Text>
+                            <Text style={[styles.colHeader, { flex: 1.4 }]}>ID</Text>
+                            <Text style={[styles.colHeader, { flex: 2.2 }]}>Phone Number</Text>
                             <Text style={[styles.colHeader, { flex: 1, textAlign: 'center' }]}>Status</Text>
                         </View>
 
                         {filtered.map((item, idx) => (
                             <TouchableOpacity
-                                key={item.id}
+                                key={`${item.phone}-${idx}`}
                                 style={[styles.tableRow, idx % 2 === 0 && styles.tableRowAlt]}
                                 onPress={() => router.push({
                                     pathname: '/admin/HelpBoxDetail',
@@ -213,11 +192,11 @@ export default function HelpBox() {
                                 } as any)}
                                 activeOpacity={0.7}
                             >
-                                <Text style={[styles.cell, { flex: 1.2 }]} numberOfLines={1}>
-                                    #{item.ticket_id || item.id?.slice(0, 6).toUpperCase()}
+                                <Text style={[styles.cell, { flex: 1.4 }]} numberOfLines={1}>
+                                    #{item.id?.slice(0, 6).toUpperCase()}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 2 }]} numberOfLines={1}>
-                                    {item.sender_phone}
+                                <Text style={[styles.cell, { flex: 2.2 }]} numberOfLines={1}>
+                                    {item.phone}
                                 </Text>
                                 <View style={{ flex: 1, alignItems: 'center' }}>
                                     {item.status === 'solved' ? (
@@ -226,7 +205,7 @@ export default function HelpBox() {
                                         </View>
                                     ) : (
                                         <View style={styles.openBadge}>
-                                            <Ionicons name="close" size={14} color="#ef4444" />
+                                            <Ionicons name="time-outline" size={14} color="#f59e0b" />
                                         </View>
                                     )}
                                 </View>
@@ -235,9 +214,8 @@ export default function HelpBox() {
                     </View>
                 )}
 
-                {/* COUNT */}
                 {!loading && filtered.length > 0 && (
-                    <Text style={styles.countText}>{filtered.length} message{filtered.length !== 1 ? 's' : ''}</Text>
+                    <Text style={styles.countText}>{filtered.length} request{filtered.length !== 1 ? 's' : ''}</Text>
                 )}
             </ScrollView>
         </View>
@@ -269,9 +247,12 @@ const styles = StyleSheet.create({
     },
     searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A', fontWeight: '500' },
 
-    filtersRow: { flexDirection: 'row', gap: wp('4%'), marginBottom: hp('2%'), zIndex: 10 },
-    filterGroup: { flex: 1, zIndex: 10 },
-    filterLabel: { fontSize: 12, fontWeight: '700', color: '#295C59', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 },
+    filtersRow: { flexDirection: 'row', gap: wp('4%'), marginBottom: hp('2%') },
+    filterGroup: { flex: 1 },
+    filterLabel: {
+        fontSize: 12, fontWeight: '700', color: '#295C59',
+        marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4,
+    },
     dropBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         backgroundColor: '#fff', borderRadius: 12,
@@ -280,11 +261,12 @@ const styles = StyleSheet.create({
     },
     dropBtnText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A', flex: 1 },
     dropMenu: {
+        position: 'absolute', top: '100%', left: 0, right: 0,
         backgroundColor: '#fff', borderRadius: 12,
         borderWidth: 1.5, borderColor: '#D6E8E7',
-        marginTop: 4, overflow: 'hidden',
-        elevation: 6, shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6,
+        marginTop: 4, zIndex: 999,
+        elevation: 8, shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8,
     },
     dropItem: { paddingHorizontal: wp('3%'), paddingVertical: hp('1.3%') },
     dropItemActive: { backgroundColor: '#E8F4F3' },
@@ -296,6 +278,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden', borderWidth: 1, borderColor: '#E8F4F3',
         elevation: 2, shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
+        marginTop: hp('1%'),
     },
     tableHeader: {
         flexDirection: 'row', backgroundColor: '#295C59',
@@ -316,7 +299,7 @@ const styles = StyleSheet.create({
     },
     openBadge: {
         width: 26, height: 26, borderRadius: 13,
-        backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center',
     },
 
     countText: {

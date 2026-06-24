@@ -58,11 +58,11 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "owner": "mr.ded",
+    "owner": "sriyog",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4ef1e836-b268-4ec8-b6dd-e0e127189eec"
+        "projectId": "b04b2dce-e9db-4925-b32c-498453c6031d"
       }
     }
   }
