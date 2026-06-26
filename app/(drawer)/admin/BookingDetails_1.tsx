@@ -94,26 +94,6 @@ export default function BookingDetails() {
 
     const goPrev = () => setSelectedIndex(i => (i - 1 + photoUrls.length) % photoUrls.length);
     const goNext = () => setSelectedIndex(i => (i + 1) % photoUrls.length);
-    useEffect(() => {
-        const load = async () => {
-            setLoading(true);
-            try {
-                const data = await fetchBookingsFromAirtable();
-                const found = data.find((item: any) => item.id === id);
-
-                // 👇 ADD THIS LINE TO SEE ALL AVAILABLE KEYS
-                console.log("👉 CURRENT BOOKING OBJECT DATA:", found);
-
-                setBooking(found || null);
-            } catch (error) {
-                console.error("Error fetching booking details:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        load();
-    }, [id]);
 
     // Handle Offer Acceptance
     const handleAcceptOffer = async () => {
@@ -160,7 +140,7 @@ export default function BookingDetails() {
             const Print = require('expo-print');
             const Sharing = require('expo-sharing');
             const html = buildBookingPdfHtml(booking);
-            const { uri } = await Print.printToFileAsync({ html, width: 810, height: 1440 });
+            const { uri } = await Print.printToFileAsync({ html, width: 1080, height: 1920 });
             const FileSystem = require('expo-file-system');
             const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
             const namedUri = `${dir}HomeSewa-${booking.bookingId}.pdf`;

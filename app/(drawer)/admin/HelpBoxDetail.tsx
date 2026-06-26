@@ -11,7 +11,8 @@ import Header4 from '@/components/Header4Admin';
 
 export default function HelpBoxDetail() {
     const { entry } = useLocalSearchParams<{ entry: string }>();
-    const item = JSON.parse(entry || '{}');
+    let item: any = {};
+    try { item = JSON.parse(entry || '{}'); } catch {}
 
     const [reply, setReply] = useState(item.reply || '');
     const [saving, setSaving] = useState(false);
@@ -26,7 +27,7 @@ export default function HelpBoxDetail() {
         try {
             const { error } = await supabase
                 .from('helpbox')
-                .update({ reply: reply.trim(), status: newStatus })
+                .update({ reply: reply.trim(), status: newStatus, modified_at: new Date().toISOString() })
                 .eq('id', item.id);
             if (error) throw error;
             Alert.alert('Saved', `Ticket marked as ${newStatus}.`, [

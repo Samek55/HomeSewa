@@ -13,7 +13,15 @@ type HelpEntry = {
     id: string;
     phone: string;
     created_at: string;
+    modified_at?: string;
     status: 'open' | 'solved';
+};
+
+const formatDate = (iso: string) => {
+    try {
+        const d = new Date(iso);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    } catch { return '—'; }
 };
 
 const DURATIONS = ['Today', 'Yesterday', 'This Week', 'This Month', '3 Months', '6 Months', '1 Year', 'All'] as const;
@@ -177,9 +185,10 @@ export default function HelpBox() {
                 ) : (
                     <View style={styles.table}>
                         <View style={styles.tableHeader}>
-                            <Text style={[styles.colHeader, { flex: 1.4 }]}>ID</Text>
-                            <Text style={[styles.colHeader, { flex: 2.2 }]}>Phone Number</Text>
-                            <Text style={[styles.colHeader, { flex: 1, textAlign: 'center' }]}>Status</Text>
+                            <Text style={[styles.colHeader, { flex: 0.6 }]}>UID</Text>
+                            <Text style={[styles.colHeader, { flex: 1.8 }]}>Phone</Text>
+                            <Text style={[styles.colHeader, { flex: 1.4, textAlign: 'center' }]}>Date</Text>
+                            <Text style={[styles.colHeader, { flex: 0.8, textAlign: 'center' }]}>Status</Text>
                         </View>
 
                         {filtered.map((item, idx) => (
@@ -192,21 +201,20 @@ export default function HelpBox() {
                                 } as any)}
                                 activeOpacity={0.7}
                             >
-                                <Text style={[styles.cell, { flex: 1.4 }]} numberOfLines={1}>
-                                    #{item.id?.slice(0, 6).toUpperCase()}
+                                <Text style={[styles.cell, { flex: 0.6 }]} numberOfLines={1}>
+                                    {idx + 1}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 2.2 }]} numberOfLines={1}>
+                                <Text style={[styles.cell, { flex: 1.8 }]} numberOfLines={1}>
                                     {item.phone}
                                 </Text>
-                                <View style={{ flex: 1, alignItems: 'center' }}>
+                                <Text style={[styles.cell, { flex: 1.4, textAlign: 'center' }]} numberOfLines={1}>
+                                    {item.created_at ? formatDate(item.created_at) : '—'}
+                                </Text>
+                                <View style={{ flex: 0.8, alignItems: 'center' }}>
                                     {item.status === 'solved' ? (
-                                        <View style={styles.solvedBadge}>
-                                            <Ionicons name="checkmark" size={14} color="#22c55e" />
-                                        </View>
+                                        <Text style={styles.solvedText}>✓</Text>
                                     ) : (
-                                        <View style={styles.openBadge}>
-                                            <Ionicons name="time-outline" size={14} color="#f59e0b" />
-                                        </View>
+                                        <Text style={styles.openText}>!?</Text>
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -293,13 +301,11 @@ const styles = StyleSheet.create({
     tableRowAlt: { backgroundColor: '#FAFEFE' },
     cell: { fontSize: 13, fontWeight: '500', color: '#1C2B2A' },
 
-    solvedBadge: {
-        width: 26, height: 26, borderRadius: 13,
-        backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center',
+    solvedText: {
+        fontSize: 18, fontWeight: '800', color: '#22c55e',
     },
-    openBadge: {
-        width: 26, height: 26, borderRadius: 13,
-        backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center',
+    openText: {
+        fontSize: 15, fontWeight: '800', color: '#f59e0b',
     },
 
     countText: {

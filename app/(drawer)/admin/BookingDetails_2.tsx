@@ -95,7 +95,7 @@ export default function BookingDetails() {
             const Print = require('expo-print');
             const Sharing = require('expo-sharing');
             const html = buildBookingPdfHtml(booking);
-            const { uri } = await Print.printToFileAsync({ html, width: 810, height: 1440 });
+            const { uri } = await Print.printToFileAsync({ html, width: 1080, height: 1920 });
             const FileSystem = require('expo-file-system');
             const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
             const namedUri = `${dir}HomeSewa-${booking.bookingId}.pdf`;

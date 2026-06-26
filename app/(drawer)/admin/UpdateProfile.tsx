@@ -256,7 +256,7 @@ export default function UpdateProfile() {
 
                 <Field label="Gender">
                     <View style={styles.radioRow}>
-                        {['Male', 'Female', 'Other'].map(g => (
+                        {['Male', 'Female'].map(g => (
                             <TouchableOpacity key={g} style={styles.radioOption} onPress={() => setGender(g)} activeOpacity={0.7}>
                                 <View style={styles.radioOuter}>
                                     {gender === g && <View style={styles.radioInner} />}
