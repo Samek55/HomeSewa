@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
-    ActivityIndicator, ScrollView, Alert,
+    ActivityIndicator, ScrollView, Alert, DeviceEventEmitter,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -77,7 +77,16 @@ export default function HelpBox() {
         setLoading(false);
     }, []);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        load();
+        const sub = DeviceEventEmitter.addListener(
+            'helpbox:update',
+            ({ id, status }: { id: string; status: 'open' | 'solved' }) => {
+                setEntries(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+            }
+        );
+        return () => sub.remove();
+    }, [load]);
 
     const filtered = useMemo(() => {
         let data = filterByDuration(entries, duration);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
-    Alert, ActivityIndicator, ScrollView,
+    Alert, ActivityIndicator, ScrollView, DeviceEventEmitter,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,6 +15,7 @@ export default function HelpBoxDetail() {
     try { item = JSON.parse(entry || '{}'); } catch {}
 
     const [reply, setReply] = useState(item.reply || '');
+    const [status, setStatus] = useState<'open' | 'solved'>(item.status || 'open');
     const [saving, setSaving] = useState(false);
 
     const formatDate = (iso: string) => {
@@ -25,11 +26,15 @@ export default function HelpBoxDetail() {
     const handleSave = async (newStatus: 'solved' | 'open') => {
         setSaving(true);
         try {
-            const { error } = await supabase
+            const { data: updated, error } = await supabase
                 .from('helpbox')
                 .update({ reply: reply.trim(), status: newStatus, modified_at: new Date().toISOString() })
-                .eq('id', item.id);
+                .eq('id', item.id)
+                .select();
             if (error) throw error;
+            if (!updated || updated.length === 0) throw new Error(`No row updated — id: ${item.id}`);
+            setStatus(newStatus);
+            DeviceEventEmitter.emit('helpbox:update', { id: item.id, status: newStatus });
             Alert.alert('Saved', `Ticket marked as ${newStatus}.`, [
                 { text: 'OK', onPress: () => router.back() },
             ]);
@@ -39,7 +44,7 @@ export default function HelpBoxDetail() {
         setSaving(false);
     };
 
-    const isSolved = item.status === 'solved';
+    const isSolved = status === 'solved';
 
     return (
         <View style={styles.screen}>
