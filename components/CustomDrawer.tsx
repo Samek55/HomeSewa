@@ -132,6 +132,16 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                         : <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} />
                     }
 
+                    {adminTable === 'admins' && (
+                        <>
+                            <View style={styles.divider} />
+                            <Text style={styles.sectionLabel}>Super Admin</Text>
+                            <MenuItem icon="people-outline" label="User Management" active={isActive('/admin/UserManagement')} onPress={() => navigate('/admin/UserManagement')} />
+                            <MenuItem icon="shield-checkmark-outline" label="Verification" active={isActive('/admin/ProfessionalVerification')} onPress={() => navigate('/admin/ProfessionalVerification')} />
+                            <MenuItem icon="notifications-outline" label="Notifications" active={isActive('/admin/AdminNotifications')} onPress={() => navigate('/admin/AdminNotifications')} />
+                        </>
+                    )}
+
                     <View style={styles.divider} />
 
                     {/* Hide Become a Partner when logged in */}
@@ -284,6 +294,15 @@ const styles = StyleSheet.create({
         height: 20,
         borderRadius: 2,
         backgroundColor: '#295C59',
+    },
+    sectionLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#9BBAB8',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
     },
 
     adminWrapper: {

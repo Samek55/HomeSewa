@@ -235,6 +235,20 @@ export async function notifyProfessionalsAccepted(service: string, city: string,
   }
 }
 
+// Push to customers only
+export async function notifyCustomers(title: string, message: string) {
+  try {
+    await sendNotification({
+      filters: [{ field: 'tag', key: 'role', relation: '=', value: 'user' }],
+      headings: { en: title },
+      contents: { en: message },
+    });
+    console.log('Customer notification sent:', title);
+  } catch (error: any) {
+    console.log('Customer notification error:', error?.response?.data || error.message);
+  }
+}
+
 // Announcements & public messages → everyone
 export async function notifyAll(title: string, message: string) {
   try {

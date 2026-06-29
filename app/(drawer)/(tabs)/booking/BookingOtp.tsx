@@ -17,6 +17,7 @@ import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
 import { OneSignal } from 'react-native-onesignal';
+import { supabase } from '../../../../lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -154,6 +155,18 @@ export default function BookingOtp() {
         'Photos': photoUrls,
         service_names: serviceNames,
       };
+
+      // Check if this customer's phone is blocked by admin
+      const { data: blocked } = await supabase
+        .from('blocked_customers')
+        .select('phone')
+        .eq('phone', String(number))
+        .maybeSingle();
+      if (blocked) {
+        Alert.alert('Account Restricted', 'Your account has been restricted. Please contact HomeSewa support.');
+        setIsSubmitting(false);
+        return;
+      }
 
       await createBooking(booking);
 

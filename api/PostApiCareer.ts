@@ -28,7 +28,7 @@ export const createCareer = async (data: any) => {
     headshot: headshotUrl,
     positions: data['Your Expertise'] || [],
     working_areas: workingAreas,
-    status: 'Active',
+    status: 'Pending',
     application_date: new Date().toISOString().split('T')[0],
     pin,
   };
@@ -47,7 +47,7 @@ export const createCareer = async (data: any) => {
     phone: data['Phone'],
     pin,
     role: 'professional',
-    status: 'Active',
+    status: 'Pending',
   }]);
 
   return { ...workforce, pin };

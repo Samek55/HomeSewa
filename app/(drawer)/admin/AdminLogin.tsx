@@ -64,7 +64,7 @@ export default function AdminLogin() {
             // Check admins table first
             const { data: admin } = await supabase
                 .from('admins')
-                .select('id, full_name, status, pin')
+                .select('id, full_name, status, pin, role')
                 .eq('phone', cleaned)
                 .single();
 
@@ -75,10 +75,23 @@ export default function AdminLogin() {
                 .eq('phone', cleaned)
                 .single();
 
-            const isAdmin = admin && admin.status === 'Active' && admin.pin === password;
+            // Only true super admins (non-professional role) can log in via admins table
+            const isAdmin = admin && admin.role !== 'professional' && admin.status === 'Active' && admin.pin === password;
+            // Professionals must be Active in workforce table
             const isWorker = worker && worker.status === 'Active' && worker.pin === password;
 
             if (!isAdmin && !isWorker) {
+                // Give a specific message if the account exists but is disabled
+                const accountExists = (admin && admin.pin === password) || (worker && worker.pin === password);
+                if (accountExists) {
+                    const isDisabled =
+                        (worker && worker.status === 'Inactive') ||
+                        (admin && admin.role !== 'professional' && admin.status !== 'Active');
+                    if (isDisabled) {
+                        Alert.alert('Account Disabled', 'Your account has been disabled by the admin. Please contact support.');
+                        return;
+                    }
+                }
                 Alert.alert('Login Failed', 'Invalid phone or PIN');
                 return;
             }

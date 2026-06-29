@@ -12,6 +12,9 @@ export default function AdminLayout() {
       <Stack.Screen name="HelpBox" />
       <Stack.Screen name="UpdateProfile" />
       <Stack.Screen name="HelpBoxDetail" />
+      <Stack.Screen name="UserManagement" />
+      <Stack.Screen name="ProfessionalVerification" />
+      <Stack.Screen name="AdminNotifications" />
       <Stack.Screen name="SuperAdminHistory" />
       <Stack.Screen name="WorkCompletionOTP" />
       <Stack.Screen name="GeneratePaymentDetails" />
