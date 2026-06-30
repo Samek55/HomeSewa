@@ -169,10 +169,6 @@ export default function PartnershipScreen() {
       return Alert.alert('Validation Error', 'Please upload CRC photos');
     }
 
-    if (!message.trim()) {
-      return Alert.alert('Validation Error', 'Message cannot be empty');
-    }
-
     setOverlayStatus('loading');
     setOverlayVisible(true);
 
@@ -412,7 +408,7 @@ export default function PartnershipScreen() {
           />
 
           {/* Message TextArea */}
-          <Text style={styles.label}>Message <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Message</Text>
           <TextArea
             value={message}
             onChangeText={setMessage}

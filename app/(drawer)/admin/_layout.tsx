@@ -17,6 +17,8 @@ export default function AdminLayout() {
       <Stack.Screen name="AdminNotifications" />
       <Stack.Screen name="SuperAdminHistory" />
       <Stack.Screen name="WorkCompletionOTP" />
+      <Stack.Screen name="PaymentMethod" />
+      <Stack.Screen name="KhaltiPayment" />
       <Stack.Screen name="GeneratePaymentDetails" />
       <Stack.Screen name="PaymentDetails" />
     </Stack>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     Alert, TextInput, ScrollView, ActivityIndicator,
-    KeyboardAvoidingView, Platform,
+    KeyboardAvoidingView, Platform, Modal, FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -10,6 +10,21 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notifyAll, notifyProfessionalsInCity, notifyCustomers } from '../../../api/notifications';
+
+const SERVICES = [
+    'Deep Cleaning', 'Garden Care', 'Masonry Repair', 'Plumbing Repair',
+    'Electrical Repair', 'Carpentry', 'Washing Machine Repair', 'EV Charger Installation',
+    'AC Services', 'Painting', 'Packing & Moving', 'AirBnB Maintenance',
+    'Bridal Makeup', 'RO Water Purifying', 'Refrigerator Repair', 'CCTV Services',
+    'Modular Kitchen', 'Home Renovation', 'Pest Control', 'Drywall Repair',
+    'Salon at Home', 'Tiling', 'Chef at Home', 'Home Automation',
+    'Parqueting', 'Indoor Planting', 'Spa at Home', 'Physiotherapy',
+    'Handyman', 'Massage Therapy', 'Water Tank Cleaning', 'Aluminum Fabrication',
+    'False Ceiling', 'Computer Repair', 'Geyser Repair', 'Chimney Repair',
+    'Tree Cutting & Pruning', 'Septic Tank Cleaning', 'Pet Grooming', 'Lift / Elevator Repair',
+];
+
+const CITIES = ['Kathmandu', 'Bhaktapur', 'Lalitpur'];
 
 type Tab = 'all' | 'professionals' | 'customers';
 
@@ -34,12 +49,109 @@ const TAB_CONFIG: { key: Tab; label: string; icon: string; description: string }
     },
 ];
 
+function MultiSelectDropdown({ label, options, selected, onChange, placeholder }: {
+    label: string;
+    options: string[];
+    selected: string[];
+    onChange: (items: string[]) => void;
+    placeholder: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const [temp, setTemp] = useState<string[]>([]);
+
+    const handleOpen = () => {
+        setTemp([...selected]);
+        setOpen(true);
+    };
+
+    const toggle = (item: string) => {
+        setTemp(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+    };
+
+    const handleConfirm = () => {
+        onChange(temp);
+        setOpen(false);
+    };
+
+    const removeOne = (item: string) => {
+        onChange(selected.filter(i => i !== item));
+    };
+
+    return (
+        <>
+            <Text style={styles.label}>{label}</Text>
+            <TouchableOpacity style={styles.dropdownBtn} onPress={handleOpen} activeOpacity={0.8}>
+                <Text style={selected.length > 0 ? styles.dropdownValue : styles.dropdownPlaceholder} numberOfLines={1}>
+                    {selected.length > 0 ? `${selected.length} selected` : placeholder}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#9BBAB8" />
+            </TouchableOpacity>
+
+            {selected.length > 0 && (
+                <View style={styles.chipsRow}>
+                    {selected.map(item => (
+                        <View key={item} style={styles.chip}>
+                            <Text style={styles.chipText}>{item}</Text>
+                            <TouchableOpacity onPress={() => removeOne(item)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                                <Ionicons name="close" size={12} color="#295C59" />
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+                </View>
+            )}
+
+            <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select {label}</Text>
+                            <TouchableOpacity onPress={() => setOpen(false)}>
+                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <FlatList
+                            data={options}
+                            keyExtractor={item => item}
+                            style={{ maxHeight: hp('50%') }}
+                            renderItem={({ item }) => {
+                                const checked = temp.includes(item);
+                                return (
+                                    <TouchableOpacity
+                                        style={styles.optionRow}
+                                        onPress={() => toggle(item)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                                            {checked && <Ionicons name="checkmark" size={13} color="#fff" />}
+                                        </View>
+                                        <Text style={[styles.optionText, checked && styles.optionTextChecked]}>{item}</Text>
+                                    </TouchableOpacity>
+                                );
+                            }}
+                        />
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity style={styles.clearBtn} onPress={() => setTemp([])}>
+                                <Text style={styles.clearBtnText}>Clear All</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirm}>
+                                <Text style={styles.confirmBtnText}>Confirm ({temp.length})</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </>
+    );
+}
+
 export default function AdminNotifications() {
     const [tab, setTab] = useState<Tab>('all');
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
-    const [service, setService] = useState('');
-    const [city, setCity] = useState('');
+    const [selectedServices, setSelectedServices] = useState<string[]>([]);
+    const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [sending, setSending] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -57,14 +169,14 @@ export default function AdminNotifications() {
     const resetFields = () => {
         setTitle('');
         setMessage('');
-        setService('');
-        setCity('');
+        setSelectedServices([]);
+        setSelectedCities([]);
     };
 
     const handleSend = async () => {
         if (tab === 'professionals') {
-            if (!service.trim()) return Alert.alert('Missing Field', 'Please enter a service type.');
-            if (!city.trim()) return Alert.alert('Missing Field', 'Please enter a city.');
+            if (!selectedServices.length) return Alert.alert('Missing Field', 'Please select at least one service type.');
+            if (!selectedCities.length) return Alert.alert('Missing Field', 'Please select at least one city.');
             if (!message.trim()) return Alert.alert('Missing Field', 'Please enter a message.');
         } else {
             if (!title.trim()) return Alert.alert('Missing Field', 'Please enter a title.');
@@ -72,7 +184,7 @@ export default function AdminNotifications() {
         }
 
         const preview = tab === 'professionals'
-            ? `To: ${service} professionals in ${city}\n\n${message}`
+            ? `To: ${selectedServices.join(', ')} professionals in ${selectedCities.join(', ')}\n\n${message}`
             : `${title}\n\n${message}`;
 
         Alert.alert('Confirm Send', preview, [
@@ -84,7 +196,7 @@ export default function AdminNotifications() {
                         if (tab === 'all') {
                             await notifyAll(title.trim(), message.trim());
                         } else if (tab === 'professionals') {
-                            await notifyProfessionalsInCity(service.trim(), city.trim());
+                            await notifyProfessionalsInCity(selectedServices, selectedCities, message.trim());
                         } else {
                             await notifyCustomers(title.trim(), message.trim());
                         }
@@ -94,7 +206,7 @@ export default function AdminNotifications() {
                         Alert.alert('Error', e.message || 'Failed to send notification.');
                     }
                     setSending(false);
-                }
+                },
             },
         ]);
     };
@@ -113,7 +225,6 @@ export default function AdminNotifications() {
                 <Text style={styles.headerTitle}>Send Notification</Text>
             </View>
 
-            {/* Tabs */}
             <View style={styles.tabs}>
                 {TAB_CONFIG.map(t => (
                     <TouchableOpacity
@@ -130,7 +241,6 @@ export default function AdminNotifications() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-                    {/* Info banner */}
                     <View style={styles.infoBanner}>
                         <Ionicons name={activeTab.icon as any} size={18} color="#295C59" />
                         <Text style={styles.infoText}>{activeTab.description}</Text>
@@ -138,23 +248,21 @@ export default function AdminNotifications() {
 
                     {tab === 'professionals' ? (
                         <>
-                            <Text style={styles.label}>Service Type</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="e.g. Plumber, Carpenter, Electrician"
-                                placeholderTextColor="#B0BEC5"
-                                value={service}
-                                onChangeText={setService}
+                            <MultiSelectDropdown
+                                label="SERVICE TYPE"
+                                options={SERVICES}
+                                selected={selectedServices}
+                                onChange={setSelectedServices}
+                                placeholder="Select service types..."
                             />
-                            <Text style={styles.label}>City</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="e.g. Kathmandu, Pokhara, Lalitpur"
-                                placeholderTextColor="#B0BEC5"
-                                value={city}
-                                onChangeText={setCity}
+                            <MultiSelectDropdown
+                                label="CITY"
+                                options={CITIES}
+                                selected={selectedCities}
+                                onChange={setSelectedCities}
+                                placeholder="Select cities..."
                             />
-                            <Text style={styles.label}>Message</Text>
+                            <Text style={styles.label}>MESSAGE</Text>
                             <TextInput
                                 style={[styles.input, styles.textarea]}
                                 placeholder="Type your message to professionals..."
@@ -167,7 +275,7 @@ export default function AdminNotifications() {
                         </>
                     ) : (
                         <>
-                            <Text style={styles.label}>Title</Text>
+                            <Text style={styles.label}>TITLE</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="Notification title"
@@ -175,7 +283,7 @@ export default function AdminNotifications() {
                                 value={title}
                                 onChangeText={setTitle}
                             />
-                            <Text style={styles.label}>Message</Text>
+                            <Text style={styles.label}>MESSAGE</Text>
                             <TextInput
                                 style={[styles.input, styles.textarea]}
                                 placeholder={
@@ -252,6 +360,70 @@ const styles = StyleSheet.create({
         fontSize: 14, color: '#1C2B2A',
     },
     textarea: { minHeight: hp('16%'), paddingTop: hp('1.5%') },
+
+    // Dropdown
+    dropdownBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: '#fff', borderRadius: 14,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('4%'), paddingVertical: hp('1.8%'),
+    },
+    dropdownValue: { fontSize: 14, color: '#1C2B2A', fontWeight: '500', flex: 1 },
+    dropdownPlaceholder: { fontSize: 14, color: '#B0BEC5', flex: 1 },
+
+    // Chips
+    chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+    chip: {
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        backgroundColor: '#E8F4F3', borderRadius: 20,
+        paddingVertical: 5, paddingHorizontal: 10,
+    },
+    chipText: { fontSize: 12, color: '#295C59', fontWeight: '600' },
+
+    // Modal
+    modalOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
+        backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        paddingTop: 8, maxHeight: hp('75%'),
+    },
+    modalHeader: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: wp('5%'), paddingVertical: hp('1.8%'),
+        borderBottomWidth: 1, borderBottomColor: '#F0F4F3',
+    },
+    modalTitle: { fontSize: 16, fontWeight: '800', color: '#1C2B2A' },
+    optionRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        paddingVertical: hp('1.5%'), paddingHorizontal: wp('5%'),
+        borderBottomWidth: 1, borderBottomColor: '#F5F9F8',
+    },
+    checkbox: {
+        width: 22, height: 22, borderRadius: 6,
+        borderWidth: 2, borderColor: '#D6E8E7',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    checkboxChecked: { backgroundColor: '#295C59', borderColor: '#295C59' },
+    optionText: { fontSize: 14, color: '#4B5563', flex: 1 },
+    optionTextChecked: { color: '#1C2B2A', fontWeight: '600' },
+    modalFooter: {
+        flexDirection: 'row', gap: 12,
+        padding: wp('4%'), borderTopWidth: 1, borderTopColor: '#F0F4F3',
+    },
+    clearBtn: {
+        flex: 1, paddingVertical: hp('1.5%'), borderRadius: 14,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        alignItems: 'center',
+    },
+    clearBtnText: { fontSize: 14, fontWeight: '700', color: '#9BBAB8' },
+    confirmBtn: {
+        flex: 2, paddingVertical: hp('1.5%'), borderRadius: 14,
+        backgroundColor: '#295C59', alignItems: 'center',
+    },
+    confirmBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+
     sendBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         backgroundColor: '#295C59', borderRadius: 16,

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
     View, Text, Image, TouchableOpacity, ScrollView,
-    StyleSheet, ActivityIndicator, Alert, Linking, Share,
+    StyleSheet, ActivityIndicator, Alert, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
@@ -11,7 +11,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
 import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
-import { buildBookingPdfHtml } from '../../../api/helper/bookingPdfTemplate';
+import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
@@ -39,6 +39,7 @@ export default function BookingDetails() {
     const scrollRef = useRef<ScrollView>(null);
     const [workStatus, setWorkStatus] = useState<StatusType>('Pending');
     const [isLocked, setIsLocked] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     const STATUS_OPTIONS: StatusType[] = ['Completed', 'Pending', 'Cancelled', 'Dispute'];
 
@@ -46,7 +47,11 @@ export default function BookingDetails() {
         const loadBooking = async () => {
             setLoading(true);
             try {
-                const data = await fetchBookingsFromAirtable();
+                const [data, adminTable] = await Promise.all([
+                    fetchBookingsFromAirtable(),
+                    AsyncStorage.getItem('adminTable'),
+                ]);
+                if (adminTable === 'admins') setIsSuperAdmin(true);
                 const found = data.find((item: any) => item.id === id);
                 if (found) {
                     setBooking(found);
@@ -78,7 +83,7 @@ export default function BookingDetails() {
                 const customerName = booking?.fullName || 'Customer';
                 try { await sendCompletionOtp(customerPhone, customerName, otp); } catch {}
                 await AsyncStorage.setItem('completionOtp', JSON.stringify({ otp, bookingId: booking.id }));
-                router.push({ pathname: '/admin/WorkCompletionOTP', params: { customerName, customerPhone } });
+                router.push({ pathname: '/admin/WorkCompletionOTP', params: { customerName, customerPhone, budget: booking.budget || '' } });
                 return;
             }
             await updateBookingStatus(booking.id, workStatus);
@@ -88,32 +93,7 @@ export default function BookingDetails() {
         }
     };
 
-    const handleSharePDF = async () => {
-        if (!booking) return;
-        const location = [booking.area, booking.city].filter(Boolean).join(', ');
-        try {
-            const Print = require('expo-print');
-            const Sharing = require('expo-sharing');
-            const html = buildBookingPdfHtml(booking);
-            const { uri } = await Print.printToFileAsync({ html, width: 1080, height: 1920 });
-            const FileSystem = require('expo-file-system');
-            const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
-            const namedUri = `${dir}HomeSewa-${booking.bookingId}.pdf`;
-            await FileSystem.moveAsync({ from: uri, to: namedUri });
-            await Sharing.shareAsync(namedUri, { mimeType: 'application/pdf', dialogTitle: `Booking #${booking.bookingId}` });
-            return;
-        } catch {
-            // Expo Go fallback — text share
-        }
-        try {
-            await Share.share({
-                message: `HomeSewa Booking Receipt\nBooking ID: #${booking.bookingId}\n\nCustomer: ${booking.fullName}\nPhone: +977 ${booking.phone}\nService: ${booking.service}\nStatus: ${booking.status}\nBudget: ${booking.budget}\nLocation: ${location}\nBooking Date: ${booking.bookingDate}\nStarting Date: ${booking.startingDate}${booking.completionDate ? `\nEnding Date: ${booking.completionDate}` : ''}${booking.approxDays != null ? `\nApprox Days: ${booking.approxDays} Day${booking.approxDays !== 1 ? 's' : ''}` : ''}${booking.specialRequests ? `\nSpecial Request: ${booking.specialRequests}` : ''}\n\nHelpline: +977 98520 24 365\nwww.homesewa.app`,
-                title: `Booking #${booking.bookingId}`,
-            });
-        } catch {
-            Alert.alert('Error', 'Could not share booking');
-        }
-    };
+    const handleSharePDF = () => shareBookingPdf(booking);
 
     const statusColor = (s: string) => {
         const ls = s?.toLowerCase() || '';
@@ -219,14 +199,14 @@ export default function BookingDetails() {
                     <View>
                         <View style={styles.divider} />
                         <Text style={styles.statusLabel}>Work Status</Text>
-                        {isLocked && (
+                        {isLocked && !isSuperAdmin && (
                             <Text style={styles.lockedNote}>Completed — cannot be modified.</Text>
                         )}
 
                         <View style={styles.dropdownWrapper}>
                             <TouchableOpacity
-                                style={[styles.dropdownBtn, isLocked && { opacity: 0.4 }]}
-                                disabled={isLocked}
+                                style={[styles.dropdownBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
+                                disabled={isLocked && !isSuperAdmin}
                                 onPress={() => {
                                     const next = !openDropdown;
                                     setOpenDropdown(next);
@@ -256,8 +236,8 @@ export default function BookingDetails() {
                         </View>
 
                         <TouchableOpacity
-                            style={[styles.submitBtn, isLocked && { opacity: 0.4 }]}
-                            disabled={isLocked}
+                            style={[styles.submitBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
+                            disabled={isLocked && !isSuperAdmin}
                             onPress={handleSubmit}
                         >
                             <Text style={styles.submitText}>Submit</Text>

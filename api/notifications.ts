@@ -113,6 +113,39 @@ export async function notifyUsers(service: string, bookingArea: string, customer
   }
 }
 
+// New professional registration → super admins only (fetched from DB, never tag-based)
+export async function notifyAdminNewProfessional(applicantName: string, positions: string[]) {
+  try {
+    // Fetch only super admin phones (role != 'professional' and active)
+    const { data: superAdmins } = await supabase
+      .from('admins')
+      .select('phone')
+      .neq('role', 'professional')
+      .eq('status', 'Active');
+
+    if (!superAdmins || superAdmins.length === 0) {
+      console.log('No active super admins found to notify');
+      return;
+    }
+
+    const phones = superAdmins
+      .map((a: any) => String(a.phone).replace(/\D/g, '').slice(-10))
+      .filter((p: string) => p.length === 10);
+
+    if (phones.length === 0) return;
+
+    const services = positions.length > 0 ? positions.join(', ') : 'N/A';
+    await sendNotification({
+      include_aliases: { external_id: phones },
+      target_channel: 'push',
+      headings: { en: 'New Professional Application' },
+      contents: { en: `${applicantName} (${services}) has applied. Review in Verification screen.` },
+    });
+  } catch (error: any) {
+    console.log('New professional notification error:', error?.response?.data || error.message);
+  }
+}
+
 // Partnership form submitted → admin only
 export async function notifyAdmins(applicantName: string) {
   try {
@@ -129,37 +162,51 @@ export async function notifyAdmins(applicantName: string) {
   }
 }
 
-// Push to all professionals of a service in a specific city
-export async function notifyProfessionalsInCity(service: string, city: string) {
+// Push to professionals matching one or more services in one or more cities
+export async function notifyProfessionalsInCity(service: string | string[], city: string | string[], message?: string) {
   try {
-    const { data } = await supabase
+    const services = (Array.isArray(service) ? service : [service]).map(s => s.trim());
+    const cities = (Array.isArray(city) ? city : [city]).map(c => c.trim());
+
+    const serviceLabel = services.join(', ');
+    const cityLabel = cities.join(', ');
+
+    // Case-insensitive city filter using OR
+    const cityFilter = cities.map(c => `preferred_city.ilike.${c}`).join(',');
+
+    let query = supabase
       .from('workforce')
       .select('phone')
-      .contains('positions', [service.trim()])
-      .eq('preferred_city', city.trim())
+      .overlaps('positions', services)
       .eq('status', 'Active');
 
+    query = cities.length === 1
+      ? query.ilike('preferred_city', cities[0])
+      : query.or(cityFilter);
+
+    const { data } = await query;
+
     if (!data || data.length === 0) {
-      console.log(`No professionals found for "${service}" in "${city}"`);
-      return;
+      throw new Error(`No active professionals found for "${serviceLabel}" in "${cityLabel}".`);
     }
 
     const phones = data
       .map((p: any) => String(p.phone).replace(/\D/g, '').slice(-10))
       .filter((p: string) => p.length === 10);
 
-    if (phones.length === 0) return;
+    if (phones.length === 0) throw new Error('No valid phone numbers found for matching professionals.');
 
     await sendNotification({
       include_aliases: { external_id: phones },
       target_channel: 'push',
-      headings: { en: 'HomeSewa Service Request' },
-      contents: { en: `New ${service} booking in ${city}. Open HomeSewa to respond.` },
+      headings: { en: `HomeSewa — ${serviceLabel} in ${cityLabel}` },
+      contents: { en: message || `New ${serviceLabel} booking in ${cityLabel}. Open HomeSewa to respond.` },
     });
 
-    console.log(`City push sent to ${phones.length} professionals for "${service}" in "${city}"`);
+    console.log(`City push sent to ${phones.length} professionals for "${serviceLabel}" in "${cityLabel}"`);
   } catch (error: any) {
     console.log('notifyProfessionalsInCity error:', error?.response?.data || error.message);
+    throw error;
   }
 }
 

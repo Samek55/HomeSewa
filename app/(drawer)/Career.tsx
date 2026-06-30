@@ -188,10 +188,6 @@ export default function CareerScreen() {
     }
 
 
-    if (!message.trim()) {
-      return Alert.alert('Validation Error', 'Message is required');
-    }
-
     setOverlayStatus('loading');
     setOverlayVisible(true);
 
@@ -503,7 +499,7 @@ export default function CareerScreen() {
           </View>
 
           {/* Message */}
-          <Text style={styles.label}>Message <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Message</Text>
           <TextArea
             value={message}
             onChangeText={setMessage}

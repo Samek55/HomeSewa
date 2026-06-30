@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
-    ActivityIndicator, Alert, TextInput, FlatList,
+    ActivityIndicator, Alert, TextInput, FlatList, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
@@ -30,9 +31,9 @@ export default function UserManagement() {
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-    const navigation = useNavigation();
 
     useEffect(() => {
         AsyncStorage.getItem('adminTable').then(table => {
@@ -65,20 +66,64 @@ export default function UserManagement() {
         setLoading(false);
     }, []);
 
-    useEffect(() => {
-        if (!isSuperAdmin) return;
-        if (tab === 'professionals') loadProfessionals();
-        else loadCustomers();
-    }, [tab, isSuperAdmin]);
-
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
+    // Reload whenever the screen is focused OR the tab changes
+    useFocusEffect(
+        useCallback(() => {
             if (!isSuperAdmin) return;
             if (tab === 'professionals') loadProfessionals();
             else loadCustomers();
-        });
-        return unsubscribe;
-    }, [navigation, tab, isSuperAdmin]);
+        }, [tab, isSuperAdmin])
+    );
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        if (tab === 'professionals') await loadProfessionals();
+        else await loadCustomers();
+        setRefreshing(false);
+    }, [tab]);
+
+    // Realtime: reflect Supabase deletions/updates instantly in the UI
+    useEffect(() => {
+        if (!isSuperAdmin) return;
+        const channel = supabase
+            .channel('um-changes')
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'workforce' },
+                (payload) => {
+                    if (payload.old?.uin) {
+                        setProfessionals(prev => prev.filter(p => p.uin !== payload.old.uin));
+                    }
+                }
+            )
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'workforce' },
+                (payload) => {
+                    if (payload.new?.uin) {
+                        setProfessionals(prev => prev.map(p =>
+                            p.uin === payload.new.uin ? { ...p, status: payload.new.status } : p
+                        ));
+                    }
+                }
+            )
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'blocked_customers' },
+                (payload) => {
+                    if (payload.old?.phone) {
+                        setCustomers(prev => prev.map(c =>
+                            c.phone === payload.old.phone ? { ...c, blocked: false } : c
+                        ));
+                    }
+                }
+            )
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blocked_customers' },
+                (payload) => {
+                    if (payload.new?.phone) {
+                        setCustomers(prev => prev.map(c =>
+                            c.phone === payload.new.phone ? { ...c, blocked: true } : c
+                        ));
+                    }
+                }
+            )
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [isSuperAdmin]);
 
     const toggleProfessional = async (uin: string, phone: string, currentStatus: string) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
@@ -91,9 +136,11 @@ export default function UserManagement() {
 
     const toggleCustomer = async (phone: string, blocked: boolean) => {
         if (blocked) {
-            await supabase.from('blocked_customers').delete().eq('phone', phone);
+            const { error } = await supabase.from('blocked_customers').delete().eq('phone', phone);
+            if (error) return Alert.alert('Error', error.message);
         } else {
-            await supabase.from('blocked_customers').insert([{ phone }]);
+            const { error } = await supabase.from('blocked_customers').insert([{ phone }]);
+            if (error) return Alert.alert('Error', error.message);
         }
         setCustomers(prev => prev.map(c => c.phone === phone ? { ...c, blocked: !blocked } : c));
     };
@@ -154,6 +201,14 @@ export default function UserManagement() {
                     data={tab === 'professionals' ? filteredProfessionals : filteredCustomers as any[]}
                     keyExtractor={(item: any) => item.uin || item.phone}
                     contentContainerStyle={{ paddingHorizontal: wp('4%'), paddingBottom: hp('10%') }}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#295C59']}
+                            tintColor="#295C59"
+                        />
+                    }
                     renderItem={({ item }: any) => (
                         <View style={styles.card}>
                             <View style={styles.cardLeft}>
@@ -180,40 +235,42 @@ export default function UserManagement() {
                                         </Text>
                                     </View>
                                 )}
-                                <TouchableOpacity
-                                    style={[styles.toggleBtn,
-                                        tab === 'professionals'
-                                            ? item.status === 'Active' ? styles.btnDisable : styles.btnEnable
-                                            : item.blocked ? styles.btnEnable : styles.btnDisable
-                                    ]}
-                                    onPress={() => {
-                                        if (tab === 'professionals') {
-                                            Alert.alert(
-                                                item.status === 'Active' ? 'Disable Account' : 'Enable Account',
-                                                `${item.status === 'Active' ? 'Disable' : 'Enable'} ${item.full_name}?`,
-                                                [
-                                                    { text: 'Cancel', style: 'cancel' },
-                                                    { text: 'Confirm', onPress: () => toggleProfessional(item.uin, item.phone, item.status) },
-                                                ]
-                                            );
-                                        } else {
-                                            Alert.alert(
-                                                item.blocked ? 'Unblock Customer' : 'Block Customer',
-                                                `${item.blocked ? 'Unblock' : 'Block'} ${item.full_name}?`,
-                                                [
-                                                    { text: 'Cancel', style: 'cancel' },
-                                                    { text: 'Confirm', onPress: () => toggleCustomer(item.phone, item.blocked) },
-                                                ]
-                                            );
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.toggleBtnText}>
-                                        {tab === 'professionals'
-                                            ? item.status === 'Active' ? 'Disable' : 'Enable'
-                                            : item.blocked ? 'Unblock' : 'Block'}
-                                    </Text>
-                                </TouchableOpacity>
+                                <View style={styles.actionRow}>
+                                    <TouchableOpacity
+                                        style={[styles.toggleBtn,
+                                            tab === 'professionals'
+                                                ? item.status === 'Active' ? styles.btnDisable : styles.btnEnable
+                                                : item.blocked ? styles.btnEnable : styles.btnDisable
+                                        ]}
+                                        onPress={() => {
+                                            if (tab === 'professionals') {
+                                                Alert.alert(
+                                                    item.status === 'Active' ? 'Disable Account' : 'Enable Account',
+                                                    `${item.status === 'Active' ? 'Disable' : 'Enable'} ${item.full_name}?`,
+                                                    [
+                                                        { text: 'Cancel', style: 'cancel' },
+                                                        { text: 'Confirm', onPress: () => toggleProfessional(item.uin, item.phone, item.status) },
+                                                    ]
+                                                );
+                                            } else {
+                                                Alert.alert(
+                                                    item.blocked ? 'Unblock Customer' : 'Block Customer',
+                                                    `${item.blocked ? 'Unblock' : 'Block'} ${item.full_name}?`,
+                                                    [
+                                                        { text: 'Cancel', style: 'cancel' },
+                                                        { text: 'Confirm', onPress: () => toggleCustomer(item.phone, item.blocked) },
+                                                    ]
+                                                );
+                                            }
+                                        }}
+                                    >
+                                        <Text style={styles.toggleBtnText}>
+                                            {tab === 'professionals'
+                                                ? item.status === 'Active' ? 'Disable' : 'Enable'
+                                                : item.blocked ? 'Unblock' : 'Block'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
                     )}
@@ -275,6 +332,7 @@ const styles = StyleSheet.create({
     pillPending: { backgroundColor: '#fef3c7' },
     pillInactive: { backgroundColor: '#fee2e2' },
     statusText: { fontSize: 11, fontWeight: '700' },
+    actionRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     toggleBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 },
     btnDisable: { backgroundColor: '#fee2e2' },
     btnEnable: { backgroundColor: '#dcfce7' },

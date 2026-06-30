@@ -40,6 +40,7 @@ export default function UpdateProfile() {
     const [tempUri, setTempUri] = useState<string | null>(null);
     const [showCrop, setShowCrop] = useState(false);
 
+
     // Stats
     const [uin, setUin] = useState('');
     const [status, setStatus] = useState('');
@@ -53,34 +54,48 @@ export default function UpdateProfile() {
             setPhone(p);
             setAdminTable(t);
             try {
-                const { data } = await supabase
-                    .from(t)
-                    .select('full_name, photo_url, email, gender, preferred_city, preferred_area, years_experience, positions, uin, status')
-                    .eq('phone', p)
-                    .single();
-                if (data) {
-                    setFullName(data.full_name || '');
-                    setPhotoUrl(data.photo_url || null);
-                    setEmail(data.email || '');
-                    setGender(data.gender || '');
-                    setCity(data.preferred_city || '');
-                    setArea(
-                        Array.isArray(data.preferred_area)
-                            ? data.preferred_area
-                            : data.preferred_area
-                                ? data.preferred_area.split(',').map((s: string) => s.trim()).filter(Boolean)
-                                : []
-                    );
-                    setExperience(String(data.years_experience || ''));
-                    setPositions(
-                        Array.isArray(data.positions)
-                            ? data.positions
-                            : data.positions
-                                ? data.positions.split(',').map((s: string) => s.trim()).filter(Boolean)
-                                : []
-                    );
-                    setUin(data.uin || '');
-                    setStatus(data.status || '');
+                if (t === 'admins') {
+                    const cleanP = p.replace(/\D/g, '').slice(-10);
+                    const { data } = await supabase
+                        .from('admins')
+                        .select('full_name, status')
+                        .eq('phone', cleanP)
+                        .single();
+                    if (data) {
+                        setFullName(data.full_name || '');
+                        setStatus(data.status || '');
+                    }
+                } else {
+                    // Professional — full profile from workforce table
+                    const { data } = await supabase
+                        .from('workforce')
+                        .select('full_name, photo_url, email, gender, preferred_city, preferred_area, years_experience, positions, uin, status')
+                        .eq('phone', p)
+                        .single();
+                    if (data) {
+                        setFullName(data.full_name || '');
+                        setPhotoUrl(data.photo_url || null);
+                        setEmail(data.email || '');
+                        setGender(data.gender || '');
+                        setCity(data.preferred_city || '');
+                        setArea(
+                            Array.isArray(data.preferred_area)
+                                ? data.preferred_area
+                                : data.preferred_area
+                                    ? data.preferred_area.split(',').map((s: string) => s.trim()).filter(Boolean)
+                                    : []
+                        );
+                        setExperience(String(data.years_experience || ''));
+                        setPositions(
+                            Array.isArray(data.positions)
+                                ? data.positions
+                                : data.positions
+                                    ? data.positions.split(',').map((s: string) => s.trim()).filter(Boolean)
+                                    : []
+                        );
+                        setUin(data.uin || '');
+                        setStatus(data.status || '');
+                    }
                 }
             } catch {}
             setLoading(false);
@@ -90,7 +105,7 @@ export default function UpdateProfile() {
 
     const pickPhoto = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images'] as any,
             allowsEditing: false,
             quality: 0.88,
         });
@@ -123,20 +138,34 @@ export default function UpdateProfile() {
                 setPhotoUrl(newPhotoUrl);
                 setTempUri(null);
             }
-            const { error } = await supabase
-                .from(adminTable)
-                .update({
-                    full_name: fullName.trim(),
-                    photo_url: newPhotoUrl,
-                    email: email.trim(),
-                    gender: gender.trim(),
-                    preferred_city: city.trim(),
-                    preferred_area: area,
-                    years_experience: experience ? Number(experience) : null,
-                    positions: positions,
-                })
-                .eq('phone', phone);
-            if (error) throw error;
+
+            const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+
+            if (adminTable === 'admins') {
+                // Super admin — only update full_name, nothing else
+                const { error } = await supabase
+                    .from('admins')
+                    .update({ full_name: fullName.trim() })
+                    .eq('phone', cleanPhone);
+                if (error) throw error;
+            } else {
+                // Professional — update full workforce profile
+                const { error } = await supabase
+                    .from('workforce')
+                    .update({
+                        full_name: fullName.trim(),
+                        photo_url: newPhotoUrl,
+                        email: email.trim(),
+                        gender: gender.trim(),
+                        preferred_city: city.trim(),
+                        preferred_area: area,
+                        years_experience: experience ? Number(experience) : null,
+                        positions: positions,
+                    })
+                    .eq('phone', cleanPhone);
+                if (error) throw error;
+            }
+            DeviceEventEmitter.emit('authChanged');
             Alert.alert('Saved', 'Profile updated successfully!', [
                 { text: 'OK', onPress: () => router.back() },
             ]);
@@ -240,87 +269,96 @@ export default function UpdateProfile() {
                     </View>
                 </Field>
 
-                <Field label="Email">
-                    <TextInput
-                        style={[styles.input, activeInput === 'email' && styles.inputActive]}
-                        value={email}
-                        onChangeText={setEmail}
-                        placeholder="Enter your email address"
-                        placeholderTextColor="#4B4B4B"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        onFocus={() => setActiveInput('email')}
-                        onBlur={() => setActiveInput(null)}
-                    />
-                </Field>
+                {adminTable !== 'admins' && (
+                    <>
+                        <Field label="Email">
+                            <TextInput
+                                style={[styles.input, activeInput === 'email' && styles.inputActive]}
+                                value={email}
+                                onChangeText={setEmail}
+                                placeholder="Enter your email address"
+                                placeholderTextColor="#4B4B4B"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                onFocus={() => setActiveInput('email')}
+                                onBlur={() => setActiveInput(null)}
+                            />
+                        </Field>
 
-                <Field label="Gender">
-                    <View style={styles.radioRow}>
-                        {['Male', 'Female'].map(g => (
-                            <TouchableOpacity key={g} style={styles.radioOption} onPress={() => setGender(g)} activeOpacity={0.7}>
-                                <View style={styles.radioOuter}>
-                                    {gender === g && <View style={styles.radioInner} />}
-                                </View>
-                                <Text style={styles.radioLabel}>{g}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </Field>
+                        <Field label="Gender">
+                            <View style={styles.radioRow}>
+                                {['Male', 'Female'].map(g => (
+                                    <TouchableOpacity key={g} style={styles.radioOption} onPress={() => setGender(g)} activeOpacity={0.7}>
+                                        <View style={styles.radioOuter}>
+                                            {gender === g && <View style={styles.radioInner} />}
+                                        </View>
+                                        <Text style={styles.radioLabel}>{g}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </Field>
+                    </>
+                )}
 
-                {/* Professional Info */}
-                <SectionHeader icon="briefcase-outline" title="Professional Information" />
+                {/* Professional Info — hidden for super admin */}
+                {adminTable !== 'admins' && <SectionHeader icon="briefcase-outline" title="Professional Information" />}
+                {adminTable === 'admins' && null}
 
-                <Field label="Your Expertise">
-                    <DropdownAdd
-                        options={servicesData2.map(s => s.name)}
-                        placeholder="Select maximum UpTo 5"
-                        placeholderColor="#4B4B4B"
-                        value={positions}
-                        onSelectOption={setPositions}
-                        onOpen={() => setActiveInput('expertise')}
-                        onClose={() => setActiveInput(null)}
-                        maxSelections={5}
-                    />
-                </Field>
+                {adminTable !== 'admins' && (
+                    <>
+                        <Field label="Your Expertise">
+                            <DropdownAdd
+                                options={servicesData2.map(s => s.name)}
+                                placeholder="Select maximum UpTo 5"
+                                placeholderColor="#4B4B4B"
+                                value={positions}
+                                onSelectOption={setPositions}
+                                onOpen={() => setActiveInput('expertise')}
+                                onClose={() => setActiveInput(null)}
+                                maxSelections={5}
+                            />
+                        </Field>
 
-                <Field label="Years of Experience">
-                    <TextInput
-                        style={[styles.input, activeInput === 'experience' && styles.inputActive]}
-                        value={experience}
-                        onChangeText={t => setExperience(t.replace(/[^0-9]/g, ''))}
-                        placeholder="5"
-                        placeholderTextColor="#4B4B4B"
-                        keyboardType="numeric"
-                        onFocus={() => setActiveInput('experience')}
-                        onBlur={() => setActiveInput(null)}
-                    />
-                </Field>
+                        <Field label="Years of Experience">
+                            <TextInput
+                                style={[styles.input, activeInput === 'experience' && styles.inputActive]}
+                                value={experience}
+                                onChangeText={t => setExperience(t.replace(/[^0-9]/g, ''))}
+                                placeholder="5"
+                                placeholderTextColor="#4B4B4B"
+                                keyboardType="numeric"
+                                onFocus={() => setActiveInput('experience')}
+                                onBlur={() => setActiveInput(null)}
+                            />
+                        </Field>
 
-                <Field label="Preferred City">
-                    <DropdownAdd
-                        options={CITY_OPTIONS}
-                        placeholder="Select your preferred city"
-                        placeholderColor="#4B4B4B"
-                        value={city ? [city] : []}
-                        onSelectOption={vals => { setCity(vals[vals.length - 1] ?? ''); setArea([]); }}
-                        onOpen={() => setActiveInput('city')}
-                        onClose={() => setActiveInput(null)}
-                        maxSelections={1}
-                    />
-                </Field>
+                        <Field label="Preferred City">
+                            <DropdownAdd
+                                options={CITY_OPTIONS}
+                                placeholder="Select your preferred city"
+                                placeholderColor="#4B4B4B"
+                                value={city ? [city] : []}
+                                onSelectOption={vals => { setCity(vals[vals.length - 1] ?? ''); setArea([]); }}
+                                onOpen={() => setActiveInput('city')}
+                                onClose={() => setActiveInput(null)}
+                                maxSelections={1}
+                            />
+                        </Field>
 
-                <Field label="Preferred Working Area">
-                    <DropdownAdd
-                        options={AREA_OPTIONS}
-                        placeholder="Select maximum UpTo 5"
-                        placeholderColor="#4B4B4B"
-                        value={area}
-                        onSelectOption={setArea}
-                        onOpen={() => setActiveInput('workingArea')}
-                        onClose={() => setActiveInput(null)}
-                        maxSelections={5}
-                    />
-                </Field>
+                        <Field label="Preferred Working Area">
+                            <DropdownAdd
+                                options={AREA_OPTIONS}
+                                placeholder="Select maximum UpTo 5"
+                                placeholderColor="#4B4B4B"
+                                value={area}
+                                onSelectOption={setArea}
+                                onOpen={() => setActiveInput('workingArea')}
+                                onClose={() => setActiveInput(null)}
+                                maxSelections={5}
+                            />
+                        </Field>
+                    </>
+                )}
 
                 {/* Account */}
                 <SectionHeader icon="settings-outline" title="Account" />

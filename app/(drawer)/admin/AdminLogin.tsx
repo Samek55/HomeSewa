@@ -81,14 +81,30 @@ export default function AdminLogin() {
             const isWorker = worker && worker.status === 'Active' && worker.pin === password;
 
             if (!isAdmin && !isWorker) {
-                // Give a specific message if the account exists but is disabled
-                const accountExists = (admin && admin.pin === password) || (worker && worker.pin === password);
-                if (accountExists) {
-                    const isDisabled =
-                        (worker && worker.status === 'Inactive') ||
-                        (admin && admin.role !== 'professional' && admin.status !== 'Active');
-                    if (isDisabled) {
-                        Alert.alert('Account Disabled', 'Your account has been disabled by the admin. Please contact support.');
+                const pinMatches = (worker && worker.pin === password) || (admin && admin.pin === password);
+                if (pinMatches) {
+                    // Pending professional — correct PIN but not yet approved
+                    if (worker && worker.status === 'Pending') {
+                        Alert.alert(
+                            'Approval Pending',
+                            'Your application is currently under review by the admin. You will receive an SMS with your login details once your profile is approved.\n\nThank you for your patience.'
+                        );
+                        return;
+                    }
+                    // Rejected professional
+                    if (worker && worker.status === 'Rejected') {
+                        Alert.alert(
+                            'Application Rejected',
+                            'Your professional application was not approved. Please contact HomeSewa support for more information.'
+                        );
+                        return;
+                    }
+                    // Disabled account
+                    if (worker && worker.status === 'Inactive') {
+                        Alert.alert(
+                            'Account Disabled',
+                            'Your account has been disabled by the admin. Please contact HomeSewa support.'
+                        );
                         return;
                     }
                 }

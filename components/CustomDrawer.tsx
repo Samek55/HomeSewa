@@ -108,13 +108,17 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
                 {/* MENU */}
                 <View style={styles.menu}>
-                    <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => navigate('/Home')} />
-                    <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => navigate('/Service')} />
+                    <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => navigate('/Home')} superAdmin={adminTable === 'admins'} />
+                    {adminTable !== 'admins' && (
+                        <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => navigate('/Service')} />
+                    )}
                     {isLoggedIn && (
-                        <MenuItem icon="time-outline" label="Booking History" active={isActive('/admin/BookingHistory')} onPress={() => navigate('/admin/BookingHistory')} />
+                        <MenuItem icon="time-outline" label="Booking History" active={isActive('/admin/BookingHistory')} onPress={() => navigate('/admin/BookingHistory')} superAdmin={adminTable === 'admins'} />
+                    )}
+                    {adminTable === 'admins' && (
+                        <MenuItem icon="chatbox-ellipses-outline" label="Help Box" active={isActive('/admin/HelpBox')} onPress={() => navigate('/admin/HelpBox')} superAdmin />
                     )}
 
-                    {/* Hide Book a Service and Join as Professional when logged in as professional */}
                     {!isLoggedIn && (
                         <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => navigate('/Book')} />
                     )}
@@ -122,36 +126,39 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                         <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => navigate('/Career')} />
                     )}
 
-                    <View style={styles.divider} />
+                    {adminTable !== 'admins' && <View style={styles.divider} />}
 
-                    <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => navigate('/About')} />
-                    <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => navigate('/Contact')} />
-                    <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => navigate('/FAQs')} />
-                    {adminTable === 'admins'
-                        ? <MenuItem icon="chatbox-ellipses-outline" label="Help Box" active={isActive('/admin/HelpBox')} onPress={() => navigate('/admin/HelpBox')} />
-                        : <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} />
-                    }
+                    {adminTable !== 'admins' && (
+                        <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => navigate('/About')} />
+                    )}
+                    {adminTable !== 'admins' && (
+                        <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => navigate('/Contact')} />
+                    )}
+                    {adminTable !== 'admins' && (
+                        <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => navigate('/FAQs')} />
+                    )}
+                    {adminTable !== 'admins' && (
+                        <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} />
+                    )}
 
                     {adminTable === 'admins' && (
                         <>
                             <View style={styles.divider} />
                             <Text style={styles.sectionLabel}>Super Admin</Text>
-                            <MenuItem icon="people-outline" label="User Management" active={isActive('/admin/UserManagement')} onPress={() => navigate('/admin/UserManagement')} />
-                            <MenuItem icon="shield-checkmark-outline" label="Verification" active={isActive('/admin/ProfessionalVerification')} onPress={() => navigate('/admin/ProfessionalVerification')} />
-                            <MenuItem icon="notifications-outline" label="Notifications" active={isActive('/admin/AdminNotifications')} onPress={() => navigate('/admin/AdminNotifications')} />
+                            <MenuItem icon="people-outline" label="User Management" active={isActive('/admin/UserManagement')} onPress={() => navigate('/admin/UserManagement')} superAdmin />
+                            <MenuItem icon="shield-checkmark-outline" label="Verification" active={isActive('/admin/ProfessionalVerification')} onPress={() => navigate('/admin/ProfessionalVerification')} superAdmin />
+                            <MenuItem icon="notifications-outline" label="Notifications" active={isActive('/admin/AdminNotifications')} onPress={() => navigate('/admin/AdminNotifications')} superAdmin />
                         </>
                     )}
 
-                    <View style={styles.divider} />
+                    {!isLoggedIn && <View style={styles.divider} />}
 
-                    {/* Hide Become a Partner when logged in */}
                     {!isLoggedIn && (
                         <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => navigate('/Partnership')} />
                     )}
 
-                    {/* Change PIN — only visible when logged in */}
                     {isLoggedIn && (
-                        <MenuItem icon="key-outline" label="Change PIN" active={isActive('/AdminChangePassword')} onPress={() => { props.navigation.closeDrawer(); router.push({ pathname: '/AdminChangePassword', params: { mode: 'change' } } as any); }} />
+                        <MenuItem icon="key-outline" label="Change PIN" active={isActive('/AdminChangePassword')} onPress={() => { props.navigation.closeDrawer(); router.push({ pathname: '/AdminChangePassword', params: { mode: 'change' } } as any); }} superAdmin={adminTable === 'admins'} />
                     )}
                 </View>
 
@@ -178,17 +185,18 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
     );
 }
 
-function MenuItem({ icon, label, onPress, active }: any) {
+function MenuItem({ icon, label, onPress, active, superAdmin }: any) {
+    const compact = !!superAdmin;
     return (
         <TouchableOpacity
-            style={[styles.item, active && styles.itemActive]}
+            style={[styles.item, active && styles.itemActive, compact && styles.itemCompact]}
             onPress={onPress}
             activeOpacity={0.7}
         >
-            <View style={[styles.iconBox, active && styles.iconBoxActive]}>
-                <Ionicons name={icon} size={22} color={active ? '#295C59' : '#6B7280'} />
+            <View style={[styles.iconBox, active && styles.iconBoxActive, compact && styles.iconBoxCompact]}>
+                <Ionicons name={icon} size={compact ? 20 : 22} color={active ? '#295C59' : '#6B7280'} />
             </View>
-            <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+            <Text style={[styles.label, active && styles.labelActive, compact && styles.labelCompact]}>{label}</Text>
             {active && <View style={styles.activeBar} />}
         </TouchableOpacity>
     );
@@ -250,7 +258,7 @@ const styles = StyleSheet.create({
     menu: {
         flex: 1,
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 4,
         justifyContent: 'space-evenly',
     },
     divider: {
@@ -260,12 +268,15 @@ const styles = StyleSheet.create({
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 6,
+        paddingVertical: 9,
         paddingHorizontal: 10,
         borderRadius: 14,
     },
     itemActive: {
         backgroundColor: '#E8F4F3',
+    },
+    itemCompact: {
+        paddingVertical: 9,
     },
     iconBox: {
         width: 40,
@@ -279,6 +290,12 @@ const styles = StyleSheet.create({
     iconBoxActive: {
         backgroundColor: '#C9E8E6',
     },
+    iconBoxCompact: {
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        marginRight: 11,
+    },
     label: {
         fontSize: 15,
         fontWeight: '500',
@@ -288,6 +305,9 @@ const styles = StyleSheet.create({
     labelActive: {
         color: '#295C59',
         fontWeight: '700',
+    },
+    labelCompact: {
+        fontSize: 14.5,
     },
     activeBar: {
         width: 3,
@@ -302,7 +322,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.8,
         paddingHorizontal: 10,
-        paddingVertical: 4,
+        paddingVertical: 6,
     },
 
     adminWrapper: {

@@ -10,14 +10,13 @@ import {
     StyleSheet,
     Modal,
     Alert,
-    Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import LocationPin from '../../../assets/icons/contact/location-pin.png';
 import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
-import { buildBookingPdfHtml } from '../../../api/helper/bookingPdfTemplate';
+import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import { supabase } from '../../../lib/supabase';
 
 import {
@@ -30,8 +29,6 @@ import { notifyUsers, notifyProfessionalsAccepted } from '@/api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
-const WORKFORCE_URL = process.env.EXPO_PUBLIC_AIRTABLE_API_URL_CAREER!;
-const AIRTABLE_TOKEN = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN!;
 
 const sendAcceptanceSms = async (customerPhone: string, customerName: string, professionalName: string, professionalPhone: string) => {
     const to = '977' + customerPhone.replace(/\D/g, '').slice(-10);
@@ -133,32 +130,7 @@ export default function BookingDetails() {
         }
     };
 
-    const handleSharePDF = async () => {
-        if (!booking) return;
-        const location = [booking.area, booking.city].filter(Boolean).join(', ');
-        try {
-            const Print = require('expo-print');
-            const Sharing = require('expo-sharing');
-            const html = buildBookingPdfHtml(booking);
-            const { uri } = await Print.printToFileAsync({ html, width: 1080, height: 1920 });
-            const FileSystem = require('expo-file-system');
-            const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
-            const namedUri = `${dir}HomeSewa-${booking.bookingId}.pdf`;
-            await FileSystem.moveAsync({ from: uri, to: namedUri });
-            await Sharing.shareAsync(namedUri, { mimeType: 'application/pdf', dialogTitle: `Booking #${booking.bookingId}` });
-            return;
-        } catch {
-            // Expo Go fallback — text share
-        }
-        try {
-            await Share.share({
-                message: `HomeSewa Booking Receipt\nBooking ID: #${booking.bookingId}\n\nCustomer: ${booking.fullName}\nPhone: +977 ${booking.phone}\nService: ${booking.service}\nBudget: ${booking.budget}\nLocation: ${location}\nBooking Date: ${booking.bookingDate}\nStarting Date: ${booking.startingDate}${booking.completionDate ? `\nEnding Date: ${booking.completionDate}` : ''}${booking.approxDays != null ? `\nApprox Days: ${booking.approxDays} Day${booking.approxDays !== 1 ? 's' : ''}` : ''}${booking.specialRequests ? `\nSpecial Request: ${booking.specialRequests}` : ''}\n\nHelpline: +977 98520 24 365\nwww.homesewa.app`,
-                title: `Booking #${booking.bookingId}`,
-            });
-        } catch {
-            Alert.alert('Error', 'Could not share booking');
-        }
-    };
+    const handleSharePDF = () => shareBookingPdf(booking);
 
     return (
         <View style={{ flex: 1 }}>

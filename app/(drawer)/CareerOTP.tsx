@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createCareer } from '@/api/PostApiCareer';
+import { notifyAdminNewProfessional } from '@/api/notifications';
 import SubmitOverlay from '@/components/bookings/SubmitOverlay';
 import Header3 from '@/components/Header3drawer';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -98,12 +99,16 @@ export default function CareerOTP() {
       const result = await createCareer(careerData);
       await AsyncStorage.removeItem('pendingCareerData');
 
-      // Send welcome SMS with login credentials
+      // Send "application received, pending approval" SMS — login details come only after admin approves
       const firstName = String(careerData['Full Name'] || '').split(' ')[0] || 'Professional';
       const cleanPhone = String(careerData['Phone'] || '').replace(/\D/g, '').slice(-10);
-      const welcomeText =
-        `Dear ${firstName}, you have been registered as a HomeSewa Professional!\n\nYour Login Details:\nPhone: ${cleanPhone}\nPIN: ${result.pin}\n\nYou can change your PIN from the login page.\n\nThanks for using HomeSewa\n( www.homesewa.app )`;
-      sendSparrowSms(cleanPhone, welcomeText).catch(() => {});
+      const pendingText =
+        `Dear ${firstName}, your HomeSewa Professional application has been received successfully!\n\nYour application is currently under review. You will receive your login details via SMS once our team approves your profile.\n\nThank You for choosing HomeSewa\n( www.homesewa.app )`;
+      sendSparrowSms(cleanPhone, pendingText).catch(() => {});
+
+      // Notify super admin to review the new application
+      const positions = Array.isArray(careerData['Positions']) ? careerData['Positions'] : [];
+      notifyAdminNewProfessional(careerData['Full Name'] || firstName, positions).catch(() => {});
 
       setOverlayStatus('success');
     } catch (error: any) {

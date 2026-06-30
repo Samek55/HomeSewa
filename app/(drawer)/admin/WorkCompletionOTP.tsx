@@ -14,7 +14,7 @@ const { width, height } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
 export default function WorkCompletionOTP() {
-    const { customerName, customerPhone } = useLocalSearchParams<{ customerName: string; customerPhone: string }>();
+    const { customerName, customerPhone, budget } = useLocalSearchParams<{ customerName: string; customerPhone: string; budget: string }>();
     const [otp, setOtp] = useState(['', '', '', '']);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
