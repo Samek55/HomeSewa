@@ -8,6 +8,8 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -185,7 +187,7 @@ export default function BookingOtp() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <Header2 />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
@@ -230,7 +232,7 @@ export default function BookingOtp() {
           </TouchableOpacity>
         </View>
       </TouchableWithoutFeedback>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

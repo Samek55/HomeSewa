@@ -8,6 +8,8 @@ import {
     Dimensions,
     TouchableWithoutFeedback,
     Keyboard,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
@@ -116,7 +118,7 @@ export default function HelpboxOTP() {
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
             <Header2 />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.container}>
@@ -161,7 +163,7 @@ export default function HelpboxOTP() {
                     </TouchableOpacity>
                 </View>
             </TouchableWithoutFeedback>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

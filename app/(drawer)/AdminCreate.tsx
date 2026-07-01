@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Text,
   Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
 
 import {
@@ -215,11 +216,11 @@ export default function CreateUser() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <Header4 />
-      <TouchableOpacity 
-        activeOpacity={1} 
-        style={{ flex: 1 }} 
+      <TouchableOpacity
+        activeOpacity={1}
+        style={{ flex: 1 }}
         onPress={Keyboard.dismiss}
       >
         <View style={styles.container}>
@@ -277,7 +278,7 @@ export default function CreateUser() {
           </View>
         </View>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

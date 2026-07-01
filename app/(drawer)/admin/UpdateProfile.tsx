@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     View, Text, Image, TouchableOpacity,
     StyleSheet, TextInput, Alert, ActivityIndicator,
-    ScrollView, Dimensions, DeviceEventEmitter,
+    ScrollView, Dimensions, DeviceEventEmitter, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -213,6 +213,7 @@ export default function UpdateProfile() {
                 />
             )}
 
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
             <ScrollView
                 style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
@@ -388,6 +389,7 @@ export default function UpdateProfile() {
             </View>
 
             </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 }

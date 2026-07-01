@@ -7,6 +7,12 @@ const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY;
 
+const NOTIFICATION_DEFAULTS = {
+  large_icon: 'homesewa',          // white-bg + green logo (bundled via app.json largeIcons)
+  small_icon: 'notification_small_icon', // monochrome logo drawable
+  android_accent_color: 'FF295C59',      // green tint for small icon (no # prefix for OneSignal)
+};
+
 const sendNotification = async (payload: object) => {
   if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
     console.log('Notification skipped: missing OneSignal config');
@@ -14,7 +20,7 @@ const sendNotification = async (payload: object) => {
   }
   await axios.post(
     'https://api.onesignal.com/notifications',
-    { app_id: ONESIGNAL_APP_ID, ...payload },
+    { app_id: ONESIGNAL_APP_ID, ...NOTIFICATION_DEFAULTS, ...payload },
     {
       headers: {
         Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,

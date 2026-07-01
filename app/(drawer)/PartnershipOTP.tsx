@@ -1,6 +1,7 @@
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   Alert, Dimensions, TouchableWithoutFeedback, Keyboard,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
@@ -100,7 +101,7 @@ export default function PartnershipOTP() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <Header3 />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
@@ -148,7 +149,7 @@ export default function PartnershipOTP() {
         onClose={() => { setOverlayVisible(false); router.replace('/Partnership'); }}
         onClear={() => { setOverlayVisible(false); router.replace({ pathname: '/Partnership', params: { clearForm: 'true' } }); }}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

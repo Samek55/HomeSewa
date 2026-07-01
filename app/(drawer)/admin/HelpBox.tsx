@@ -81,8 +81,8 @@ export default function HelpBox() {
         load();
         const sub = DeviceEventEmitter.addListener(
             'helpbox:update',
-            ({ id, status }: { id: string; status: 'open' | 'solved' }) => {
-                setEntries(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+            ({ id, status, modified_at }: { id: string; status: 'open' | 'solved'; modified_at?: string }) => {
+                setEntries(prev => prev.map(e => e.id === id ? { ...e, status, modified_at } : e));
             }
         );
         return () => sub.remove();

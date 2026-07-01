@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity, TextInput,
     Alert, Dimensions, TouchableWithoutFeedback, Keyboard, Image,
+    KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -84,7 +85,7 @@ export default function WorkCompletionOTP() {
     }
 
     return (
-        <View style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
             <Header4 />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.container}>
@@ -126,7 +127,7 @@ export default function WorkCompletionOTP() {
                     </TouchableOpacity>
                 </View>
             </TouchableWithoutFeedback>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

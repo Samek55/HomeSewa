@@ -238,8 +238,8 @@ export default function AdminNotifications() {
                 ))}
             </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+                <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
                     <View style={styles.infoBanner}>
                         <Ionicons name={activeTab.icon as any} size={18} color="#295C59" />
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     tabActive: { borderBottomWidth: 3, borderBottomColor: '#295C59' },
     tabText: { fontSize: 11, fontWeight: '600', color: '#9BBAB8' },
     tabTextActive: { color: '#295C59', fontWeight: '700' },
-    content: { padding: wp('4%'), paddingBottom: hp('12%') },
+    content: { padding: wp('4%'), paddingBottom: hp('20%') },
     infoBanner: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 10,
         backgroundColor: '#E8F4F3', borderRadius: 14,

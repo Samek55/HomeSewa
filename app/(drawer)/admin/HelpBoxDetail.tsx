@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
-    Alert, ActivityIndicator, ScrollView, DeviceEventEmitter,
+    Alert, ActivityIndicator, ScrollView, DeviceEventEmitter, Linking, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -25,16 +25,17 @@ export default function HelpBoxDetail() {
 
     const handleSave = async (newStatus: 'solved' | 'open') => {
         setSaving(true);
+        const now = new Date().toISOString();
         try {
             const { data: updated, error } = await supabase
                 .from('helpbox')
-                .update({ reply: reply.trim(), status: newStatus, modified_at: new Date().toISOString() })
+                .update({ reply: reply.trim(), status: newStatus, modified_at: now })
                 .eq('id', item.id)
                 .select();
             if (error) throw error;
             if (!updated || updated.length === 0) throw new Error(`No row updated — id: ${item.id}`);
             setStatus(newStatus);
-            DeviceEventEmitter.emit('helpbox:update', { id: item.id, status: newStatus });
+            DeviceEventEmitter.emit('helpbox:update', { id: item.id, status: newStatus, modified_at: now });
             Alert.alert('Saved', `Ticket marked as ${newStatus}.`, [
                 { text: 'OK', onPress: () => router.back() },
             ]);
@@ -65,12 +66,34 @@ export default function HelpBoxDetail() {
                 </View>
             </View>
 
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
             <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: hp('10%') }} showsVerticalScrollIndicator={false}>
 
                 <View style={styles.card}>
                     <Text style={styles.sectionLabel}>Phone Number</Text>
-                    <Text style={styles.phoneText}>+977 {item.phone}</Text>
+                    <View style={styles.phoneRow}>
+                        <TouchableOpacity
+                            onPress={() => Linking.openURL(`tel:+977${item.phone}`)}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={[styles.phoneText, styles.phoneLink]}>+977 {item.phone}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.whatsappBtn}
+                            onPress={() => Linking.openURL(`whatsapp://send?phone=977${item.phone}`)}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="logo-whatsapp" size={30} color="#25D366" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
+
+                {item.modified_at && (
+                    <View style={styles.card}>
+                        <Text style={styles.sectionLabel}>Last Updated</Text>
+                        <Text style={styles.dateText}>{formatDate(item.modified_at)}</Text>
+                    </View>
+                )}
 
                 <View style={styles.card}>
                     <Text style={styles.sectionLabel}>Note</Text>
@@ -127,6 +150,7 @@ export default function HelpBoxDetail() {
                     </View>
                 )}
             </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 }
@@ -159,7 +183,11 @@ const styles = StyleSheet.create({
         fontSize: 11, fontWeight: '800', color: '#295C59',
         textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8,
     },
+    phoneRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     phoneText: { fontSize: 20, fontWeight: '700', color: '#1C2B2A' },
+    phoneLink: { textDecorationLine: 'underline', color: '#295C59' },
+    whatsappBtn: { padding: 4 },
+    dateText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A' },
 
     replyInput: {
         fontSize: 14, color: '#1C2B2A', lineHeight: 22,
