@@ -13,7 +13,6 @@
       "bundleIdentifier": "com.pracasinfosys.sriyog.com"
     },
     "android": {
-    "googleServicesFile": "./google-services.json",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
