@@ -182,3 +182,44 @@ dependencies {
 }
 
 apply plugin: 'com.google.gms.google-services'
+
+// Force the correct google-services.json content before EAS can inject an old stored version
+task fixGoogleServicesJson {
+    doFirst {
+        file("${projectDir}/google-services.json").text = '''{
+  "project_info": {
+    "project_number": "768180965838",
+    "project_id": "homesewa-ad5d9",
+    "storage_bucket": "homesewa-ad5d9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:768180965838:android:5de9dfa622c55ffc2e5b9f",
+        "android_client_info": {
+          "package_name": "com.pracasinfosys.sriyog.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCwjVRmzTz5k3I8rRgN2nwACEdld94NJc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}'''
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name == 'processReleaseGoogleServices') {
+        task.dependsOn fixGoogleServicesJson
+    }
+}
