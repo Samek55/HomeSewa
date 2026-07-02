@@ -89,7 +89,7 @@ android {
 
     namespace 'com.pracas.homesewa'
     defaultConfig {
-        applicationId 'com.pracas.homesewa'
+        applicationId 'com.pracasinfosys.sriyog.com'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
