@@ -148,9 +148,9 @@ export default function RootLayout() {
         const { supabase } = require('../lib/supabase');
         const { data } = await supabase
           .from('workforce')
-          .select('preferred_city, positions')
-          .eq('phone', adminPhone)
-          .single();
+          .select('working_areas, services')
+          .or(`phone.eq.${adminPhone},phone.eq.977${adminPhone}`)
+          .maybeSingle();
 
         if (!data) return;
 
@@ -158,8 +158,8 @@ export default function RootLayout() {
         OneSignal.login(adminPhone);
         OneSignal.User.addTag('phone', adminPhone);
         OneSignal.User.addTag('role', 'career');
-        OneSignal.User.addTag('city', data.preferred_city || '');
-        OneSignal.User.addTag('services', (data.positions || [])[0] || '');
+        OneSignal.User.addTag('city', (data.working_areas || [])[0] || '');
+        OneSignal.User.addTag('services', (data.services || [])[0] || '');
 
         console.log('[Tags] Professional tags refreshed on launch for:', adminPhone);
       } catch (e) {

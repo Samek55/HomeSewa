@@ -90,30 +90,23 @@ export default function AdminChangePassword() {
 
         setLoading(true);
         try {
-            const [{ data: adminRecord }, { data: workerRecord }] = await Promise.all([
-                supabase.from('admins').select('pin, full_name').eq('phone', cleaned).single(),
-                supabase.from('workforce').select('pin, full_name').eq('phone', cleaned).single(),
-            ]);
+            // PIN lives only on `admin` — for both super admins and professionals —
+            // `workforce` has no pin column at all.
+            const { data: adminRecord } = await supabase
+                .from('admin')
+                .select('pin, full_name')
+                .eq('phone', cleaned)
+                .single();
 
-            const matchedAdmin = adminRecord && adminRecord.pin === resolvedOld;
-            const matchedWorker = workerRecord && workerRecord.pin === resolvedOld;
-
-            if (!matchedAdmin && !matchedWorker) {
+            if (!adminRecord || adminRecord.pin !== resolvedOld) {
                 Alert.alert('Error', 'Phone number or current PIN is incorrect');
                 return;
             }
 
-            const updates: any[] = [];
-            if (matchedAdmin) {
-                updates.push(supabase.from('admins').update({ pin: resolvedNew }).eq('phone', cleaned));
-            }
-            if (matchedWorker) {
-                updates.push(supabase.from('workforce').update({ pin: resolvedNew }).eq('phone', cleaned));
-            }
-            await Promise.all(updates);
+            const { error } = await supabase.from('admin').update({ pin: resolvedNew }).eq('phone', cleaned);
+            if (error) throw error;
 
-            const fullName = (matchedWorker ? workerRecord?.full_name : adminRecord?.full_name) || '';
-            const firstName = fullName.split(' ')[0] || 'User';
+            const firstName = (adminRecord.full_name || '').split(' ')[0] || 'User';
             sendPinChangeSms(cleaned, firstName).catch(() => {});
 
             Alert.alert('Success', 'PIN updated successfully', [

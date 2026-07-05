@@ -30,6 +30,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -150,6 +151,23 @@ export default function CareerScreen() {
 
     if (!cleanNumber || cleanNumber.length !== 10) {
       return Alert.alert('Validation Error', 'Enter a valid 10-digit phone number');
+    }
+
+    const { data: existingWorker } = await supabase
+      .from('workforce')
+      .select('phone')
+      .eq('phone', cleanNumber)
+      .maybeSingle();
+
+    if (existingWorker) {
+      return Alert.alert(
+        'Already Registered',
+        'This number is already registered. Please go to the login page to reset your PIN or log in from there.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Login', onPress: () => router.push('/Admin') },
+        ]
+      );
     }
 
     if (!gender) {

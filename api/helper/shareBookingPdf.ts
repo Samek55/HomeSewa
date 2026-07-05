@@ -14,10 +14,10 @@ export async function shareBookingPdf(booking: any) {
 
         if (isAvailable) {
             const Print = require('expo-print');
-            const FileSystem = require('expo-file-system');
+            const FileSystem = require('expo-file-system/legacy');
 
             const html = buildBookingPdfHtml(booking);
-            const { uri } = await Print.printToFileAsync({ html, width: 1080, height: 1920 });
+            const { uri } = await Print.printToFileAsync({ html });
 
             const cacheDir = FileSystem.cacheDirectory ?? uri.substring(0, uri.lastIndexOf('/') + 1);
             const namedUri = `${cacheDir}HomeSewa-${bookingId}.pdf`;

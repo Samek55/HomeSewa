@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
-    ActivityIndicator, Alert, FlatList, Image, Linking,
+    ActivityIndicator, Alert, FlatList, Image, Linking, Modal, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
@@ -21,13 +21,12 @@ const sendSparrowSms = async (phone: string, text: string) => {
 };
 
 type Professional = {
-    uin: string;
+    uin: number;
     full_name: string;
     phone: string;
     email: string | null;
     gender: string | null;
     positions: string[];
-    preferred_city: string;
     working_areas: string[];
     headshot: string | null;
     id_proof: string | null;
@@ -36,13 +35,33 @@ type Professional = {
     emergency_contact_number: string | null;
     referral_phone_number: string | null;
     message: string | null;
-    pin: string | null;
+};
+
+// `workforce` was migrated from a legacy system — real columns are
+// first_name/middle_name/last_name, profile_status, services, working_areas,
+// headshot_url, government_issued_id_url, created_date, years_experience,
+// emergency_contact, referred_by, issues. PIN lives on `admins`, not workforce.
+const normalizePhone = (raw: string) => {
+    if (!raw) return raw;
+    const digits = String(raw).replace(/\D/g, '');
+    return digits.length > 10 && digits.startsWith('977') ? digits.slice(-10) : digits;
+};
+
+const formatDate = (iso?: string) => {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleDateString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+        });
+    } catch { return iso; }
 };
 
 export default function ProfessionalVerification() {
     const [pending, setPending] = useState<Professional[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [selected, setSelected] = useState<Professional | null>(null);
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -60,10 +79,25 @@ export default function ProfessionalVerification() {
         setLoading(true);
         const { data } = await supabase
             .from('workforce')
-            .select('uin, full_name, phone, email, gender, positions, preferred_city, working_areas, headshot, id_proof, application_date, years_of_experience, emergency_contact_number, referral_phone_number, message, pin')
-            .eq('status', 'Pending')
-            .order('application_date', { ascending: false });
-        if (data) setPending(data as Professional[]);
+            .select('uin, first_name, middle_name, last_name, phone, email, gender, services, working_areas, headshot_url, government_issued_id_url, created_date, years_experience, emergency_contact, referred_by, issues')
+            .eq('profile_status', 'Waiting for Verification')
+            .order('created_date', { ascending: false });
+        if (data) setPending(data.map(row => ({
+            uin: row.uin,
+            full_name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' ') || 'Unknown',
+            phone: normalizePhone(row.phone),
+            email: row.email,
+            gender: row.gender,
+            positions: row.services || [],
+            working_areas: row.working_areas || [],
+            headshot: row.headshot_url,
+            id_proof: row.government_issued_id_url,
+            application_date: row.created_date,
+            years_of_experience: row.years_experience,
+            emergency_contact_number: row.emergency_contact,
+            referral_phone_number: row.referred_by,
+            message: row.issues,
+        })));
         setLoading(false);
     }, []);
 
@@ -79,6 +113,12 @@ export default function ProfessionalVerification() {
     // Realtime: instantly remove rows deleted or status-changed in Supabase
     useEffect(() => {
         if (!isSuperAdmin) return;
+
+        // Clear any stale channel left over from a Fast Refresh / remount —
+        // calling .on() on an already-subscribed channel throws at runtime.
+        const stale = supabase.getChannels().find(c => c.topic === 'realtime:pv-workforce');
+        if (stale) supabase.removeChannel(stale);
+
         const channel = supabase
             .channel('pv-workforce')
             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'workforce' },
@@ -90,8 +130,8 @@ export default function ProfessionalVerification() {
             )
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'workforce' },
                 (payload) => {
-                    // Remove from pending list if status is no longer Pending
-                    if (payload.new?.uin && payload.new?.status !== 'Pending') {
+                    // Remove from pending list once it's no longer awaiting verification
+                    if (payload.new?.uin && payload.new?.profile_status !== 'Waiting for Verification') {
                         setPending(prev => prev.filter(p => p.uin !== payload.new.uin));
                     }
                 }
@@ -100,19 +140,26 @@ export default function ProfessionalVerification() {
         return () => { supabase.removeChannel(channel); };
     }, [isSuperAdmin]);
 
-    const handleApprove = (uin: string, phone: string, name: string, pin: string | null) => {
+    const handleApprove = (uin: number, phone: string, name: string) => {
         Alert.alert('Approve', `Approve ${name} as a professional?`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Approve', onPress: async () => {
-                    await supabase.from('workforce').update({ status: 'Active' }).eq('uin', uin);
-                    await supabase.from('admins').update({ status: 'Active' }).eq('phone', phone);
+                    await supabase.from('workforce').update({ profile_status: 'Active' }).eq('uin', uin);
+                    // The admins row (with login PIN) was created at signup with status 'Pending' — activate it now.
+                    const { data: adminRow } = await supabase
+                        .from('admin')
+                        .update({ status: 'Active' })
+                        .eq('phone', phone)
+                        .select('pin')
+                        .single();
                     setPending(prev => prev.filter(p => p.uin !== uin));
+                    setSelected(null);
 
                     // Send login details SMS now that they're approved
                     const firstName = name.split(' ')[0] || 'Professional';
                     const approvalText =
-                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${pin || 'Contact support'}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
+                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${adminRow?.pin || 'Contact support'}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
                     sendSparrowSms(phone, approvalText).catch(() => {});
 
                     Alert.alert('Approved', `${name} has been approved. Login details sent via SMS.`);
@@ -121,13 +168,14 @@ export default function ProfessionalVerification() {
         ]);
     };
 
-    const handleReject = (uin: string, name: string) => {
+    const handleReject = (uin: number, name: string) => {
         Alert.alert('Reject', `Reject ${name}'s application?`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Reject', style: 'destructive', onPress: async () => {
-                    await supabase.from('workforce').update({ status: 'Rejected' }).eq('uin', uin);
+                    await supabase.from('workforce').update({ profile_status: 'Rejected' }).eq('uin', uin);
                     setPending(prev => prev.filter(p => p.uin !== uin));
+                    setSelected(null);
                 }
             },
         ]);
@@ -155,11 +203,10 @@ export default function ProfessionalVerification() {
             ) : (
                 <FlatList
                     data={pending}
-                    keyExtractor={item => item.uin}
+                    keyExtractor={item => String(item.uin)}
                     contentContainerStyle={{ padding: wp('4%'), paddingBottom: hp('10%') }}
                     renderItem={({ item }) => (
-                        <View style={styles.card}>
-                            {/* Header row — photo + name + date */}
+                        <TouchableOpacity style={styles.card} onPress={() => setSelected(item)} activeOpacity={0.75}>
                             <View style={styles.cardTop}>
                                 {item.headshot ? (
                                     <Image source={{ uri: item.headshot }} style={styles.avatar} />
@@ -173,89 +220,15 @@ export default function ProfessionalVerification() {
                                 <View style={styles.cardInfo}>
                                     <Text style={styles.name}>{item.full_name}</Text>
                                     {item.application_date && (
-                                        <Text style={styles.appliedDate}>Applied: {item.application_date}</Text>
+                                        <Text style={styles.appliedDate}>Applied: {formatDate(item.application_date)}</Text>
+                                    )}
+                                    {(item.positions?.length > 0) && (
+                                        <Text style={styles.summarySub} numberOfLines={1}>{item.positions.join(', ')}</Text>
                                     )}
                                 </View>
+                                <Ionicons name="chevron-forward" size={20} color="#D6E8E7" />
                             </View>
-
-                            {/* Details grid */}
-                            <View style={styles.detailsGrid}>
-                                <InfoRow icon="call-outline" label="Phone" value={`+977 ${item.phone}`} />
-                                {item.email && <InfoRow icon="mail-outline" label="Email" value={item.email} />}
-                                {item.gender && <InfoRow icon="person-outline" label="Gender" value={item.gender} />}
-                                {item.years_of_experience && <InfoRow icon="time-outline" label="Experience" value={`${item.years_of_experience} years`} />}
-                                <InfoRow icon="location-outline" label="City" value={item.preferred_city} />
-                                {item.emergency_contact_number && <InfoRow icon="alert-circle-outline" label="Emergency Contact" value={`+977 ${item.emergency_contact_number}`} />}
-                                {item.referral_phone_number && <InfoRow icon="people-outline" label="Referred By" value={`+977 ${item.referral_phone_number}`} />}
-                            </View>
-
-                            {/* Expertise */}
-                            {(item.positions || []).length > 0 && (
-                                <View style={styles.chipSection}>
-                                    <Text style={styles.chipSectionLabel}>Expertise</Text>
-                                    <View style={styles.chipsRow}>
-                                        {(item.positions || []).map((p, i) => (
-                                            <View key={i} style={[styles.chip, styles.chipGreen]}>
-                                                <Text style={styles.chipTextGreen}>{p}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                </View>
-                            )}
-
-                            {/* Working areas */}
-                            {(item.working_areas || []).length > 0 && (
-                                <View style={styles.chipSection}>
-                                    <Text style={styles.chipSectionLabel}>Working Areas</Text>
-                                    <View style={styles.chipsRow}>
-                                        {(item.working_areas || []).map((area, i) => (
-                                            <View key={i} style={[styles.chip, styles.chipBlue]}>
-                                                <Text style={styles.chipTextBlue}>{area}</Text>
-                                            </View>
-                                        ))}
-                                    </View>
-                                </View>
-                            )}
-
-                            {/* Message / note */}
-                            {item.message && (
-                                <View style={styles.messageBox}>
-                                    <Text style={styles.chipSectionLabel}>Note from Applicant</Text>
-                                    <Text style={styles.messageText}>{item.message}</Text>
-                                </View>
-                            )}
-
-                            {/* ID proof */}
-                            {item.id_proof && (
-                                <TouchableOpacity
-                                    style={styles.idProofBtn}
-                                    onPress={() => Linking.openURL(item.id_proof!)}
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="document-text-outline" size={16} color="#295C59" />
-                                    <Text style={styles.idProofText}>View ID / Document</Text>
-                                    <Ionicons name="open-outline" size={14} color="#9BBAB8" />
-                                </TouchableOpacity>
-                            )}
-
-                            {/* Action buttons */}
-                            <View style={styles.btnRow}>
-                                <TouchableOpacity
-                                    style={[styles.btn, styles.rejectBtn]}
-                                    onPress={() => handleReject(item.uin, item.full_name)}
-                                >
-                                    <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
-                                    <Text style={styles.rejectText}>Reject</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[styles.btn, styles.approveBtn]}
-                                    onPress={() => handleApprove(item.uin, item.phone, item.full_name, item.pin)}
-                                >
-                                    <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-                                    <Text style={styles.approveText}>Approve</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        </TouchableOpacity>
                     )}
                     ListEmptyComponent={
                         <View style={styles.empty}>
@@ -266,6 +239,111 @@ export default function ProfessionalVerification() {
                     }
                 />
             )}
+
+            {/* ── Detail Modal ── */}
+            <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.handleBar} />
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setSelected(null)}>
+                            <Ionicons name="close" size={22} color="#295C59" />
+                        </TouchableOpacity>
+
+                        {selected && (
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('4%') }}>
+                                <View style={styles.cardTop}>
+                                    {selected.headshot ? (
+                                        <Image source={{ uri: selected.headshot }} style={styles.avatar} />
+                                    ) : (
+                                        <View style={styles.avatarPlaceholder}>
+                                            <Text style={styles.avatarText}>
+                                                {(selected.full_name || '?')[0].toUpperCase()}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    <View style={styles.cardInfo}>
+                                        <Text style={styles.name}>{selected.full_name}</Text>
+                                        {selected.application_date && (
+                                            <Text style={styles.appliedDate}>Applied: {formatDate(selected.application_date)}</Text>
+                                        )}
+                                    </View>
+                                </View>
+
+                                <View style={styles.detailsGrid}>
+                                    <InfoRow icon="call-outline" label="Phone" value={`+977 ${selected.phone}`} />
+                                    {selected.email && <InfoRow icon="mail-outline" label="Email" value={selected.email} />}
+                                    {selected.gender && <InfoRow icon="person-outline" label="Gender" value={selected.gender} />}
+                                    {selected.years_of_experience && <InfoRow icon="time-outline" label="Experience" value={`${selected.years_of_experience} years`} />}
+                                    {selected.emergency_contact_number && <InfoRow icon="alert-circle-outline" label="Emergency Contact" value={`+977 ${selected.emergency_contact_number}`} />}
+                                    {selected.referral_phone_number && <InfoRow icon="people-outline" label="Referred By" value={`+977 ${selected.referral_phone_number}`} />}
+                                </View>
+
+                                {(selected.positions || []).length > 0 && (
+                                    <View style={styles.chipSection}>
+                                        <Text style={styles.chipSectionLabel}>Expertise</Text>
+                                        <View style={styles.chipsRow}>
+                                            {(selected.positions || []).map((p, i) => (
+                                                <View key={i} style={[styles.chip, styles.chipGreen]}>
+                                                    <Text style={styles.chipTextGreen}>{p}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
+
+                                {(selected.working_areas || []).length > 0 && (
+                                    <View style={styles.chipSection}>
+                                        <Text style={styles.chipSectionLabel}>Working Areas</Text>
+                                        <View style={styles.chipsRow}>
+                                            {(selected.working_areas || []).map((area, i) => (
+                                                <View key={i} style={[styles.chip, styles.chipBlue]}>
+                                                    <Text style={styles.chipTextBlue}>{area}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
+
+                                {selected.message && (
+                                    <View style={styles.messageBox}>
+                                        <Text style={styles.chipSectionLabel}>Note from Applicant</Text>
+                                        <Text style={styles.messageText}>{selected.message}</Text>
+                                    </View>
+                                )}
+
+                                {selected.id_proof && (
+                                    <TouchableOpacity
+                                        style={styles.idProofBtn}
+                                        onPress={() => Linking.openURL(selected.id_proof!)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name="document-text-outline" size={16} color="#295C59" />
+                                        <Text style={styles.idProofText}>View ID / Document</Text>
+                                        <Ionicons name="open-outline" size={14} color="#9BBAB8" />
+                                    </TouchableOpacity>
+                                )}
+
+                                <View style={styles.btnRow}>
+                                    <TouchableOpacity
+                                        style={[styles.btn, styles.rejectBtn]}
+                                        onPress={() => handleReject(selected.uin, selected.full_name)}
+                                    >
+                                        <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
+                                        <Text style={styles.rejectText}>Reject</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.btn, styles.approveBtn]}
+                                        onPress={() => handleApprove(selected.uin, selected.phone, selected.full_name)}
+                                    >
+                                        <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+                                        <Text style={styles.approveText}>Approve</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -316,6 +394,25 @@ const styles = StyleSheet.create({
     cardInfo: { flex: 1 },
     name: { fontSize: 15, fontWeight: '800', color: '#1C2B2A', marginBottom: 2 },
     appliedDate: { fontSize: 11, color: '#B0BEC5' },
+    summarySub: { fontSize: 12, color: '#9BBAB8', marginTop: 2 },
+
+    modalOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
+        backgroundColor: '#F5F9F8', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingHorizontal: wp('5%'), paddingTop: hp('1.5%'),
+        maxHeight: hp('88%'),
+    },
+    handleBar: {
+        width: 40, height: 4, borderRadius: 2,
+        backgroundColor: '#D6E8E7', alignSelf: 'center', marginBottom: hp('1%'),
+    },
+    modalClose: {
+        alignSelf: 'flex-end', padding: 6,
+        backgroundColor: '#E8F4F3', borderRadius: 20, marginBottom: hp('1%'),
+    },
 
     detailsGrid: {
         backgroundColor: '#F8FFFE', borderRadius: 10, padding: wp('3%'),

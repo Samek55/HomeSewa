@@ -25,12 +25,13 @@ export default function PaymentMethod() {
             const phone = await AsyncStorage.getItem('adminPhone') ?? '';
             setProfessionalPhone(phone);
             if (phone) {
+                const cleanPhone = phone.replace(/\D/g, '');
                 const { data } = await supabase
                     .from('workforce')
-                    .select('full_name')
-                    .eq('phone', phone.replace(/\D/g, ''))
-                    .single();
-                setProfessionalName(data?.full_name ?? '');
+                    .select('first_name, middle_name, last_name')
+                    .or(`phone.eq.${cleanPhone},phone.eq.977${cleanPhone}`)
+                    .maybeSingle();
+                setProfessionalName(data ? [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ') : '');
             }
         })();
     }, []);

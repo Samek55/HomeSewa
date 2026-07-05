@@ -48,10 +48,11 @@ const fetchProfessionalName = async (phone: string): Promise<string> => {
         const clean = phone.replace(/\D/g, '');
         const { data } = await supabase
             .from('workforce')
-            .select('full_name')
-            .eq('phone', clean)
-            .single();
-        return data?.full_name || 'HomeSewa Professional';
+            .select('first_name, middle_name, last_name')
+            .or(`phone.eq.${clean},phone.eq.977${clean}`)
+            .maybeSingle();
+        const fullName = data ? [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ') : '';
+        return fullName || 'HomeSewa Professional';
     } catch {
         return 'HomeSewa Professional';
     }

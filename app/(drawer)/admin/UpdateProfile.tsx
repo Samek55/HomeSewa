@@ -57,7 +57,7 @@ export default function UpdateProfile() {
                 if (t === 'admins') {
                     const cleanP = p.replace(/\D/g, '').slice(-10);
                     const { data } = await supabase
-                        .from('admins')
+                        .from('admin')
                         .select('full_name, status')
                         .eq('phone', cleanP)
                         .single();
@@ -66,35 +66,23 @@ export default function UpdateProfile() {
                         setStatus(data.status || '');
                     }
                 } else {
-                    // Professional — full profile from workforce table
+                    // Professional — full profile from workforce table.
                     const { data } = await supabase
                         .from('workforce')
-                        .select('full_name, photo_url, email, gender, preferred_city, preferred_area, years_experience, positions, uin, status')
-                        .eq('phone', p)
-                        .single();
+                        .select('first_name, middle_name, last_name, headshot_url, email, gender, preferred_city, working_areas, years_experience, services, uin, profile_status')
+                        .or(`phone.eq.${p},phone.eq.977${p}`)
+                        .maybeSingle();
                     if (data) {
-                        setFullName(data.full_name || '');
-                        setPhotoUrl(data.photo_url || null);
+                        setFullName([data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' '));
+                        setPhotoUrl(data.headshot_url || null);
                         setEmail(data.email || '');
                         setGender(data.gender || '');
                         setCity(data.preferred_city || '');
-                        setArea(
-                            Array.isArray(data.preferred_area)
-                                ? data.preferred_area
-                                : data.preferred_area
-                                    ? data.preferred_area.split(',').map((s: string) => s.trim()).filter(Boolean)
-                                    : []
-                        );
+                        setArea(Array.isArray(data.working_areas) ? data.working_areas : []);
                         setExperience(String(data.years_experience || ''));
-                        setPositions(
-                            Array.isArray(data.positions)
-                                ? data.positions
-                                : data.positions
-                                    ? data.positions.split(',').map((s: string) => s.trim()).filter(Boolean)
-                                    : []
-                        );
+                        setPositions(Array.isArray(data.services) ? data.services : []);
                         setUin(data.uin || '');
-                        setStatus(data.status || '');
+                        setStatus(data.profile_status || '');
                     }
                 }
             } catch {}
@@ -144,25 +132,28 @@ export default function UpdateProfile() {
             if (adminTable === 'admins') {
                 // Super admin — only update full_name, nothing else
                 const { error } = await supabase
-                    .from('admins')
+                    .from('admin')
                     .update({ full_name: fullName.trim() })
                     .eq('phone', cleanPhone);
                 if (error) throw error;
             } else {
-                // Professional — update full workforce profile
+                // Professional — update full workforce profile.
+                const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
                 const { error } = await supabase
                     .from('workforce')
                     .update({
-                        full_name: fullName.trim(),
-                        photo_url: newPhotoUrl,
+                        first_name: nameParts[0] || null,
+                        middle_name: nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : null,
+                        last_name: nameParts.length > 1 ? nameParts[nameParts.length - 1] : null,
+                        headshot_url: newPhotoUrl,
                         email: email.trim(),
                         gender: gender.trim(),
-                        preferred_city: city.trim(),
-                        preferred_area: area,
+                        preferred_city: city.trim() || null,
+                        working_areas: area,
                         years_experience: experience ? Number(experience) : null,
-                        positions: positions,
+                        services: positions,
                     })
-                    .eq('phone', cleanPhone);
+                    .or(`phone.eq.${cleanPhone},phone.eq.977${cleanPhone}`);
                 if (error) throw error;
             }
             DeviceEventEmitter.emit('authChanged');

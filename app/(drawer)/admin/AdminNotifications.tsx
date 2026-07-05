@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notifyAll, notifyProfessionalsInCity, notifyCustomers } from '../../../api/notifications';
@@ -58,6 +59,7 @@ function MultiSelectDropdown({ label, options, selected, onChange, placeholder }
 }) {
     const [open, setOpen] = useState(false);
     const [temp, setTemp] = useState<string[]>([]);
+    const insets = useSafeAreaInsets();
 
     const handleOpen = () => {
         setTemp([...selected]);
@@ -131,7 +133,7 @@ function MultiSelectDropdown({ label, options, selected, onChange, placeholder }
                             }}
                         />
 
-                        <View style={styles.modalFooter}>
+                        <View style={[styles.modalFooter, { paddingBottom: hp('1.5%') + insets.bottom }]}>
                             <TouchableOpacity style={styles.clearBtn} onPress={() => setTemp([])}>
                                 <Text style={styles.clearBtnText}>Clear All</Text>
                             </TouchableOpacity>

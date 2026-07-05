@@ -30,37 +30,32 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
         setAdminPhone(phone);
         setAdminTable(table);
 
-        if (phone && table === 'workforce') {
-            try {
-                const { data } = await supabase
+        if (!phone) { setProfile(null); return; }
+
+        try {
+            // `admin` is the source of truth for the display name for every
+            // logged-in account (super admin or professional) — it's what
+            // AdminLogin authenticates against, so it's guaranteed to exist.
+            const { data: adminRow } = await supabase
+                .from('admin')
+                .select('full_name')
+                .eq('phone', phone)
+                .single();
+
+            let photoUrl: string | null = null;
+            if (table === 'workforce') {
+                // Professionals: enrich with their headshot from workforce,
+                // matching either phone format (legacy rows store a 977 prefix).
+                const { data: wf } = await supabase
                     .from('workforce')
-                    .select('full_name, photo_url')
-                    .eq('phone', phone)
-                    .single();
-                if (data) {
-                    setProfile({
-                        fullName: data.full_name || '',
-                        phone,
-                        photoUrl: data.photo_url || null,
-                    });
-                }
-            } catch {}
-        } else if (phone && table === 'admins') {
-            try {
-                const { data } = await supabase
-                    .from('admins')
-                    .select('full_name')
-                    .eq('phone', phone)
-                    .single();
-                if (data) {
-                    setProfile({
-                        fullName: data.full_name || '',
-                        phone,
-                        photoUrl: null,
-                    });
-                }
-            } catch {}
-        } else {
+                    .select('headshot_url')
+                    .or(`phone.eq.${phone},phone.eq.977${phone}`)
+                    .maybeSingle();
+                photoUrl = wf?.headshot_url || null;
+            }
+
+            setProfile(adminRow ? { fullName: adminRow.full_name || '', phone, photoUrl } : null);
+        } catch {
             setProfile(null);
         }
     }, []);

@@ -25,9 +25,9 @@ export function buildBookingPdfHtml(booking: any): string {
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    width: 1080px;
-    min-height: 1920px;
+  @page { size: A4; margin: 0; }
+
+  html, body {
     background: #f4f8f7;
     font-family: Arial, Helvetica, sans-serif;
     color: #1C2B2A;
@@ -37,62 +37,64 @@ export function buildBookingPdfHtml(booking: any): string {
   .header {
     background: ${PRIMARY};
     width: 100%;
-    padding: 70px 80px 60px;
+    padding: 36px 48px 30px;
     display: flex;
     align-items: center;
-    gap: 40px;
+    gap: 20px;
   }
   .logo {
-    width: 140px;
-    height: 140px;
+    width: 62px;
+    height: 62px;
     object-fit: contain;
-    border-radius: 24px;
+    border-radius: 12px;
     background: rgba(255,255,255,0.12);
-    padding: 10px;
+    padding: 6px;
+    flex-shrink: 0;
   }
   .brand { flex: 1; }
   .brand-name {
-    font-size: 68px;
+    font-size: 28px;
     font-weight: 800;
     color: #fff;
-    letter-spacing: 1px;
+    letter-spacing: 0.3px;
   }
   .brand-tag {
-    font-size: 30px;
+    font-size: 12px;
     color: rgba(255,255,255,0.72);
-    margin-top: 6px;
+    margin-top: 2px;
     font-weight: 400;
   }
-  .helpline-block { text-align: right; }
+  .helpline-block { text-align: right; flex-shrink: 0; }
   .helpline-label {
-    font-size: 22px;
+    font-size: 10px;
     color: rgba(255,255,255,0.6);
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .helpline-number {
-    font-size: 34px;
+    font-size: 14px;
     color: #fff;
     font-weight: 800;
-    margin-top: 4px;
-    letter-spacing: 0.5px;
+    margin-top: 2px;
   }
 
   /* ── RECEIPT BADGE ── */
   .receipt-bar {
     background: #E8F4F3;
-    padding: 28px 80px;
+    padding: 16px 48px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 3px solid ${PRIMARY};
+    border-bottom: 2px solid ${PRIMARY};
   }
   .receipt-title {
-    font-size: 40px;
+    font-size: 18px;
     font-weight: 800;
     color: ${PRIMARY};
   }
   .booking-id {
-    font-size: 30px;
+    font-size: 13px;
     color: #555;
     font-weight: 600;
   }
@@ -100,38 +102,38 @@ export function buildBookingPdfHtml(booking: any): string {
   /* ── CARD ── */
   .card {
     background: #fff;
-    margin: 60px 80px;
-    border-radius: 28px;
+    margin: 30px 48px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(41,92,89,0.10);
+    box-shadow: 0 4px 16px rgba(41,92,89,0.10);
   }
   .card-header {
     background: ${PRIMARY};
-    padding: 40px 56px 36px;
+    padding: 20px 28px 18px;
   }
   .customer-name {
-    font-size: 50px;
+    font-size: 20px;
     font-weight: 800;
     color: #fff;
   }
   .customer-phone {
-    font-size: 28px;
+    font-size: 12.5px;
     color: rgba(255,255,255,0.80);
-    margin-top: 10px;
+    margin-top: 5px;
     font-weight: 500;
   }
 
   /* Status badge */
   .status-badge {
     display: inline-block;
-    margin-top: 18px;
-    padding: 8px 28px;
+    margin-top: 10px;
+    padding: 4px 14px;
     border-radius: 50px;
-    font-size: 24px;
+    font-size: 11px;
     font-weight: 700;
     background: rgba(255,255,255,0.18);
     color: #fff;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
   }
 
   /* Detail table */
@@ -139,20 +141,20 @@ export function buildBookingPdfHtml(booking: any): string {
     width: 100%;
     border-collapse: collapse;
   }
-  tr { border-bottom: 1.5px solid #F0F7F6; }
+  tr { border-bottom: 1px solid #F0F7F6; }
   tr:last-child { border-bottom: none; }
-  td { padding: 28px 56px; vertical-align: top; }
+  td { padding: 13px 28px; vertical-align: top; }
   .lbl {
-    width: 38%;
-    font-size: 24px;
+    width: 34%;
+    font-size: 11px;
     font-weight: 700;
     color: #9BBAB8;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding-right: 20px;
+    letter-spacing: 0.5px;
+    padding-right: 12px;
   }
   .val {
-    font-size: 30px;
+    font-size: 13.5px;
     font-weight: 600;
     color: #1C2B2A;
     line-height: 1.4;
@@ -161,28 +163,24 @@ export function buildBookingPdfHtml(booking: any): string {
   /* ── FOOTER ── */
   .footer {
     background: ${PRIMARY};
-    padding: 44px 80px;
+    padding: 22px 48px;
     text-align: center;
-    margin-top: auto;
   }
   .footer-text {
-    font-size: 26px;
+    font-size: 12px;
     color: rgba(255,255,255,0.75);
     font-weight: 500;
   }
   .footer-website {
-    font-size: 30px;
+    font-size: 13px;
     color: #fff;
     font-weight: 800;
-    margin-top: 8px;
-    letter-spacing: 0.5px;
+    margin-top: 4px;
+    letter-spacing: 0.4px;
   }
-
-  /* spacer pushes footer to bottom */
-  .spacer { flex: 1; }
 </style>
 </head>
-<body style="display:flex;flex-direction:column;">
+<body>
 
   <!-- HEADER -->
   <div class="header">
@@ -221,8 +219,6 @@ export function buildBookingPdfHtml(booking: any): string {
       ${row('Special Request',       booking.specialRequests)}
     </table>
   </div>
-
-  <div class="spacer"></div>
 
   <!-- FOOTER -->
   <div class="footer">

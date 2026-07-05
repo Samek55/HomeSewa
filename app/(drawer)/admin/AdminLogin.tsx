@@ -61,59 +61,62 @@ export default function AdminLogin() {
             }
             const cleaned = phoneNumber.replace(/\s/g, '');
 
-            // Check admins table first
+            // `admin` is the source of truth for login credentials for BOTH super
+            // admins and professionals (role: 'super_admin' | 'admin' | 'professional').
+            // `workforce` only holds richer profile data (services/areas) — it has
+            // no pin/status columns compatible with login, so it must not gate auth.
             const { data: admin } = await supabase
-                .from('admins')
+                .from('admin')
                 .select('id, full_name, status, pin, role')
                 .eq('phone', cleaned)
                 .single();
 
-            // Then check workforce table
-            const { data: worker } = await supabase
-                .from('workforce')
-                .select('uin, full_name, status, pin, preferred_city, positions')
-                .eq('phone', cleaned)
-                .single();
-
-            // Only true super admins (non-professional role) can log in via admins table
-            const isAdmin = admin && admin.role !== 'professional' && admin.status === 'Active' && admin.pin === password;
-            // Professionals must be Active in workforce table
-            const isWorker = worker && worker.status === 'Active' && worker.pin === password;
-
-            if (!isAdmin && !isWorker) {
-                const pinMatches = (worker && worker.pin === password) || (admin && admin.pin === password);
-                if (pinMatches) {
-                    // Pending professional — correct PIN but not yet approved
-                    if (worker && worker.status === 'Pending') {
-                        Alert.alert(
-                            'Approval Pending',
-                            'Your application is currently under review by the admin. You will receive an SMS with your login details once your profile is approved.\n\nThank you for your patience.'
-                        );
-                        return;
-                    }
-                    // Rejected professional
-                    if (worker && worker.status === 'Rejected') {
-                        Alert.alert(
-                            'Application Rejected',
-                            'Your professional application was not approved. Please contact HomeSewa support for more information.'
-                        );
-                        return;
-                    }
-                    // Disabled account
-                    if (worker && worker.status === 'Inactive') {
-                        Alert.alert(
-                            'Account Disabled',
-                            'Your account has been disabled by the admin. Please contact HomeSewa support.'
-                        );
-                        return;
-                    }
-                }
+            if (!admin || admin.pin !== password) {
                 Alert.alert('Login Failed', 'Invalid phone or PIN');
                 return;
             }
 
-            const displayName = (isAdmin ? admin?.full_name : worker?.full_name) || 'Admin';
-            const adminTable = isWorker ? 'workforce' : 'admins';
+            const isProfessional = admin.role === 'professional';
+
+            if (admin.status === 'Pending') {
+                Alert.alert(
+                    'Approval Pending',
+                    'Your application is currently under review by the admin. You will receive an SMS with your login details once your profile is approved.\n\nThank you for your patience.'
+                );
+                return;
+            }
+            if (admin.status === 'Rejected') {
+                Alert.alert(
+                    'Application Rejected',
+                    'Your professional application was not approved. Please contact HomeSewa support for more information.'
+                );
+                return;
+            }
+            if (admin.status === 'Inactive') {
+                Alert.alert(
+                    'Account Disabled',
+                    'Your account has been disabled by the admin. Please contact HomeSewa support.'
+                );
+                return;
+            }
+            if (admin.status !== 'Active') {
+                Alert.alert('Login Failed', 'Invalid phone or PIN');
+                return;
+            }
+
+            // Best-effort profile enrichment (city/services) for OneSignal tags.
+            let worker: any = null;
+            if (isProfessional) {
+                const { data: wf } = await supabase
+                    .from('workforce')
+                    .select('services, working_areas')
+                    .or(`phone.eq.${cleaned},phone.eq.977${cleaned}`)
+                    .maybeSingle();
+                worker = wf;
+            }
+
+            const displayName = admin.full_name || 'Admin';
+            const adminTable = isProfessional ? 'workforce' : 'admins';
             await AsyncStorage.setItem('adminPhone', cleaned);
             await AsyncStorage.setItem('adminTable', adminTable);
             await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
@@ -121,10 +124,10 @@ export default function AdminLogin() {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.login(cleaned);
                 OneSignal.User.addTag('phone', cleaned);
-                if (isWorker) {
+                if (isProfessional) {
                     OneSignal.User.addTag('role', 'career');
-                    OneSignal.User.addTag('city', worker?.preferred_city || '');
-                    OneSignal.User.addTag('services', (worker?.positions || [])[0] || '');
+                    OneSignal.User.addTag('city', (worker?.working_areas || [])[0] || '');
+                    OneSignal.User.addTag('services', (worker?.services || [])[0] || '');
                 } else {
                     OneSignal.User.addTag('role', 'admin');
                 }

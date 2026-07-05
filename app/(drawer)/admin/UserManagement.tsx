@@ -13,13 +13,14 @@ import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Professional = {
-    uin: string;
+    id: number;
     full_name: string;
     phone: string;
     positions: string[];
     preferred_city: string;
     status: string;
     modified_at?: string;
+    created_at?: string;
 };
 
 type Customer = {
@@ -27,6 +28,19 @@ type Customer = {
     full_name: string;
     blocked: boolean;
 };
+
+// `admins` (role: 'professional') is the source of truth for who actually has
+// login access — it's what Professional Verification promotes an applicant
+// into once approved. `workforce` holds the richer profile (services, working
+// areas) but includes ~180 legacy migrated rows that were never verified/never
+// had login credentials, so it must not be used to decide who shows up here.
+const normalizePhone = (raw: string) => {
+    if (!raw) return raw;
+    const digits = String(raw).replace(/\D/g, '');
+    return digits.length > 10 && digits.startsWith('977') ? digits.slice(-10) : digits;
+};
+
+const isPendingStatus = (status: string) => /pending|waiting/i.test(status || '');
 
 export default function UserManagement() {
     const [tab, setTab] = useState<'professionals' | 'customers'>('professionals');
@@ -53,11 +67,31 @@ export default function UserManagement() {
 
     const loadProfessionals = useCallback(async () => {
         setLoading(true);
-        const { data } = await supabase
-            .from('workforce')
-            .select('uin, full_name, phone, positions, preferred_city, status')
+        const { data: adminRows } = await supabase
+            .from('admin')
+            .select('id, full_name, phone, status, created_at, modified_at')
+            .eq('role', 'professional')
+            .neq('status', 'Pending')
             .order('full_name');
-        if (data) setProfessionals(data as Professional[]);
+
+        if (!adminRows) { setProfessionals([]); setLoading(false); return; }
+
+        // Best-effort enrichment with profile info (services/areas) from workforce.
+        const { data: wfRows } = await supabase
+            .from('workforce')
+            .select('phone, services, working_areas');
+        const wfByPhone = new Map<string, any>();
+        (wfRows || []).forEach(w => wfByPhone.set(normalizePhone(w.phone), w));
+
+        setProfessionals(adminRows.map(a => {
+            const wf = wfByPhone.get(normalizePhone(a.phone));
+            return {
+                ...a,
+                phone: normalizePhone(a.phone),
+                positions: wf?.services || [],
+                preferred_city: wf?.working_areas?.length > 0 ? wf.working_areas.join(', ') : '—',
+            };
+        }));
         setLoading(false);
     }, []);
 
@@ -90,20 +124,26 @@ export default function UserManagement() {
     // Realtime: reflect Supabase deletions/updates instantly in the UI
     useEffect(() => {
         if (!isSuperAdmin) return;
+
+        // Clear any stale channel left over from a Fast Refresh / remount —
+        // calling .on() on an already-subscribed channel throws at runtime.
+        const stale = supabase.getChannels().find(c => c.topic === 'realtime:um-changes');
+        if (stale) supabase.removeChannel(stale);
+
         const channel = supabase
             .channel('um-changes')
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'workforce' },
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'admin' },
                 (payload) => {
-                    if (payload.old?.uin) {
-                        setProfessionals(prev => prev.filter(p => p.uin !== payload.old.uin));
+                    if (payload.old?.id) {
+                        setProfessionals(prev => prev.filter(p => p.id !== payload.old.id));
                     }
                 }
             )
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'workforce' },
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'admin' },
                 (payload) => {
-                    if (payload.new?.uin) {
+                    if (payload.new?.id && payload.new?.role === 'professional') {
                         setProfessionals(prev => prev.map(p =>
-                            p.uin === payload.new.uin
+                            p.id === payload.new.id
                                 ? { ...p, status: payload.new.status, modified_at: payload.new.modified_at }
                                 : p
                         ));
@@ -150,9 +190,16 @@ export default function UserManagement() {
             const { data } = await supabase
                 .from('workforce')
                 .select('*')
-                .eq('uin', item.uin)
-                .single();
-            setDetailData(data || item);
+                .or(`phone.eq.${item.phone},phone.eq.977${item.phone}`)
+                .maybeSingle();
+            setDetailData(data
+                ? {
+                    ...data,
+                    positions: data.services || [],
+                    preferred_city: data.working_areas?.length > 0 ? data.working_areas.join(', ') : '—',
+                    ...item, // admins fields (full_name, phone, status, id) are the source of truth
+                }
+                : item);
             setLoadingDetail(false);
         } else {
             setDetailData(item);
@@ -161,13 +208,14 @@ export default function UserManagement() {
 
     const closeDetail = () => { setSelectedItem(null); setDetailData(null); };
 
-    const toggleProfessional = async (uin: string, phone: string, currentStatus: string) => {
+    const toggleProfessional = async (id: number, phone: string, currentStatus: string) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         const now = new Date().toISOString();
-        const { error } = await supabase.from('workforce').update({ status: newStatus, modified_at: now }).eq('uin', uin);
+        const { error } = await supabase.from('admin').update({ status: newStatus, modified_at: now }).eq('id', id);
         if (error) return Alert.alert('Error', error.message);
-        await supabase.from('admins').update({ status: newStatus, modified_at: now }).eq('phone', phone);
-        setProfessionals(prev => prev.map(p => p.uin === uin ? { ...p, status: newStatus, modified_at: now } : p));
+        await supabase.from('workforce').update({ profile_status: newStatus, updated_at: now })
+            .or(`phone.eq.${phone},phone.eq.977${phone}`);
+        setProfessionals(prev => prev.map(p => p.id === id ? { ...p, status: newStatus, modified_at: now } : p));
     };
 
     const toggleCustomer = async (phone: string, blocked: boolean) => {
@@ -235,7 +283,7 @@ export default function UserManagement() {
             ) : (
                 <FlatList
                     data={tab === 'professionals' ? filteredProfessionals : filteredCustomers as any[]}
-                    keyExtractor={(item: any) => item.uin || item.phone}
+                    keyExtractor={(item: any) => String(item.id ?? item.phone)}
                     contentContainerStyle={{ paddingHorizontal: wp('4%'), paddingBottom: hp('10%') }}
                     refreshControl={
                         <RefreshControl
@@ -269,8 +317,8 @@ export default function UserManagement() {
                             </View>
                             <View style={styles.cardRight}>
                                 {tab === 'professionals' && (
-                                    <View style={[styles.statusPill, item.status === 'Active' ? styles.pillActive : item.status === 'Pending' ? styles.pillPending : styles.pillInactive]}>
-                                        <Text style={[styles.statusText, { color: item.status === 'Active' ? '#16a34a' : item.status === 'Pending' ? '#d97706' : '#ef4444' }]}>
+                                    <View style={[styles.statusPill, item.status === 'Active' ? styles.pillActive : isPendingStatus(item.status) ? styles.pillPending : styles.pillInactive]}>
+                                        <Text style={[styles.statusText, { color: item.status === 'Active' ? '#16a34a' : isPendingStatus(item.status) ? '#d97706' : '#ef4444' }]}>
                                             {item.status}
                                         </Text>
                                     </View>
@@ -290,7 +338,7 @@ export default function UserManagement() {
                                                     `${item.status === 'Active' ? 'Disable' : 'Enable'} ${item.full_name}?`,
                                                     [
                                                         { text: 'Cancel', style: 'cancel' },
-                                                        { text: 'Confirm', onPress: () => toggleProfessional(item.uin, item.phone, item.status) },
+                                                        { text: 'Confirm', onPress: () => toggleProfessional(item.id, item.phone, item.status) },
                                                     ]
                                                 );
                                             } else {
@@ -357,12 +405,12 @@ export default function UserManagement() {
                                     {selectedItem?._type === 'professionals' && (
                                         <View style={[styles.statusPill,
                                             detailData.status === 'Active' ? styles.pillActive
-                                            : detailData.status === 'Pending' ? styles.pillPending
+                                            : isPendingStatus(detailData.status) ? styles.pillPending
                                             : styles.pillInactive
                                         ]}>
                                             <Text style={[styles.statusText, {
                                                 color: detailData.status === 'Active' ? '#16a34a'
-                                                    : detailData.status === 'Pending' ? '#d97706' : '#ef4444'
+                                                    : isPendingStatus(detailData.status) ? '#d97706' : '#ef4444'
                                             }]}>{detailData.status}</Text>
                                         </View>
                                     )}
@@ -439,7 +487,7 @@ export default function UserManagement() {
                                                     { text: 'Cancel', style: 'cancel' },
                                                     {
                                                         text: 'Confirm', onPress: async () => {
-                                                            await toggleProfessional(detailData.uin, detailData.phone, detailData.status);
+                                                            await toggleProfessional(detailData.id, detailData.phone, detailData.status);
                                                             const newStatus = detailData.status === 'Active' ? 'Inactive' : 'Active';
                                                             setDetailData((d: any) => ({ ...d, status: newStatus }));
                                                             setSelectedItem((s: any) => ({ ...s, status: newStatus }));

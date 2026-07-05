@@ -2,6 +2,20 @@ import { supabase } from '../lib/supabase';
 
 const generatePin = () => String(Math.floor(1000 + Math.random() * 9000));
 
+// `workforce`'s real columns are first_name/middle_name/last_name, profile_status,
+// services, working_areas, headshot_url, government_issued_id_url, created_date,
+// years_experience, emergency_contact, referred_by, issues — not the full_name/
+// positions/status/pin names this used to write. There's also no pin column on
+// workforce at all; login credentials live only on `admin`.
+const splitFullName = (fullName: string) => {
+  const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+  return {
+    first_name: parts[0] || null,
+    middle_name: parts.length > 2 ? parts.slice(1, -1).join(' ') : null,
+    last_name: parts.length > 1 ? parts[parts.length - 1] : null,
+  };
+};
+
 export const createCareer = async (data: any) => {
   const rawArea = data['Preferred Working Area'];
   const workingAreas = Array.isArray(rawArea) ? rawArea : rawArea ? [rawArea] : [];
@@ -15,22 +29,21 @@ export const createCareer = async (data: any) => {
   const pin = generatePin();
 
   const workforceFields = {
-    full_name: data['Full Name'],
+    ...splitFullName(data['Full Name']),
     phone: data['Phone'],
     email: data['Email'] || null,
     gender: data['Gender'] || null,
-    years_of_experience: data['Years of Experience'] || null,
-    message: data['Message'] || null,
-    emergency_contact_number: data['Emergency Contact Number'] || null,
-    referral_phone_number: data['Referral Phone Number'] || null,
+    years_experience: data['Years of Experience'] || null,
+    issues: data['Message'] || null,
+    emergency_contact: data['Emergency Contact Number'] || null,
+    referred_by: data['Referral Phone Number'] || null,
     preferred_city: data['Preferred City'] || null,
-    id_proof: idProofUrl,
-    headshot: headshotUrl,
-    positions: data['Your Expertise'] || [],
+    government_issued_id_url: idProofUrl,
+    headshot_url: headshotUrl,
+    services: data['Your Expertise'] || [],
     working_areas: workingAreas,
-    status: 'Pending',
-    application_date: new Date().toISOString().split('T')[0],
-    pin,
+    profile_status: 'Waiting for Verification',
+    created_date: new Date().toISOString(),
   };
 
   const { data: workforce, error } = await supabase
@@ -41,8 +54,8 @@ export const createCareer = async (data: any) => {
 
   if (error) throw new Error(error.message);
 
-  // Also register in admins table so professional can log in
-  await supabase.from('admins').insert([{
+  // Also register in admin table so professional can log in (PIN lives here, not on workforce)
+  await supabase.from('admin').insert([{
     full_name: data['Full Name'],
     phone: data['Phone'],
     pin,

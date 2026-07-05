@@ -11,10 +11,12 @@ import Header4 from '@/components/Header4Admin';
 
 type HelpEntry = {
     id: string;
+    ticket_no?: number;
     phone: string;
     created_at: string;
     modified_at?: string;
     status: 'open' | 'solved';
+    issue?: string;
 };
 
 const formatDate = (iso: string) => {
@@ -68,7 +70,8 @@ export default function HelpBox() {
         try {
             const { data, error } = await supabase
                 .from('helpbox')
-                .select('*');
+                .select('*')
+                .order('created_at', { ascending: true });
             if (error) throw error;
             if (data) setEntries(data as HelpEntry[]);
         } catch (e: any) {
@@ -211,7 +214,7 @@ export default function HelpBox() {
                                 activeOpacity={0.7}
                             >
                                 <Text style={[styles.cell, { flex: 0.6 }]} numberOfLines={1}>
-                                    {idx + 1}
+                                    H{String(item.ticket_no ?? idx + 1).padStart(4, '0')}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1.8 }]} numberOfLines={1}>
                                     {item.phone}

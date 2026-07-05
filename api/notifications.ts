@@ -124,7 +124,7 @@ export async function notifyAdminNewProfessional(applicantName: string, position
   try {
     // Fetch only super admin phones (role != 'professional' and active)
     const { data: superAdmins } = await supabase
-      .from('admins')
+      .from('admin')
       .select('phone')
       .neq('role', 'professional')
       .eq('status', 'Active');
@@ -177,20 +177,12 @@ export async function notifyProfessionalsInCity(service: string | string[], city
     const serviceLabel = services.join(', ');
     const cityLabel = cities.join(', ');
 
-    // Case-insensitive city filter using OR
-    const cityFilter = cities.map(c => `preferred_city.ilike.${c}`).join(',');
-
-    let query = supabase
+    const { data } = await supabase
       .from('workforce')
       .select('phone')
-      .overlaps('positions', services)
-      .eq('status', 'Active');
-
-    query = cities.length === 1
-      ? query.ilike('preferred_city', cities[0])
-      : query.or(cityFilter);
-
-    const { data } = await query;
+      .overlaps('services', services)
+      .in('preferred_city', cities)
+      .eq('profile_status', 'Active');
 
     if (!data || data.length === 0) {
       throw new Error(`No active professionals found for "${serviceLabel}" in "${cityLabel}".`);
@@ -221,10 +213,10 @@ export async function pushAreaProfessionals(service: string, area: string) {
   try {
     const { data } = await supabase
       .from('workforce')
-      .select('phone, full_name')
-      .contains('positions', [service])
+      .select('phone, first_name')
+      .contains('services', [service])
       .contains('working_areas', [area])
-      .eq('status', 'Active');
+      .eq('profile_status', 'Active');
 
     if (!data || data.length === 0) {
       console.log(`No active "${service}" professionals found in "${area}"`);
@@ -234,7 +226,7 @@ export async function pushAreaProfessionals(service: string, area: string) {
     const targets = [...data].sort(() => Math.random() - 0.5).slice(0, 5);
 
     await Promise.all(targets.map(async (pro) => {
-      const firstName = (pro.full_name || '').split(' ')[0] || 'Professional';
+      const firstName = pro.first_name || 'Professional';
       const phone = String(pro.phone).replace(/\D/g, '').slice(-10);
       await sendNotification({
         include_aliases: { external_id: [phone] },
@@ -256,9 +248,9 @@ export async function notifyProfessionalsAccepted(service: string, city: string,
     const { data } = await supabase
       .from('workforce')
       .select('phone')
-      .contains('positions', [service.trim()])
+      .contains('services', [service.trim()])
       .eq('preferred_city', city.trim())
-      .eq('status', 'Active');
+      .eq('profile_status', 'Active');
 
     if (!data || data.length === 0) {
       console.log(`No professionals found for "${service}" in "${city}"`);

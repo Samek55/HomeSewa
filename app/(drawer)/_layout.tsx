@@ -24,6 +24,15 @@ export default function DrawerLayout() {
         overlayColor: 'rgba(0,0,0,0.5)',
       }}
     >
+      {/* Must be declared first, matching initialRouteName above — otherwise
+          FAQs (the first explicitly-declared screen) can become the fallback
+          target whenever navigation resets to "the first screen" (empty back
+          stack, stale deep link), instead of Home. */}
+      <Drawer.Screen
+        name="(tabs)"
+        options={{ drawerItemStyle: { display: 'none' } }}
+      />
+
       <Drawer.Screen
         name="FAQs"
         options={{

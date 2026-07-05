@@ -9,6 +9,16 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 
+const ISSUE_OPTIONS = [
+    'Professional Membership',
+    'Service Enquiry',
+    'Partnership',
+    'Complain of Pro',
+    'Work Dispute',
+    'Advertising',
+    'Other',
+];
+
 export default function HelpBoxDetail() {
     const { entry } = useLocalSearchParams<{ entry: string }>();
     let item: any = {};
@@ -16,6 +26,8 @@ export default function HelpBoxDetail() {
 
     const [reply, setReply] = useState(item.reply || '');
     const [status, setStatus] = useState<'open' | 'solved'>(item.status || 'open');
+    const [issue, setIssue] = useState<string>(item.issue || '');
+    const [showIssueDrop, setShowIssueDrop] = useState(false);
     const [saving, setSaving] = useState(false);
 
     const formatDate = (iso: string) => {
@@ -29,7 +41,7 @@ export default function HelpBoxDetail() {
         try {
             const { data: updated, error } = await supabase
                 .from('helpbox')
-                .update({ reply: reply.trim(), status: newStatus, modified_at: now })
+                .update({ reply: reply.trim(), status: newStatus, issue: issue || null, modified_at: now })
                 .eq('id', item.id)
                 .select();
             if (error) throw error;
@@ -56,7 +68,9 @@ export default function HelpBoxDetail() {
                     <Ionicons name="arrow-back" size={22} color="#fff" />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>#{item.id?.slice(0, 6).toUpperCase()}</Text>
+                    <Text style={styles.headerTitle}>
+                        H{String(item.ticket_no ?? '').padStart(4, '0')}
+                    </Text>
                     {item.created_at ? <Text style={styles.headerSub}>{formatDate(item.created_at)}</Text> : null}
                 </View>
                 <View style={[styles.statusPill, { backgroundColor: isSolved ? '#dcfce7' : '#fee2e2' }]}>
@@ -88,12 +102,49 @@ export default function HelpBoxDetail() {
                     </View>
                 </View>
 
+                {item.created_at && (
+                    <View style={styles.card}>
+                        <Text style={styles.sectionLabel}>Request Date</Text>
+                        <Text style={styles.dateText}>{formatDate(item.created_at)}</Text>
+                    </View>
+                )}
+
                 {item.modified_at && (
                     <View style={styles.card}>
                         <Text style={styles.sectionLabel}>Last Updated</Text>
                         <Text style={styles.dateText}>{formatDate(item.modified_at)}</Text>
                     </View>
                 )}
+
+                <View style={[styles.card, { zIndex: 10 }]}>
+                    <Text style={styles.sectionLabel}>Issue</Text>
+                    <TouchableOpacity
+                        style={styles.issueBtn}
+                        onPress={() => !isSolved && setShowIssueDrop(v => !v)}
+                        activeOpacity={0.7}
+                        disabled={isSolved}
+                    >
+                        <Text style={issue ? styles.issueBtnText : styles.issueBtnPlaceholder}>
+                            {issue || 'Select issue type'}
+                        </Text>
+                        <Ionicons name={showIssueDrop ? 'chevron-up' : 'chevron-down'} size={16} color="#295C59" />
+                    </TouchableOpacity>
+                    {showIssueDrop && (
+                        <View style={styles.issueDropMenu}>
+                            {ISSUE_OPTIONS.map(opt => (
+                                <TouchableOpacity
+                                    key={opt}
+                                    style={[styles.issueDropItem, issue === opt && styles.issueDropItemActive]}
+                                    onPress={() => { setIssue(opt); setShowIssueDrop(false); }}
+                                >
+                                    <Text style={[styles.issueDropItemText, issue === opt && styles.issueDropItemTextActive]}>
+                                        {opt}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
+                </View>
 
                 <View style={styles.card}>
                     <Text style={styles.sectionLabel}>Note</Text>
@@ -188,6 +239,24 @@ const styles = StyleSheet.create({
     phoneLink: { textDecorationLine: 'underline', color: '#295C59' },
     whatsappBtn: { padding: 4 },
     dateText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A' },
+
+    issueBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: '#F5F9F8', borderRadius: 10,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('3%'), paddingVertical: hp('1.5%'),
+    },
+    issueBtnText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A' },
+    issueBtnPlaceholder: { fontSize: 14, fontWeight: '500', color: '#B0BEC5' },
+    issueDropMenu: {
+        backgroundColor: '#fff', borderRadius: 10,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        marginTop: 6, overflow: 'hidden',
+    },
+    issueDropItem: { paddingHorizontal: wp('3%'), paddingVertical: hp('1.3%') },
+    issueDropItemActive: { backgroundColor: '#E8F4F3' },
+    issueDropItemText: { fontSize: 13.5, fontWeight: '500', color: '#1C2B2A' },
+    issueDropItemTextActive: { color: '#295C59', fontWeight: '700' },
 
     replyInput: {
         fontSize: 14, color: '#1C2B2A', lineHeight: 22,
