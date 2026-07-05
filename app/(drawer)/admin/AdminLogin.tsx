@@ -61,45 +61,55 @@ export default function AdminLogin() {
             }
             const cleaned = phoneNumber.replace(/\s/g, '');
 
-            // `admin` is the source of truth for login credentials for BOTH super
-            // admins and professionals (role: 'super_admin' | 'admin' | 'professional').
+            // Super admins/admins live in `admin`; professionals live in their own
+            // `professional` table (no `role` column there — the table is the role).
             // `workforce` only holds richer profile data (services/areas) — it has
             // no pin/status columns compatible with login, so it must not gate auth.
-            const { data: admin } = await supabase
+            const { data: adminRow } = await supabase
                 .from('admin')
                 .select('id, full_name, status, pin, role')
                 .eq('phone', cleaned)
-                .single();
+                .maybeSingle();
 
-            if (!admin || admin.pin !== password) {
+            let account: any = adminRow;
+            const isProfessional = !adminRow;
+
+            if (isProfessional) {
+                const { data: proRow } = await supabase
+                    .from('professional')
+                    .select('id, full_name, status, pin')
+                    .eq('phone', cleaned)
+                    .maybeSingle();
+                account = proRow;
+            }
+
+            if (!account || account.pin !== password) {
                 Alert.alert('Login Failed', 'Invalid phone or PIN');
                 return;
             }
 
-            const isProfessional = admin.role === 'professional';
-
-            if (admin.status === 'Pending') {
+            if (account.status === 'Pending') {
                 Alert.alert(
                     'Approval Pending',
                     'Your application is currently under review by the admin. You will receive an SMS with your login details once your profile is approved.\n\nThank you for your patience.'
                 );
                 return;
             }
-            if (admin.status === 'Rejected') {
+            if (account.status === 'Rejected') {
                 Alert.alert(
                     'Application Rejected',
                     'Your professional application was not approved. Please contact HomeSewa support for more information.'
                 );
                 return;
             }
-            if (admin.status === 'Inactive') {
+            if (account.status === 'Inactive') {
                 Alert.alert(
                     'Account Disabled',
                     'Your account has been disabled by the admin. Please contact HomeSewa support.'
                 );
                 return;
             }
-            if (admin.status !== 'Active') {
+            if (account.status !== 'Active') {
                 Alert.alert('Login Failed', 'Invalid phone or PIN');
                 return;
             }
@@ -115,11 +125,11 @@ export default function AdminLogin() {
                 worker = wf;
             }
 
-            const displayName = admin.full_name || 'Admin';
+            const displayName = account.full_name || 'Admin';
             const adminTable = isProfessional ? 'workforce' : 'admins';
             await AsyncStorage.setItem('adminPhone', cleaned);
             await AsyncStorage.setItem('adminTable', adminTable);
-            await AsyncStorage.setItem('adminRole', admin.role || '');
+            await AsyncStorage.setItem('adminRole', isProfessional ? 'professional' : (account.role || ''));
             await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
             try {
                 const { OneSignal } = require('react-native-onesignal');

@@ -90,23 +90,30 @@ export default function AdminChangePassword() {
 
         setLoading(true);
         try {
-            // PIN lives only on `admin` — for both super admins and professionals —
-            // `workforce` has no pin column at all.
+            // Super admins/admins live in `admin`; professionals live in `professional`.
+            // `workforce` has no pin column at all, so it never gates PIN changes.
             const { data: adminRecord } = await supabase
                 .from('admin')
                 .select('pin, full_name')
                 .eq('phone', cleaned)
-                .single();
+                .maybeSingle();
 
-            if (!adminRecord || adminRecord.pin !== resolvedOld) {
+            const table = adminRecord ? 'admin' : 'professional';
+            const record = adminRecord || (await supabase
+                .from('professional')
+                .select('pin, full_name')
+                .eq('phone', cleaned)
+                .maybeSingle()).data;
+
+            if (!record || record.pin !== resolvedOld) {
                 Alert.alert('Error', 'Phone number or current PIN is incorrect');
                 return;
             }
 
-            const { error } = await supabase.from('admin').update({ pin: resolvedNew }).eq('phone', cleaned);
+            const { error } = await supabase.from(table).update({ pin: resolvedNew }).eq('phone', cleaned);
             if (error) throw error;
 
-            const firstName = (adminRecord.full_name || '').split(' ')[0] || 'User';
+            const firstName = (record.full_name || '').split(' ')[0] || 'User';
             sendPinChangeSms(cleaned, firstName).catch(() => {});
 
             Alert.alert('Success', 'PIN updated successfully', [

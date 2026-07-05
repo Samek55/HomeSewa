@@ -38,11 +38,11 @@ type AdminAccount = {
     status: string;
 };
 
-// `admins` (role: 'professional') is the source of truth for who actually has
-// login access — it's what Professional Verification promotes an applicant
-// into once approved. `workforce` holds the richer profile (services, working
-// areas) but includes ~180 legacy migrated rows that were never verified/never
-// had login credentials, so it must not be used to decide who shows up here.
+// `professional` is the source of truth for who actually has login access —
+// it's what Professional Verification promotes an applicant into once
+// approved. `workforce` holds the richer profile (services, working areas)
+// but includes ~180 legacy migrated rows that were never verified/never had
+// login credentials, so it must not be used to decide who shows up here.
 const normalizePhone = (raw: string) => {
     if (!raw) return raw;
     const digits = String(raw).replace(/\D/g, '');
@@ -88,14 +88,13 @@ export default function UserManagement() {
 
     const loadProfessionals = useCallback(async () => {
         setLoading(true);
-        const { data: adminRows } = await supabase
-            .from('admin')
+        const { data: proRows } = await supabase
+            .from('professional')
             .select('id, full_name, phone, status, created_at, modified_at')
-            .eq('role', 'professional')
             .neq('status', 'Pending')
             .order('full_name');
 
-        if (!adminRows) { setProfessionals([]); setLoading(false); return; }
+        if (!proRows) { setProfessionals([]); setLoading(false); return; }
 
         // Best-effort enrichment with profile info (services/areas) from workforce.
         const { data: wfRows } = await supabase
@@ -104,7 +103,7 @@ export default function UserManagement() {
         const wfByPhone = new Map<string, any>();
         (wfRows || []).forEach(w => wfByPhone.set(normalizePhone(w.phone), w));
 
-        setProfessionals(adminRows.map(a => {
+        setProfessionals(proRows.map(a => {
             const wf = wfByPhone.get(normalizePhone(a.phone));
             return {
                 ...a,
@@ -166,16 +165,16 @@ export default function UserManagement() {
 
         const channel = supabase
             .channel('um-changes')
-            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'admin' },
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'professional' },
                 (payload) => {
                     if (payload.old?.id) {
                         setProfessionals(prev => prev.filter(p => p.id !== payload.old.id));
                     }
                 }
             )
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'admin' },
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'professional' },
                 (payload) => {
-                    if (payload.new?.id && payload.new?.role === 'professional') {
+                    if (payload.new?.id) {
                         setProfessionals(prev => prev.map(p =>
                             p.id === payload.new.id
                                 ? { ...p, status: payload.new.status, modified_at: payload.new.modified_at }
@@ -231,7 +230,7 @@ export default function UserManagement() {
                     ...data,
                     positions: data.services || [],
                     preferred_city: data.working_areas?.length > 0 ? data.working_areas.join(', ') : '—',
-                    ...item, // admins fields (full_name, phone, status, id) are the source of truth
+                    ...item, // professional table fields (full_name, phone, status, id) are the source of truth
                 }
                 : item);
             setLoadingDetail(false);
@@ -245,7 +244,7 @@ export default function UserManagement() {
     const toggleProfessional = async (id: number, phone: string, currentStatus: string) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
         const now = new Date().toISOString();
-        const { error } = await supabase.from('admin').update({ status: newStatus, modified_at: now }).eq('id', id);
+        const { error } = await supabase.from('professional').update({ status: newStatus, modified_at: now }).eq('id', id);
         if (error) return Alert.alert('Error', error.message);
         await supabase.from('workforce').update({ profile_status: newStatus, updated_at: now })
             .or(`phone.eq.${phone},phone.eq.977${phone}`);
@@ -276,23 +275,30 @@ export default function UserManagement() {
 
         setAddingAdmin(true);
         try {
-            // `admin.phone` is unique — if this number already has an account
-            // (e.g. a Professional), promote it to Admin instead of inserting
-            // a second row (which would just fail on the unique constraint).
-            const { data: existing } = await supabase
-                .from('admin')
-                .select('id, role')
-                .eq('phone', cleanPhone)
-                .maybeSingle();
+            // Professionals live in their own table now, so promoting one to Admin
+            // means moving the row across tables, not just flipping a role field.
+            const [{ data: existingAdmin }, { data: existingPro }] = await Promise.all([
+                supabase.from('admin').select('id').eq('phone', cleanPhone).maybeSingle(),
+                supabase.from('professional').select('id, full_name, pin').eq('phone', cleanPhone).maybeSingle(),
+            ]);
 
-            if (existing) {
-                if (existing.role === 'admin' || existing.role === 'super_admin') {
-                    Alert.alert('Already an Admin', 'This phone number already has Admin access.');
-                    return;
-                }
-                const { error } = await supabase.from('admin').update({ role: 'admin', status: 'Active' }).eq('id', existing.id);
-                if (error) throw error;
-                Alert.alert('Promoted', 'Existing account upgraded to Admin.');
+            if (existingAdmin) {
+                Alert.alert('Already an Admin', 'This phone number already has Admin access.');
+                return;
+            }
+
+            if (existingPro) {
+                const { error: insertErr } = await supabase.from('admin').insert([{
+                    full_name: existingPro.full_name,
+                    phone: cleanPhone,
+                    pin: existingPro.pin,
+                    role: 'admin',
+                    status: 'Active',
+                }]);
+                if (insertErr) throw insertErr;
+                const { error: deleteErr } = await supabase.from('professional').delete().eq('id', existingPro.id);
+                if (deleteErr) throw deleteErr;
+                Alert.alert('Promoted', 'Existing Professional account upgraded to Admin.');
             } else {
                 if (!newAdminName.trim()) { Alert.alert('Validation', 'Enter a full name.'); return; }
                 if (newAdminPin.length !== 4) { Alert.alert('Validation', 'Enter a 4-digit PIN.'); return; }

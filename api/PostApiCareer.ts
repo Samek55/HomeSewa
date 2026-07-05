@@ -54,12 +54,11 @@ export const createCareer = async (data: any) => {
 
   if (error) throw new Error(error.message);
 
-  // Also register in admin table so professional can log in (PIN lives here, not on workforce)
-  await supabase.from('admin').insert([{
+  // Also register in the professional table so they can log in (PIN lives here, not on workforce)
+  await supabase.from('professional').insert([{
     full_name: data['Full Name'],
     phone: data['Phone'],
     pin,
-    role: 'professional',
     status: 'Pending',
   }]);
 

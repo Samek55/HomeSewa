@@ -148,9 +148,9 @@ export default function ProfessionalVerification() {
             {
                 text: 'Approve', onPress: async () => {
                     await supabase.from('workforce').update({ profile_status: 'Active' }).eq('uin', uin);
-                    // The admins row (with login PIN) was created at signup with status 'Pending' — activate it now.
-                    const { data: adminRow } = await supabase
-                        .from('admin')
+                    // The professional row (with login PIN) was created at signup with status 'Pending' — activate it now.
+                    const { data: proRow } = await supabase
+                        .from('professional')
                         .update({ status: 'Active' })
                         .eq('phone', phone)
                         .select('pin')
@@ -161,7 +161,7 @@ export default function ProfessionalVerification() {
                     // Send login details SMS now that they're approved
                     const firstName = name.split(' ')[0] || 'Professional';
                     const approvalText =
-                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${adminRow?.pin || 'Contact support'}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
+                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${proRow?.pin || 'Contact support'}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
                     sendSparrowSms(phone, approvalText).catch(() => {});
 
                     Alert.alert('Approved', `${name} has been approved. Login details sent via SMS.`);
@@ -170,12 +170,13 @@ export default function ProfessionalVerification() {
         ]);
     };
 
-    const handleReject = (uin: number, name: string) => {
+    const handleReject = (uin: number, phone: string, name: string) => {
         Alert.alert('Reject', `Reject ${name}'s application?`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Reject', style: 'destructive', onPress: async () => {
                     await supabase.from('workforce').update({ profile_status: 'Rejected' }).eq('uin', uin);
+                    await supabase.from('professional').update({ status: 'Rejected' }).eq('phone', phone);
                     setPending(prev => prev.filter(p => p.uin !== uin));
                     setSelected(null);
                 }
@@ -328,7 +329,7 @@ export default function ProfessionalVerification() {
                                 <View style={styles.btnRow}>
                                     <TouchableOpacity
                                         style={[styles.btn, styles.rejectBtn]}
-                                        onPress={() => handleReject(selected.uin, selected.full_name)}
+                                        onPress={() => handleReject(selected.uin, selected.phone, selected.full_name)}
                                     >
                                         <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
                                         <Text style={styles.rejectText}>Reject</Text>

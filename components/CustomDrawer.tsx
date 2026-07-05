@@ -33,19 +33,20 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
         if (!phone) { setProfile(null); return; }
 
         try {
-            // `admin` is the source of truth for the display name for every
-            // logged-in account (super admin or professional) — it's what
-            // AdminLogin authenticates against, so it's guaranteed to exist.
-            const { data: adminRow } = await supabase
-                .from('admin')
+            // Super admins/admins live in `admin`; professionals live in their own
+            // `professional` table — both are guaranteed to exist since they're
+            // what AdminLogin just authenticated this session against.
+            const isProfessional = table === 'workforce';
+            const { data: accountRow } = await supabase
+                .from(isProfessional ? 'professional' : 'admin')
                 .select('full_name')
                 .eq('phone', phone)
-                .single();
+                .maybeSingle();
 
             let photoUrl: string | null = null;
-            if (table === 'workforce') {
-                // Professionals: enrich with their headshot from workforce,
-                // matching either phone format (legacy rows store a 977 prefix).
+            if (isProfessional) {
+                // Enrich with their headshot from workforce, matching either
+                // phone format (legacy rows store a 977 prefix).
                 const { data: wf } = await supabase
                     .from('workforce')
                     .select('headshot_url')
@@ -54,7 +55,7 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                 photoUrl = wf?.headshot_url || null;
             }
 
-            setProfile(adminRow ? { fullName: adminRow.full_name || '', phone, photoUrl } : null);
+            setProfile(accountRow ? { fullName: accountRow.full_name || '', phone, photoUrl } : null);
         } catch {
             setProfile(null);
         }
