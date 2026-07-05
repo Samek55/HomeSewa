@@ -119,6 +119,7 @@ export default function AdminLogin() {
             const adminTable = isProfessional ? 'workforce' : 'admins';
             await AsyncStorage.setItem('adminPhone', cleaned);
             await AsyncStorage.setItem('adminTable', adminTable);
+            await AsyncStorage.setItem('adminRole', admin.role || '');
             await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
             try {
                 const { OneSignal } = require('react-native-onesignal');
@@ -144,7 +145,7 @@ export default function AdminLogin() {
 
     const handleLogout = async () => {
         try {
-            await AsyncStorage.removeItem('adminPhone');
+            await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole']);
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.logout();

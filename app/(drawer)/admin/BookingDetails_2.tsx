@@ -12,6 +12,7 @@ import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
 import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
 import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
+import { pushAreaProfessionals } from '../../../api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
@@ -40,6 +41,7 @@ export default function BookingDetails() {
     const [workStatus, setWorkStatus] = useState<StatusType>('Pending');
     const [isLocked, setIsLocked] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [confirming, setConfirming] = useState(false);
 
     const STATUS_OPTIONS: StatusType[] = ['Completed', 'Pending', 'Cancelled', 'Dispute'];
 
@@ -94,6 +96,23 @@ export default function BookingDetails() {
     };
 
     const handleSharePDF = () => shareBookingPdf(booking);
+
+    const isPendingConfirmation = (booking?.status || '').toLowerCase().trim() === 'pending confirmation';
+
+    const handleConfirmBooking = async () => {
+        if (!booking?.id) return;
+        setConfirming(true);
+        try {
+            await updateBookingStatus(booking.id, 'New / Open');
+            const targetService = String(booking.service || '').split(',')[0].trim();
+            pushAreaProfessionals(targetService, booking.area || '').catch(() => {});
+            router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to confirm booking');
+        } finally {
+            setConfirming(false);
+        }
+    };
 
     const statusColor = (s: string) => {
         const ls = s?.toLowerCase() || '';
@@ -198,50 +217,76 @@ export default function BookingDetails() {
                     {/* BOTTOM: status control — pinned to bottom */}
                     <View>
                         <View style={styles.divider} />
-                        <Text style={styles.statusLabel}>Work Status</Text>
-                        {isLocked && !isSuperAdmin && (
-                            <Text style={styles.lockedNote}>Completed — cannot be modified.</Text>
+
+                        {isPendingConfirmation ? (
+                            isSuperAdmin ? (
+                                <>
+                                    <Text style={styles.statusLabel}>Booking Confirmation</Text>
+                                    <Text style={styles.pendingNote}>
+                                        This booking hasn't been reviewed yet. Confirming it notifies nearby professionals.
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={[styles.submitBtn, confirming && { opacity: 0.6 }]}
+                                        onPress={handleConfirmBooking}
+                                        disabled={confirming}
+                                    >
+                                        {confirming
+                                            ? <ActivityIndicator color="#fff" />
+                                            : <Text style={styles.submitText}>Confirm & Notify Professionals</Text>
+                                        }
+                                    </TouchableOpacity>
+                                </>
+                            ) : (
+                                <Text style={styles.pendingNote}>Awaiting confirmation from HomeSewa staff.</Text>
+                            )
+                        ) : (
+                            <>
+                                <Text style={styles.statusLabel}>Work Status</Text>
+                                {isLocked && !isSuperAdmin && (
+                                    <Text style={styles.lockedNote}>Completed — cannot be modified.</Text>
+                                )}
+
+                                <View style={styles.dropdownWrapper}>
+                                    <TouchableOpacity
+                                        style={[styles.dropdownBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
+                                        disabled={isLocked && !isSuperAdmin}
+                                        onPress={() => {
+                                            const next = !openDropdown;
+                                            setOpenDropdown(next);
+                                            if (next) {
+                                                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+                                            }
+                                        }}
+                                    >
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                            <Text style={styles.dropdownText}>{workStatus}</Text>
+                                            <Image source={dropdownIcon} style={{ height: 18, width: 20, tintColor: '#295C59' }} />
+                                        </View>
+                                    </TouchableOpacity>
+                                    {openDropdown && (
+                                        <View style={styles.dropdownMenu}>
+                                            {STATUS_OPTIONS.filter(item => item !== workStatus).map(item => (
+                                                <TouchableOpacity
+                                                    key={item}
+                                                    style={styles.dropdownItem}
+                                                    onPress={() => handleStatusChange(item)}
+                                                >
+                                                    <Text style={styles.dropdownItemText}>{item}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    )}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.submitBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
+                                    disabled={isLocked && !isSuperAdmin}
+                                    onPress={handleSubmit}
+                                >
+                                    <Text style={styles.submitText}>Submit</Text>
+                                </TouchableOpacity>
+                            </>
                         )}
-
-                        <View style={styles.dropdownWrapper}>
-                            <TouchableOpacity
-                                style={[styles.dropdownBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
-                                disabled={isLocked && !isSuperAdmin}
-                                onPress={() => {
-                                    const next = !openDropdown;
-                                    setOpenDropdown(next);
-                                    if (next) {
-                                        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
-                                    }
-                                }}
-                            >
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    <Text style={styles.dropdownText}>{workStatus}</Text>
-                                    <Image source={dropdownIcon} style={{ height: 18, width: 20, tintColor: '#295C59' }} />
-                                </View>
-                            </TouchableOpacity>
-                            {openDropdown && (
-                                <View style={styles.dropdownMenu}>
-                                    {STATUS_OPTIONS.filter(item => item !== workStatus).map(item => (
-                                        <TouchableOpacity
-                                            key={item}
-                                            style={styles.dropdownItem}
-                                            onPress={() => handleStatusChange(item)}
-                                        >
-                                            <Text style={styles.dropdownItemText}>{item}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
-
-                        <TouchableOpacity
-                            style={[styles.submitBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
-                            disabled={isLocked && !isSuperAdmin}
-                            onPress={handleSubmit}
-                        >
-                            <Text style={styles.submitText}>Submit</Text>
-                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             )}
@@ -294,6 +339,7 @@ const styles = StyleSheet.create({
 
     statusLabel: { fontSize: hp('2%'), fontWeight: '700', color: '#111', marginBottom: hp('0.5%') },
     lockedNote: { fontSize: hp('1.7%'), color: '#22c55e', fontWeight: '500', marginBottom: hp('0.5%') },
+    pendingNote: { fontSize: hp('1.7%'), color: '#d97706', fontWeight: '500', marginBottom: hp('1%') },
 
     dropdownWrapper: { marginBottom: hp('1%') },
     dropdownBtn: {

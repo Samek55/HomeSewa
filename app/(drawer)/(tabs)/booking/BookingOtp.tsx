@@ -14,7 +14,6 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { createBooking } from '../../../../api/PostApiBooking';
-import { pushAreaProfessionals } from '../../../../api/notifications';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
@@ -153,7 +152,9 @@ export default function BookingOtp() {
         'Budget': selectedBudget,
         'Starting Date': formatDate(date),
         ...(endDate ? { 'Service Completion Date': formatDate(endDate) } : {}),
-        'Status': 'New / Open',
+        // Bookings start unconfirmed — HomeSewa staff must review and confirm
+        // before professionals are notified (see BookingHistory/BookingDetails_2).
+        'Status': 'Pending Confirmation',
         'Photos': photoUrls,
         service_names: serviceNames,
       };
@@ -172,11 +173,8 @@ export default function BookingOtp() {
 
       await createBooking(booking);
 
-      try {
-        const targetService = Array.isArray(selectedService) ? selectedService[0] : selectedService;
-        const targetArea = Array.isArray(selectedArea) ? selectedArea[0] : selectedArea;
-        pushAreaProfessionals(String(targetService).trim(), String(targetArea).trim()).catch(() => {});
-      } catch {}
+      // Professionals are notified only after an Admin/Super Admin confirms
+      // this booking (BookingDetails_2's "Confirm & Notify Professionals").
 
       router.push('/booking/BookingVerify');
     } catch (error: any) {

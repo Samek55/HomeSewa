@@ -172,7 +172,7 @@ export default function UpdateProfile() {
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Logout', style: 'destructive', onPress: async () => {
-                    await AsyncStorage.multiRemove(['adminPhone', 'adminTable']);
+                    await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole']);
                     try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
                     DeviceEventEmitter.emit('authChanged');
                     router.replace('/Home');

@@ -62,6 +62,7 @@ export default function BookingHistory() {
     const intervalRef = useRef<any>(null);
 
     const FILTERS = [
+        ...(isSuperAdmin ? [{ label: 'Awaiting Confirmation', value: 'Pending Confirmation' }] : []),
         { label: 'New',       value: 'New / Open' },
         { label: 'Cancelled', value: 'Cancelled'  },
         { label: 'OnGoing',   value: 'Pending'    },
@@ -108,8 +109,13 @@ export default function BookingHistory() {
     }, [bookings]);
 
     const sortedBookings = useMemo(() => {
-        return [...bookings].sort((a, b) => (Number(b.bookingId) || 0) - (Number(a.bookingId) || 0));
-    }, [bookings]);
+        // Bookings awaiting staff confirmation are invisible to professionals —
+        // they only appear once an Admin/Super Admin has confirmed them.
+        const visible = isSuperAdmin
+            ? bookings
+            : bookings.filter(b => (b.status || '').toLowerCase().trim() !== 'pending confirmation');
+        return [...visible].sort((a, b) => (Number(b.bookingId) || 0) - (Number(a.bookingId) || 0));
+    }, [bookings, isSuperAdmin]);
 
     // Count bookings per YYYY-MM-DD using startingDate
     const countsByDate = useMemo(() => {
@@ -136,9 +142,11 @@ export default function BookingHistory() {
         if (filter !== 'All') {
             data = data.filter(item => {
                 const status = (item.status || '').toLowerCase().trim();
+                if (filter === 'Pending Confirmation') return status === 'pending confirmation';
                 if (filter === 'Cancelled') return status.includes('cancel');
                 if (filter === 'New / Open') return status.includes('new') || status.includes('open');
                 if (filter === 'Dispute') return status.includes('dispute');
+                if (filter === 'Pending') return status === 'pending';
                 return status.includes(filter.toLowerCase());
             });
         }
@@ -165,7 +173,7 @@ export default function BookingHistory() {
 
     const handleLogout = async () => {
         try {
-            await AsyncStorage.removeItem('adminPhone');
+            await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole']);
             try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
             router.replace('/admin/AdminLogin');
         } catch (e: any) { alert('Logout error: ' + e.message); }

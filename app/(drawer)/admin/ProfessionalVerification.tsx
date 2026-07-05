@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -58,6 +59,7 @@ const formatDate = (iso?: string) => {
 };
 
 export default function ProfessionalVerification() {
+    const insets = useSafeAreaInsets();
     const [pending, setPending] = useState<Professional[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -250,7 +252,7 @@ export default function ProfessionalVerification() {
                         </TouchableOpacity>
 
                         {selected && (
-                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('4%') }}>
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('4%') + insets.bottom }}>
                                 <View style={styles.cardTop}>
                                     {selected.headshot ? (
                                         <Image source={{ uri: selected.headshot }} style={styles.avatar} />

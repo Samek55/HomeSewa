@@ -2,12 +2,13 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     ActivityIndicator, Alert, TextInput, FlatList, RefreshControl,
-    Modal, ScrollView, Linking,
+    Modal, ScrollView, Linking, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,6 +30,14 @@ type Customer = {
     blocked: boolean;
 };
 
+type AdminAccount = {
+    id: number;
+    full_name: string;
+    phone: string;
+    role: string;
+    status: string;
+};
+
 // `admins` (role: 'professional') is the source of truth for who actually has
 // login access — it's what Professional Verification promotes an applicant
 // into once approved. `workforce` holds the richer profile (services, working
@@ -43,16 +52,26 @@ const normalizePhone = (raw: string) => {
 const isPendingStatus = (status: string) => /pending|waiting/i.test(status || '');
 
 export default function UserManagement() {
-    const [tab, setTab] = useState<'professionals' | 'customers'>('professionals');
+    const insets = useSafeAreaInsets();
+    const [tab, setTab] = useState<'professionals' | 'customers' | 'admins'>('professionals');
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [admins, setAdmins] = useState<AdminAccount[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [isSuperAdminRole, setIsSuperAdminRole] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [detailData, setDetailData] = useState<any>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
+
+    // Add Admin form
+    const [showAddAdmin, setShowAddAdmin] = useState(false);
+    const [newAdminName, setNewAdminName] = useState('');
+    const [newAdminPhone, setNewAdminPhone] = useState('');
+    const [newAdminPin, setNewAdminPin] = useState('');
+    const [addingAdmin, setAddingAdmin] = useState(false);
 
     useEffect(() => {
         AsyncStorage.getItem('adminTable').then(table => {
@@ -63,6 +82,8 @@ export default function UserManagement() {
             }
             setIsSuperAdmin(true);
         });
+        // Only Super Admin (not plain Admin) can manage other Admin accounts.
+        AsyncStorage.getItem('adminRole').then(role => setIsSuperAdminRole(role === 'super_admin'));
     }, []);
 
     const loadProfessionals = useCallback(async () => {
@@ -105,19 +126,32 @@ export default function UserManagement() {
         setLoading(false);
     }, []);
 
+    const loadAdmins = useCallback(async () => {
+        setLoading(true);
+        const { data } = await supabase
+            .from('admin')
+            .select('id, full_name, phone, role, status')
+            .in('role', ['admin', 'super_admin'])
+            .order('full_name');
+        setAdmins(data || []);
+        setLoading(false);
+    }, []);
+
     // Reload whenever the screen is focused OR the tab changes
     useFocusEffect(
         useCallback(() => {
             if (!isSuperAdmin) return;
             if (tab === 'professionals') loadProfessionals();
-            else loadCustomers();
+            else if (tab === 'customers') loadCustomers();
+            else loadAdmins();
         }, [tab, isSuperAdmin])
     );
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         if (tab === 'professionals') await loadProfessionals();
-        else await loadCustomers();
+        else if (tab === 'customers') await loadCustomers();
+        else await loadAdmins();
         setRefreshing(false);
     }, [tab]);
 
@@ -229,11 +263,70 @@ export default function UserManagement() {
         setCustomers(prev => prev.map(c => c.phone === phone ? { ...c, blocked: !blocked } : c));
     };
 
+    const toggleAdmin = async (id: number, currentStatus: string) => {
+        const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+        const { error } = await supabase.from('admin').update({ status: newStatus }).eq('id', id);
+        if (error) return Alert.alert('Error', error.message);
+        setAdmins(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+    };
+
+    const handleAddAdmin = async () => {
+        const cleanPhone = newAdminPhone.replace(/\D/g, '');
+        if (cleanPhone.length !== 10) return Alert.alert('Validation', 'Enter a valid 10-digit phone number.');
+
+        setAddingAdmin(true);
+        try {
+            // `admin.phone` is unique — if this number already has an account
+            // (e.g. a Professional), promote it to Admin instead of inserting
+            // a second row (which would just fail on the unique constraint).
+            const { data: existing } = await supabase
+                .from('admin')
+                .select('id, role')
+                .eq('phone', cleanPhone)
+                .maybeSingle();
+
+            if (existing) {
+                if (existing.role === 'admin' || existing.role === 'super_admin') {
+                    Alert.alert('Already an Admin', 'This phone number already has Admin access.');
+                    return;
+                }
+                const { error } = await supabase.from('admin').update({ role: 'admin', status: 'Active' }).eq('id', existing.id);
+                if (error) throw error;
+                Alert.alert('Promoted', 'Existing account upgraded to Admin.');
+            } else {
+                if (!newAdminName.trim()) { Alert.alert('Validation', 'Enter a full name.'); return; }
+                if (newAdminPin.length !== 4) { Alert.alert('Validation', 'Enter a 4-digit PIN.'); return; }
+                const { error } = await supabase.from('admin').insert([{
+                    full_name: newAdminName.trim(),
+                    phone: cleanPhone,
+                    pin: newAdminPin,
+                    role: 'admin',
+                    status: 'Active',
+                }]);
+                if (error) throw error;
+                Alert.alert('Added', 'New Admin account created.');
+            }
+
+            setShowAddAdmin(false);
+            setNewAdminName('');
+            setNewAdminPhone('');
+            setNewAdminPin('');
+            loadAdmins();
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Could not save.');
+        } finally {
+            setAddingAdmin(false);
+        }
+    };
+
     const filteredProfessionals = professionals.filter(p =>
         p.full_name?.toLowerCase().includes(search.toLowerCase()) || p.phone?.includes(search)
     );
     const filteredCustomers = customers.filter(c =>
         c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search)
+    );
+    const filteredAdmins = admins.filter(a =>
+        a.full_name?.toLowerCase().includes(search.toLowerCase()) || a.phone?.includes(search)
     );
 
     if (!isSuperAdmin) return null;
@@ -249,18 +342,28 @@ export default function UserManagement() {
             </View>
 
             <View style={styles.tabs}>
-                {(['professionals', 'customers'] as const).map(t => (
+                {(isSuperAdminRole
+                    ? (['professionals', 'customers', 'admins'] as const)
+                    : (['professionals', 'customers'] as const)
+                ).map(t => (
                     <TouchableOpacity
                         key={t}
                         style={[styles.tab, tab === t && styles.tabActive]}
                         onPress={() => { setTab(t); setSearch(''); }}
                     >
                         <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-                            {t === 'professionals' ? 'Professionals' : 'Customers'}
+                            {t === 'professionals' ? 'Professionals' : t === 'customers' ? 'Customers' : 'Admins'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
+
+            {tab === 'admins' && (
+                <TouchableOpacity style={styles.addAdminBtn} onPress={() => setShowAddAdmin(true)} activeOpacity={0.85}>
+                    <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                    <Text style={styles.addAdminBtnText}>Add Admin</Text>
+                </TouchableOpacity>
+            )}
 
             <View style={styles.searchBox}>
                 <Ionicons name="search-outline" size={16} color="#9BBAB8" />
@@ -282,7 +385,7 @@ export default function UserManagement() {
                 <ActivityIndicator size="large" color="#295C59" style={{ marginTop: hp('5%') }} />
             ) : (
                 <FlatList
-                    data={tab === 'professionals' ? filteredProfessionals : filteredCustomers as any[]}
+                    data={tab === 'professionals' ? filteredProfessionals : tab === 'customers' ? filteredCustomers : filteredAdmins as any[]}
                     keyExtractor={(item: any) => String(item.id ?? item.phone)}
                     contentContainerStyle={{ paddingHorizontal: wp('4%'), paddingBottom: hp('10%') }}
                     refreshControl={
@@ -293,7 +396,44 @@ export default function UserManagement() {
                             tintColor="#295C59"
                         />
                     }
-                    renderItem={({ item }: any) => (
+                    renderItem={({ item }: any) => tab === 'admins' ? (
+                        <View style={styles.card}>
+                            <View style={styles.cardLeft}>
+                                <View style={styles.avatarCircle}>
+                                    <Text style={styles.avatarText}>{(item.full_name || '?')[0].toUpperCase()}</Text>
+                                </View>
+                                <View style={styles.cardInfo}>
+                                    <Text style={styles.name}>{item.full_name || 'Unknown'}</Text>
+                                    <Text style={styles.sub}>+977 {item.phone}</Text>
+                                    <Text style={styles.sub}>{item.role === 'super_admin' ? 'Super Admin' : 'Admin'}</Text>
+                                </View>
+                            </View>
+                            <View style={styles.cardRight}>
+                                <View style={[styles.statusPill, item.status === 'Active' ? styles.pillActive : styles.pillInactive]}>
+                                    <Text style={[styles.statusText, { color: item.status === 'Active' ? '#16a34a' : '#ef4444' }]}>
+                                        {item.status}
+                                    </Text>
+                                </View>
+                                {item.role !== 'super_admin' && (
+                                    <View style={styles.actionRow}>
+                                        <TouchableOpacity
+                                            style={[styles.toggleBtn, item.status === 'Active' ? styles.btnDisable : styles.btnEnable]}
+                                            onPress={() => Alert.alert(
+                                                item.status === 'Active' ? 'Disable Admin' : 'Enable Admin',
+                                                `${item.status === 'Active' ? 'Disable' : 'Enable'} ${item.full_name}?`,
+                                                [
+                                                    { text: 'Cancel', style: 'cancel' },
+                                                    { text: 'Confirm', onPress: () => toggleAdmin(item.id, item.status) },
+                                                ]
+                                            )}
+                                        >
+                                            <Text style={styles.toggleBtnText}>{item.status === 'Active' ? 'Disable' : 'Enable'}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+                    ) : (
                         <TouchableOpacity
                             style={styles.card}
                             onPress={() => openDetail(item, tab)}
@@ -392,7 +532,7 @@ export default function UserManagement() {
                         {loadingDetail ? (
                             <ActivityIndicator size="large" color="#295C59" style={{ marginVertical: hp('5%') }} />
                         ) : detailData ? (
-                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('4%') }}>
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('4%') + insets.bottom }}>
 
                                 {/* Avatar + name */}
                                 <View style={styles.modalAvatarRow}>
@@ -534,6 +674,81 @@ export default function UserManagement() {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── Add Admin Modal ── */}
+            <Modal
+                visible={showAddAdmin}
+                animationType="slide"
+                transparent
+                onRequestClose={() => setShowAddAdmin(false)}
+            >
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
+                    <View style={styles.modalSheet}>
+                        <View style={styles.handleBar} />
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowAddAdmin(false)}>
+                            <Ionicons name="close" size={22} color="#295C59" />
+                        </TouchableOpacity>
+
+                        <Text style={styles.modalName}>Add Admin</Text>
+
+                        <ScrollView
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ marginTop: hp('2%'), paddingBottom: hp('2%') + insets.bottom }}
+                        >
+                            <Text style={styles.detailLabel}>Full Name</Text>
+                            <TextInput
+                                style={styles.formInput}
+                                value={newAdminName}
+                                onChangeText={setNewAdminName}
+                                placeholder="Enter full name"
+                                placeholderTextColor="#B0BEC5"
+                            />
+
+                            <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>Phone Number</Text>
+                            <TextInput
+                                style={styles.formInput}
+                                value={newAdminPhone}
+                                onChangeText={t => setNewAdminPhone(t.replace(/[^0-9]/g, '').slice(0, 10))}
+                                placeholder="98XXXXXXXX"
+                                placeholderTextColor="#B0BEC5"
+                                keyboardType="number-pad"
+                                maxLength={10}
+                            />
+
+                            <Text style={styles.addAdminHint}>
+                                If this phone number already has an account (e.g. a Professional), it'll be upgraded to Admin — name and PIN below are only used when creating a brand-new account.
+                            </Text>
+
+                            <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>4-Digit PIN</Text>
+                            <TextInput
+                                style={styles.formInput}
+                                value={newAdminPin}
+                                onChangeText={t => setNewAdminPin(t.replace(/[^0-9]/g, '').slice(0, 4))}
+                                placeholder="1234"
+                                placeholderTextColor="#B0BEC5"
+                                keyboardType="number-pad"
+                                maxLength={4}
+                                secureTextEntry
+                            />
+
+                            <TouchableOpacity
+                                style={[styles.modalActionBtn, styles.btnEnableLarge, addingAdmin && { opacity: 0.6 }]}
+                                onPress={handleAddAdmin}
+                                disabled={addingAdmin}
+                            >
+                                {addingAdmin
+                                    ? <ActivityIndicator color="#16a34a" />
+                                    : <Text style={styles.modalActionText}>Create Admin Account</Text>
+                                }
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }
@@ -555,6 +770,20 @@ const styles = StyleSheet.create({
     tabActive: { borderBottomWidth: 3, borderBottomColor: '#295C59' },
     tabText: { fontSize: 14, fontWeight: '600', color: '#9BBAB8' },
     tabTextActive: { color: '#295C59', fontWeight: '700' },
+    addAdminBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+        backgroundColor: '#295C59', borderRadius: 14,
+        marginHorizontal: wp('4%'), marginTop: hp('1.5%'),
+        paddingVertical: hp('1.5%'),
+    },
+    addAdminBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+    addAdminHint: { fontSize: 11.5, color: '#9BBAB8', marginTop: 8, lineHeight: 16 },
+    formInput: {
+        backgroundColor: '#fff', borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('4%'), height: hp('6%'),
+        fontSize: 14, color: '#1C2B2A', marginTop: 6,
+    },
     searchBox: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         backgroundColor: '#fff', margin: wp('4%'), marginBottom: wp('2%'),
