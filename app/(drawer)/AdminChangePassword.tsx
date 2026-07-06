@@ -36,6 +36,20 @@ const sendPinChangeSms = async (phone: string, firstName: string) => {
     });
 };
 
+const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
+
+const sendResetOtpSms = async (phone: string, otp: string, firstName: string) => {
+    const to = '977' + phone.replace(/\D/g, '').slice(-10);
+    const text = `Dear ${firstName}, Your HomeSewa PIN reset code is ${otp}.\n\nIf you did not request this, please ignore this message.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
+    const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Sparrow error ${response.status}: ${JSON.stringify(data)}`);
+};
+
 export default function AdminChangePassword() {
     const { mode } = useLocalSearchParams<{ mode?: string }>();
     // 'change' = logged-in user updating PIN (no phone needed)
@@ -47,6 +61,15 @@ export default function AdminChangePassword() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [activeInput, setActiveInput] = useState<string | null>(null);
     const [pinVisible, setPinVisible] = useState(false);
+
+    // Reset-PIN mode (forgot PIN) verifies identity via SMS OTP instead of the current PIN,
+    // since someone who forgot their PIN by definition can't provide it.
+    const [sendingOtp, setSendingOtp] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [sentOtp, setSentOtp] = useState('');
+    const [resetRecord, setResetRecord] = useState<{ table: 'admin' | 'professional'; full_name: string } | null>(null);
+    const [otpBoxes, setOtpBoxes] = useState(['', '', '', '']);
+    const otpRefs = useRef<Array<TextInput | null>>([]);
 
     // 4-box PIN state — used by both modes
     const [oldBoxes, setOldBoxes] = useState(['', '', '', '']);
@@ -62,15 +85,54 @@ export default function AdminChangePassword() {
         }
     }, [isChangePinMode]);
 
+    // Reset mode only: look up the account by phone and text it a one-time code.
+    // This is the identity check for someone who forgot their PIN.
+    const handleSendOtp = async () => {
+        const cleaned = phoneNumber.replace(/\s/g, '');
+        if (!cleaned || cleaned.length < 10) {
+            Alert.alert('Validation Error', 'Please enter your phone number');
+            return;
+        }
+
+        setSendingOtp(true);
+        try {
+            const { data: adminRecord } = await supabase
+                .from('admin')
+                .select('full_name')
+                .eq('phone', cleaned)
+                .maybeSingle();
+
+            const table: 'admin' | 'professional' = adminRecord ? 'admin' : 'professional';
+            const record = adminRecord || (await supabase
+                .from('professional')
+                .select('full_name')
+                .eq('phone', cleaned)
+                .maybeSingle()).data;
+
+            if (!record) {
+                Alert.alert('Error', 'This phone number is not registered.');
+                return;
+            }
+
+            const code = generateOtp();
+            const firstName = (record.full_name || '').split(' ')[0] || 'User';
+            await sendResetOtpSms(cleaned, code, firstName);
+
+            setSentOtp(code);
+            setResetRecord({ table, full_name: record.full_name || 'User' });
+            setOtpBoxes(['', '', '', '']);
+            setOtpSent(true);
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Could not send verification code. Please try again.');
+        } finally {
+            setSendingOtp(false);
+        }
+    };
+
     const handleSubmit = async () => {
-        const resolvedOld     = oldBoxes.join('');
         const resolvedNew     = newBoxes.join('');
         const resolvedConfirm = confirmBoxes.join('');
 
-        if (!resolvedOld || resolvedOld.length !== 4) {
-            Alert.alert('Validation Error', 'Please enter your current 4-digit PIN');
-            return;
-        }
         if (!resolvedNew || resolvedNew.length !== 4) {
             Alert.alert('Validation Error', 'Please enter a new 4-digit PIN');
             return;
@@ -79,41 +141,66 @@ export default function AdminChangePassword() {
             Alert.alert('Validation Error', 'New PIN and confirmation do not match');
             return;
         }
+
         const cleaned = isChangePinMode
             ? loggedInPhone!.replace(/\s/g, '')
             : phoneNumber.replace(/\s/g, '');
 
-        if (!isChangePinMode && (!cleaned || cleaned.length < 10)) {
-            Alert.alert('Validation Error', 'Please enter your phone number');
-            return;
-        }
-
         setLoading(true);
         try {
-            // Super admins/admins live in `admin`; professionals live in `professional`.
-            // `workforce` has no pin column at all, so it never gates PIN changes.
-            const { data: adminRecord } = await supabase
-                .from('admin')
-                .select('pin, full_name')
-                .eq('phone', cleaned)
-                .maybeSingle();
+            let table: 'admin' | 'professional';
+            let fullName: string;
 
-            const table = adminRecord ? 'admin' : 'professional';
-            const record = adminRecord || (await supabase
-                .from('professional')
-                .select('pin, full_name')
-                .eq('phone', cleaned)
-                .maybeSingle()).data;
+            if (isChangePinMode) {
+                // Super admins/admins live in `admin`; professionals live in `professional`.
+                // `workforce` has no pin column at all, so it never gates PIN changes.
+                const resolvedOld = oldBoxes.join('');
+                if (!resolvedOld || resolvedOld.length !== 4) {
+                    Alert.alert('Validation Error', 'Please enter your current 4-digit PIN');
+                    return;
+                }
 
-            if (!record || record.pin !== resolvedOld) {
-                Alert.alert('Error', 'Phone number or current PIN is incorrect');
-                return;
+                const { data: adminRecord } = await supabase
+                    .from('admin')
+                    .select('pin, full_name')
+                    .eq('phone', cleaned)
+                    .maybeSingle();
+
+                const resolvedTable = adminRecord ? 'admin' : 'professional';
+                const record = adminRecord || (await supabase
+                    .from('professional')
+                    .select('pin, full_name')
+                    .eq('phone', cleaned)
+                    .maybeSingle()).data;
+
+                if (!record || record.pin !== resolvedOld) {
+                    Alert.alert('Error', 'Current PIN is incorrect');
+                    return;
+                }
+                table = resolvedTable;
+                fullName = record.full_name || 'User';
+            } else {
+                if (!otpSent || !resetRecord) {
+                    Alert.alert('Error', 'Please verify your phone number first.');
+                    return;
+                }
+                const enteredOtp = otpBoxes.join('');
+                if (enteredOtp.length !== 4) {
+                    Alert.alert('Validation Error', 'Please enter the 4-digit code sent to your phone');
+                    return;
+                }
+                if (enteredOtp !== sentOtp) {
+                    Alert.alert('Invalid Code', 'The code you entered is incorrect.');
+                    return;
+                }
+                table = resetRecord.table;
+                fullName = resetRecord.full_name;
             }
 
             const { error } = await supabase.from(table).update({ pin: resolvedNew }).eq('phone', cleaned);
             if (error) throw error;
 
-            const firstName = (record.full_name || '').split(' ')[0] || 'User';
+            const firstName = (fullName || '').split(' ')[0] || 'User';
             sendPinChangeSms(cleaned, firstName).catch(() => {});
 
             Alert.alert('Success', 'PIN updated successfully', [
@@ -159,6 +246,7 @@ export default function AdminChangePassword() {
                                 style={[styles.textInput, styles.phoneInput]}
                                 keyboardType="number-pad"
                                 maxLength={13}
+                                editable={!otpSent}
                                 placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
                                 placeholderTextColor="#B0BEC5"
                                 value={phoneNumber}
@@ -173,89 +261,144 @@ export default function AdminChangePassword() {
                                 }}
                             />
                         </View>
+
+                        {!otpSent && (
+                            <View style={styles.btnRow}>
+                                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.push('/Admin')} activeOpacity={0.85}>
+                                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.saveBtn, sendingOtp && { opacity: 0.6 }]}
+                                    onPress={handleSendOtp}
+                                    disabled={sendingOtp}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.saveBtnText}>{sendingOtp ? 'Sending...' : 'Send Code'}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </>
                 )}
 
-                {/* Current PIN */}
-                <View style={styles.pinLabelRow}>
-                    <Text style={styles.label}>Current PIN</Text>
-                    <TouchableOpacity onPress={() => setPinVisible(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                        <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.pinBoxRow}>
-                    {oldBoxes.map((d, i) => (
-                        <TextInput
-                            key={i}
-                            ref={r => { oldRefs.current[i] = r; }}
-                            style={styles.pinBox}
-                            secureTextEntry={!pinVisible}
-                            keyboardType="number-pad"
-                            maxLength={1}
-                            value={d}
-                            onChangeText={t => {
-                                const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                const next = [...oldBoxes]; next[i] = digit; setOldBoxes(next);
-                                if (digit && i < 3) oldRefs.current[i + 1]?.focus();
-                            }}
-                            onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) oldRefs.current[i - 1]?.focus(); }}
-                        />
-                    ))}
-                </View>
+                {/* Current PIN — Change PIN mode only (logged-in user proving they know it) */}
+                {isChangePinMode && (
+                    <>
+                        <View style={styles.pinLabelRow}>
+                            <Text style={styles.label}>Current PIN</Text>
+                            <TouchableOpacity onPress={() => setPinVisible(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.pinBoxRow}>
+                            {oldBoxes.map((d, i) => (
+                                <TextInput
+                                    key={i}
+                                    ref={r => { oldRefs.current[i] = r; }}
+                                    style={styles.pinBox}
+                                    secureTextEntry={!pinVisible}
+                                    keyboardType="number-pad"
+                                    maxLength={1}
+                                    value={d}
+                                    onChangeText={t => {
+                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                        const next = [...oldBoxes]; next[i] = digit; setOldBoxes(next);
+                                        if (digit && i < 3) oldRefs.current[i + 1]?.focus();
+                                    }}
+                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) oldRefs.current[i - 1]?.focus(); }}
+                                />
+                            ))}
+                        </View>
+                    </>
+                )}
 
-                {/* New PIN */}
-                <Text style={styles.label}>New PIN</Text>
-                <View style={styles.pinBoxRow}>
-                    {newBoxes.map((d, i) => (
-                        <TextInput
-                            key={i}
-                            ref={r => { newRefs.current[i] = r; }}
-                            style={styles.pinBox}
-                            secureTextEntry={!pinVisible}
-                            keyboardType="number-pad"
-                            maxLength={1}
-                            value={d}
-                            onChangeText={t => {
-                                const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                const next = [...newBoxes]; next[i] = digit; setNewBoxes(next);
-                                if (digit && i < 3) newRefs.current[i + 1]?.focus();
-                            }}
-                            onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) newRefs.current[i - 1]?.focus(); }}
-                        />
-                    ))}
-                </View>
+                {/* Verification Code — Reset PIN mode only, after a code has been sent */}
+                {!isChangePinMode && otpSent && (
+                    <>
+                        <Text style={styles.label}>Verification Code</Text>
+                        <View style={styles.pinBoxRow}>
+                            {otpBoxes.map((d, i) => (
+                                <TextInput
+                                    key={i}
+                                    ref={r => { otpRefs.current[i] = r; }}
+                                    style={styles.pinBox}
+                                    keyboardType="number-pad"
+                                    maxLength={1}
+                                    value={d}
+                                    onChangeText={t => {
+                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                        const next = [...otpBoxes]; next[i] = digit; setOtpBoxes(next);
+                                        if (digit && i < 3) otpRefs.current[i + 1]?.focus();
+                                    }}
+                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) otpRefs.current[i - 1]?.focus(); }}
+                                />
+                            ))}
+                        </View>
+                        <TouchableOpacity onPress={handleSendOtp} disabled={sendingOtp}>
+                            <Text style={styles.resendText}>
+                                {"Didn't get code? "}
+                                <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Resend Code</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    </>
+                )}
 
-                {/* Confirm New PIN */}
-                <Text style={styles.label}>Confirm New PIN</Text>
-                <View style={styles.pinBoxRow}>
-                    {confirmBoxes.map((d, i) => (
-                        <TextInput
-                            key={i}
-                            ref={r => { confirmRefs.current[i] = r; }}
-                            style={styles.pinBox}
-                            secureTextEntry={!pinVisible}
-                            keyboardType="number-pad"
-                            maxLength={1}
-                            value={d}
-                            onChangeText={t => {
-                                const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                const next = [...confirmBoxes]; next[i] = digit; setConfirmBoxes(next);
-                                if (digit && i < 3) confirmRefs.current[i + 1]?.focus();
-                            }}
-                            onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) confirmRefs.current[i - 1]?.focus(); }}
-                        />
-                    ))}
-                </View>
+                {/* New PIN / Confirm / Save — visible once we're allowed to actually change the PIN */}
+                {(isChangePinMode || otpSent) && (
+                    <>
+                        <Text style={styles.label}>New PIN</Text>
+                        <View style={styles.pinBoxRow}>
+                            {newBoxes.map((d, i) => (
+                                <TextInput
+                                    key={i}
+                                    ref={r => { newRefs.current[i] = r; }}
+                                    style={styles.pinBox}
+                                    secureTextEntry={!pinVisible}
+                                    keyboardType="number-pad"
+                                    maxLength={1}
+                                    value={d}
+                                    onChangeText={t => {
+                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                        const next = [...newBoxes]; next[i] = digit; setNewBoxes(next);
+                                        if (digit && i < 3) newRefs.current[i + 1]?.focus();
+                                    }}
+                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) newRefs.current[i - 1]?.focus(); }}
+                                />
+                            ))}
+                        </View>
 
-                {/* BUTTONS */}
-                <View style={styles.btnRow}>
-                    <TouchableOpacity style={styles.cancelBtn} onPress={() => isChangePinMode ? router.back() : router.push('/Admin')} activeOpacity={0.85}>
-                        <Text style={styles.cancelBtnText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSubmit} disabled={loading} activeOpacity={0.85}>
-                        <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text>
-                    </TouchableOpacity>
-                </View>
+                        {/* Confirm New PIN */}
+                        <Text style={styles.label}>Confirm New PIN</Text>
+                        <View style={styles.pinBoxRow}>
+                            {confirmBoxes.map((d, i) => (
+                                <TextInput
+                                    key={i}
+                                    ref={r => { confirmRefs.current[i] = r; }}
+                                    style={styles.pinBox}
+                                    secureTextEntry={!pinVisible}
+                                    keyboardType="number-pad"
+                                    maxLength={1}
+                                    value={d}
+                                    onChangeText={t => {
+                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
+                                        const next = [...confirmBoxes]; next[i] = digit; setConfirmBoxes(next);
+                                        if (digit && i < 3) confirmRefs.current[i + 1]?.focus();
+                                    }}
+                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) confirmRefs.current[i - 1]?.focus(); }}
+                                />
+                            ))}
+                        </View>
+
+                        {/* BUTTONS */}
+                        <View style={styles.btnRow}>
+                            <TouchableOpacity style={styles.cancelBtn} onPress={() => isChangePinMode ? router.back() : router.push('/Admin')} activeOpacity={0.85}>
+                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.saveBtn, loading && { opacity: 0.6 }]} onPress={handleSubmit} disabled={loading} activeOpacity={0.85}>
+                                <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                )}
             </View>
         </KeyboardAwareScrollView>
     );
@@ -370,6 +513,12 @@ const styles = StyleSheet.create({
         fontSize: scaleFont(18),
         fontWeight: '700',
         color: '#1C2B2A',
+    },
+    resendText: {
+        textAlign: 'center',
+        fontSize: scaleFont(13),
+        color: '#5A7270',
+        marginBottom: hp('2.5%'),
     },
 
     /* BUTTONS */

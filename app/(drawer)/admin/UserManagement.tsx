@@ -298,6 +298,9 @@ export default function UserManagement() {
                 if (insertErr) throw insertErr;
                 const { error: deleteErr } = await supabase.from('professional').delete().eq('id', existingPro.id);
                 if (deleteErr) throw deleteErr;
+                // Their workforce profile stays behind and would otherwise keep matching
+                // "profile_status = Active" lead-notification queries even though they're an Admin now.
+                await supabase.from('workforce').update({ profile_status: 'Inactive' }).eq('phone', cleanPhone);
                 Alert.alert('Promoted', 'Existing Professional account upgraded to Admin.');
             } else {
                 if (!newAdminName.trim()) { Alert.alert('Validation', 'Enter a full name.'); return; }

@@ -189,7 +189,7 @@ export default function ServiceBookingScreen() {
 
     setIsSubmitting(true);
 
-    // 🚀 Airtable Rate Limit Check Execution
+    // 🚀 Daily Booking Limit Check Execution
     const isLimitReached = await checkDailyBookingLimit(cleanNumber);
 
     if (isLimitReached) {

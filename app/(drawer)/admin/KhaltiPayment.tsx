@@ -110,10 +110,11 @@ export default function KhaltiPayment() {
         return () => clearTimeout(t);
     }, [stage]);
 
-    // QR source: use Khalti payment_url if merchant API worked, else use phone number
-    const qrData = paymentUrl || cleanPhone;
-    const qrUrl = qrData
-        ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrData)}&size=300x300&margin=10`
+    // Only render a QR when we have a real, scannable Khalti payment_url. A QR encoding a bare
+    // phone number isn't actionable — scanning it just shows the digits as text, it doesn't open
+    // Khalti or trigger any payment, so showing one there would look functional but do nothing.
+    const qrUrl = paymentUrl
+        ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(paymentUrl)}&size=300x300&margin=10`
         : null;
 
     // ── Loading ──
@@ -178,12 +179,18 @@ export default function KhaltiPayment() {
                 <Text style={styles.proName}>{professionalName || 'Professional'}</Text>
                 <Text style={styles.proPhone}>Khalti Phone # : {cleanPhone || '—'}</Text>
 
-                {/* QR Code */}
+                {/* QR Code (only when Khalti gave us a real, scannable payment link) */}
                 <Animated.View style={[styles.qrCard, { transform: [{ scale: pulseAnim }] }]}>
                     {qrUrl ? (
                         <Image source={{ uri: qrUrl }} style={styles.qrImage} resizeMode="contain" />
                     ) : (
-                        <ActivityIndicator size="large" color="#5C2D91" />
+                        <View style={styles.qrFallback}>
+                            <Ionicons name="call-outline" size={28} color="#5C2D91" />
+                            <Text style={styles.qrFallbackPhone}>{cleanPhone || '—'}</Text>
+                            <Text style={styles.qrFallbackNote}>
+                                Ask the customer to send payment to this Khalti number directly, then confirm below.
+                            </Text>
+                        </View>
                     )}
                 </Animated.View>
 
@@ -273,6 +280,15 @@ const styles = StyleSheet.create({
         marginBottom: hp('2.5%'),
     },
     qrImage: { width: 240, height: 240 },
+    qrFallback: {
+        width: 240,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: hp('3%'),
+        gap: 8,
+    },
+    qrFallbackPhone: { fontSize: scaleFont(22), fontWeight: '800', color: '#1C2B2A' },
+    qrFallbackNote: { fontSize: scaleFont(12), color: '#5A7270', textAlign: 'center', lineHeight: 18 },
 
     confirmBtn: {
         width: '100%',

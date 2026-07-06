@@ -101,7 +101,7 @@ export default function BookingConfirmation() {
     //                 Budget: selectedBudget,
     //                 Date: date instanceof Date ? date.toISOString() : date,
 
-    //                 // You can also store date if you added that field to Airtable
+    //                 // You can also store date if you added that field to Supabase
     //             };
 
     //             try {

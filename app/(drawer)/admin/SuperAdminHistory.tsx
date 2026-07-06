@@ -9,7 +9,7 @@ import SearchIcon from '../../../assets/images/TabIcon/searchbar.png';
 import BookingCard from '../../../components/admin/BookingCard';
 import Header4 from '@/components/Header4Admin';
 import { router, useFocusEffect } from 'expo-router';
-import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
+import { fetchBookings } from '../../../api/helper/fetchBookingData';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const DATE_FILTERS = [
@@ -80,7 +80,7 @@ export default function SuperAdminHistory() {
 
     const loadBookings = useCallback(async () => {
         try {
-            const data = await fetchBookingsFromAirtable();
+            const data = await fetchBookings();
             const serialized = JSON.stringify(data);
             if (serialized === lastDataRef.current) return;
             lastDataRef.current = serialized;

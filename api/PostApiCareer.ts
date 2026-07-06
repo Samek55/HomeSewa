@@ -54,13 +54,20 @@ export const createCareer = async (data: any) => {
 
   if (error) throw new Error(error.message);
 
-  // Also register in the professional table so they can log in (PIN lives here, not on workforce)
-  await supabase.from('professional').insert([{
+  // Also register in the professional table so they can log in (PIN lives here, not on workforce).
+  // If this fails, the workforce row above would be an orphan an admin could approve with no way
+  // for the applicant to ever log in — so roll it back and surface the failure instead.
+  const { error: professionalError } = await supabase.from('professional').insert([{
     full_name: data['Full Name'],
     phone: data['Phone'],
     pin,
     status: 'Pending',
   }]);
+
+  if (professionalError) {
+    await supabase.from('workforce').delete().eq('uin', workforce.uin);
+    throw new Error(professionalError.message);
+  }
 
   return { ...workforce, pin };
 };

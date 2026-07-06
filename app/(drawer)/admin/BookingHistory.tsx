@@ -17,9 +17,10 @@ import SearchIcon from '../../../assets/images/TabIcon/searchbar.png';
 import BookingCard from '../../../components/admin/BookingCard';
 import Header4 from '@/components/Header4Admin';
 import { router, useFocusEffect } from 'expo-router';
-import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
+import { fetchBookings } from '../../../api/helper/fetchBookingData';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { maskCustomerName } from '../../../src/utils/maskName';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -73,7 +74,7 @@ export default function BookingHistory() {
 
     const loadBookings = useCallback(async () => {
         try {
-            const data = await fetchBookingsFromAirtable();
+            const data = await fetchBookings();
             const serialized = JSON.stringify(data);
             if (serialized === lastDataRef.current) return;
             lastDataRef.current = serialized;
@@ -168,8 +169,9 @@ export default function BookingHistory() {
             isOpen={openId === item.id}
             onToggle={() => toggleCard(item.id)}
             onPress={() => handlePress(item.id)}
+            displayName={isSuperAdmin ? item.fullName : maskCustomerName(item.fullName)}
         />
-    ), [openId, toggleCard, handlePress]);
+    ), [openId, toggleCard, handlePress, isSuperAdmin]);
 
     const handleLogout = async () => {
         try {
@@ -331,6 +333,7 @@ export default function BookingHistory() {
                                         isOpen={openId === item.id}
                                         onToggle={() => toggleCard(item.id)}
                                         onPress={() => handlePress(item.id)}
+                                        displayName={isSuperAdmin ? item.fullName : maskCustomerName(item.fullName)}
                                     />
                                 ))}
                                 {filteredData.length === 0 && (

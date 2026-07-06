@@ -35,6 +35,7 @@ type Props = {
   isOpen: boolean;
   onToggle: () => void;
   onPress: () => void;
+  displayName?: string;
 };
 
 const getStatusType = (status: string) => {
@@ -47,7 +48,7 @@ const getStatusType = (status: string) => {
   return 'Other';
 };
 
-const BookingCard = ({ item, isOpen, onToggle, onPress }: Props) => {
+const BookingCard = ({ item, isOpen, onToggle, onPress, displayName }: Props) => {
   const statusType = getStatusType(item.status);
   return (
     <View style={styles.card}>
@@ -57,7 +58,7 @@ const BookingCard = ({ item, isOpen, onToggle, onPress }: Props) => {
 
         {/* LEFT SIDE */}
         <View style={styles.leftSection}>
-          <Text style={styles.name}>{item.fullName}</Text>
+          <Text style={styles.name}>{displayName ?? item.fullName}</Text>
           <Text style={styles.service}>{item.service}</Text>
           <Text style={styles.budget}>{item.budget}</Text>
           {/* INFO */}

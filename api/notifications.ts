@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { getAuth } from 'firebase/auth';
 import { supabase } from '../lib/supabase';
+import { maskCustomerName } from '../src/utils/maskName';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 
@@ -45,7 +45,9 @@ export async function notifyProfessionals(service: string, bookingArea: string) 
         filters: [
           { field: 'tag', key: 'role', relation: '=', value: 'career' },
           { field: 'tag', key: 'services', relation: '=', value: cleanService },
-          { field: 'tag', key: 'area', relation: '=', value: cleanArea }, // Strict Area Filter
+          // No 'area' tag is ever set on a device (only 'city', from working_areas[0] — see
+          // app/_layout.tsx and AdminLogin.tsx), so this used to filter on a tag nobody has.
+          { field: 'tag', key: 'city', relation: '=', value: cleanArea },
         ],
         // Omit headings/contents so this profile segment doesn't receive a duplicate push
         sms_from: "+1234567890", // Must match your OneSignal SMS dashboard config
@@ -83,13 +85,12 @@ export async function notifyProfessionals(service: string, bookingArea: string) 
  * @param service Name of the service
  * @param bookingArea Area of the booking
  * @param customerPhone The direct 10-digit phone number string (e.g., "9803179846")
+ * @param providerPhone The accepting professional's phone number (this app authenticates
+ *   admins/professionals via Supabase phone+PIN, not Firebase Auth, so there is no
+ *   `auth.currentUser` to read this from — it must be passed in explicitly)
  */
-export async function notifyUsers(service: string, bookingArea: string, customerPhone: string) {
+export async function notifyUsers(service: string, bookingArea: string, customerPhone: string, providerPhone?: string) {
   try {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-
-    const providerPhone = currentUser?.email?.slice(0, 10) || 'A service provider';
     const cleanCustomerPhone = customerPhone?.trim();
 
     if (!cleanCustomerPhone) {
@@ -99,6 +100,8 @@ export async function notifyUsers(service: string, bookingArea: string, customer
 
     const cleanService = service?.trim() || '';
     const cleanArea = bookingArea?.trim() || '';
+    const cleanProviderPhone = providerPhone?.replace(/\D/g, '').slice(-10) || '';
+    const providerLabel = cleanProviderPhone || 'A service provider';
 
     await sendNotification({
       // Explicitly targeting the App Push channel along with your custom tags
@@ -110,7 +113,7 @@ export async function notifyUsers(service: string, bookingArea: string, customer
       // This forces OneSignal to only count users with valid, subscribed Push tokens
       is_wp_wns: false,
       headings: { en: 'Booking Accepted' },
-      contents: { en: `Your HomeSewa provider (${providerPhone}) has accepted your request for "${cleanService}" in ${cleanArea}.` },
+      contents: { en: `Your HomeSewa provider (${providerLabel}) has accepted your request for "${cleanService}" in ${cleanArea}.` },
     });
 
     console.log(`Notification safely sent to customer tag phone: ${cleanCustomerPhone}`);
@@ -209,7 +212,7 @@ export async function notifyProfessionalsInCity(service: string | string[], city
 }
 
 // Push notification to up to 5 random professionals registered in the booking area
-export async function pushAreaProfessionals(service: string, area: string) {
+export async function pushAreaProfessionals(service: string, area: string, customerName?: string, city?: string) {
   try {
     const { data } = await supabase
       .from('workforce')
@@ -224,15 +227,16 @@ export async function pushAreaProfessionals(service: string, area: string) {
     }
 
     const targets = [...data].sort(() => Math.random() - 0.5).slice(0, 5);
+    const maskedName = maskCustomerName(customerName);
+    const location = [area, city].filter(Boolean).join(', ');
 
     await Promise.all(targets.map(async (pro) => {
-      const firstName = pro.first_name || 'Professional';
       const phone = String(pro.phone).replace(/\D/g, '').slice(-10);
       await sendNotification({
         include_aliases: { external_id: [phone] },
         target_channel: 'push',
         headings: { en: 'HomeSewa Service Request' },
-        contents: { en: `Dear ${firstName}, a new ${service} service request is available in ${area}. Open HomeSewa to accept the booking!` },
+        contents: { en: `${maskedName} is looking for a ${service} in ${location}. Open HomeSewa to accept the booking!` },
       });
     }));
 

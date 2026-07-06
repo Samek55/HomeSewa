@@ -14,13 +14,6 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_AIRTABLE_API_URL_BOOKING": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Booking",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_SERVICES": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Services",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_CAREER": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/workForce",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_PARTNERSHIP": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Partnership",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_HELPBOX": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/HelpBox",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_ADMIN": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Admin",
-        "EXPO_PUBLIC_AIRTABLE_BASE_ID": "appcaAplIBD3UYYKu",
         "EXPO_PUBLIC_CLOUDINARY_URL": "https://api.cloudinary.com/v1_1/diohz8nqk/image/upload",
         "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "tackles",
         "EXPO_PUBLIC_TWILIO_BASE_URL": "https://rocketsingh-7319.twil.io",
@@ -43,13 +36,6 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_AIRTABLE_API_URL_BOOKING": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Booking",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_SERVICES": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Services",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_CAREER": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/workForce",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_PARTNERSHIP": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Partnership",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_HELPBOX": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/HelpBox",
-        "EXPO_PUBLIC_AIRTABLE_API_URL_ADMIN": "https://api.airtable.com/v0/appcaAplIBD3UYYKu/Admin",
-        "EXPO_PUBLIC_AIRTABLE_BASE_ID": "appcaAplIBD3UYYKu",
         "EXPO_PUBLIC_CLOUDINARY_URL": "https://api.cloudinary.com/v1_1/diohz8nqk/image/upload",
         "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "tackles",
         "EXPO_PUBLIC_TWILIO_BASE_URL": "https://rocketsingh-7319.twil.io",

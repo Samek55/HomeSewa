@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -10,13 +10,15 @@ import {
     StyleSheet,
     Modal,
     Alert,
+    Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import LocationPin from '../../../assets/icons/contact/location-pin.png';
-import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
+import { fetchBookings } from '../../../api/helper/fetchBookingData';
 import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
+import { claimBooking } from '../../../api/helper/updateBookingStatus';
 import { supabase } from '../../../lib/supabase';
 
 import {
@@ -24,9 +26,12 @@ import {
     heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { notifyUsers, notifyProfessionalsAccepted } from '@/api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isLeadUnlocked } from '@/api/leadUnlocks';
+import { maskCustomerName } from '@/src/utils/maskName';
+import { LEAD_FEE_NPR } from '@/src/constants/leadFee';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 
@@ -66,11 +71,15 @@ export default function BookingDetails() {
     const [visible, setVisible] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [unlocked, setUnlocked] = useState(false);
+    const hasFullAccess = isSuperAdmin || unlocked;
+
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
-                const data = await fetchBookingsFromAirtable();
+                const data = await fetchBookings();
                 const found = data.find((item: any) => item.id === id);
                 setBooking(found || null);
             } catch (error) {
@@ -82,6 +91,24 @@ export default function BookingDetails() {
 
         load();
     }, [id]);
+
+    // Re-checked on every focus so returning from the lead-payment screen unlocks contact immediately
+    useFocusEffect(
+        useCallback(() => {
+            const checkAccess = async () => {
+                const [table, phone] = await Promise.all([
+                    AsyncStorage.getItem('adminTable'),
+                    AsyncStorage.getItem('adminPhone'),
+                ]);
+                const superAdmin = table === 'admins';
+                setIsSuperAdmin(superAdmin);
+                if (!superAdmin && id && phone) {
+                    setUnlocked(await isLeadUnlocked(id, phone));
+                }
+            };
+            checkAccess();
+        }, [id])
+    );
 
     const photoUrls: string[] = booking?.photos || [];
 
@@ -95,18 +122,27 @@ export default function BookingDetails() {
 
     // Handle Offer Acceptance
     const handleAcceptOffer = async () => {
-        if (!booking) return;
+        if (!booking || !hasFullAccess) return;
 
         try {
+            // Atomically claim the booking first — without this, two professionals who both
+            // open this "New / Open" booking before either changes its status can both accept it.
+            const claimed = await claimBooking(String(booking.id), 'New / Open', 'Pending');
+            if (!claimed) {
+                Alert.alert('Already Accepted', 'This booking was just accepted by another professional.');
+                router.replace('/admin/BookingHistory');
+                return;
+            }
+
             const customerPhone = booking?.phone || "";
             const customerName = booking?.fullName || "Customer";
+            const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
 
             console.log("Passing customer phone directly to notification:", customerPhone);
 
-            await notifyUsers(booking?.service, booking?.area, customerPhone);
+            await notifyUsers(booking?.service, booking?.area, customerPhone, adminPhone);
 
             const bookingService = String(booking?.service || '').split(',')[0].trim();
-            const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
             notifyProfessionalsAccepted(bookingService, booking?.city || '', booking?.area || '', adminPhone).catch(() => {});
 
             // Send acceptance SMS to customer
@@ -162,7 +198,14 @@ export default function BookingDetails() {
                         <Text style={styles.loadingText}>Loading details...</Text>
                     ) : booking ? (
                         <View style={styles.card}>
-                            <Text style={styles.heading}>{booking?.fullName}</Text>
+                            <Text style={styles.heading}>
+                                {hasFullAccess ? booking?.fullName : maskCustomerName(booking?.fullName)}
+                            </Text>
+                            {hasFullAccess && !!booking?.phone && (
+                                <TouchableOpacity onPress={() => Linking.openURL(`tel:+977${booking.phone}`)}>
+                                    <Text style={styles.phoneLink}>📞 +977 {booking.phone}</Text>
+                                </TouchableOpacity>
+                            )}
 
                             <View style={styles.rowflex}>
                                 <Text style={styles.labelFlex}>Service(s)</Text>
@@ -277,18 +320,32 @@ export default function BookingDetails() {
 
                             {/* ButtonContainer */}
                             <View style={styles.ButtonContainer}>
-                                <TouchableOpacity
-                                    style={styles.AcceptButton}
-                                    onPress={handleAcceptOffer}
-                                >
-                                    <Text style={styles.AcceptText}>Accept This Offer</Text>
-                                </TouchableOpacity>
-                                 <TouchableOpacity
-                                    style={styles.RejectButton}
-                                    onPress={()=> router.push('/admin/BookingHistory')}
-                                >
-                                    <Text style={styles.AcceptText}>Cancel</Text>
-                                </TouchableOpacity>
+                                {hasFullAccess ? (
+                                    <>
+                                        <TouchableOpacity
+                                            style={styles.AcceptButton}
+                                            onPress={handleAcceptOffer}
+                                        >
+                                            <Text style={styles.AcceptText}>Accept This Offer</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.RejectButton}
+                                            onPress={()=> router.push('/admin/BookingHistory')}
+                                        >
+                                            <Text style={styles.AcceptText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.AcceptButton}
+                                        onPress={() => router.push({
+                                            pathname: '/admin/LeadPayment',
+                                            params: { bookingId: booking?.id?.toString() },
+                                        })}
+                                    >
+                                        <Text style={styles.AcceptText}>Pay NPR {LEAD_FEE_NPR} to View Contact</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         </View>
                     ) : (
@@ -362,6 +419,12 @@ const styles = StyleSheet.create({
         fontSize: hp('2.8%'),
         fontWeight: '700',
         color: '#222',
+    },
+    phoneLink: {
+        fontSize: hp('1.8%'),
+        fontWeight: '600',
+        color: '#295C59',
+        marginBottom: hp('1%'),
     },
     bookingId: {
         fontSize: hp('1.2%'),

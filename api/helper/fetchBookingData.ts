@@ -17,7 +17,7 @@ const formatBudget = (budget?: string | null) => {
   return budget.includes('NPR') ? budget : budget.replace(/(\d)/, 'NPR $1');
 };
 
-export const fetchBookingsFromAirtable = async () => {
+export const fetchBookings = async () => {
   try {
     const { data: bookings, error } = await supabase
       .from('booking')

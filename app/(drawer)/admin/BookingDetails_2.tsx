@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import dropdownIcon from '../../../assets/icons/contact/DropDown.png';
-import { fetchBookingsFromAirtable } from '../../../api/helper/fetchBookingDataAirtable';
+import { fetchBookings } from '../../../api/helper/fetchBookingData';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -50,7 +50,7 @@ export default function BookingDetails() {
             setLoading(true);
             try {
                 const [data, adminTable] = await Promise.all([
-                    fetchBookingsFromAirtable(),
+                    fetchBookings(),
                     AsyncStorage.getItem('adminTable'),
                 ]);
                 if (adminTable === 'admins') setIsSuperAdmin(true);
@@ -105,7 +105,7 @@ export default function BookingDetails() {
         try {
             await updateBookingStatus(booking.id, 'New / Open');
             const targetService = String(booking.service || '').split(',')[0].trim();
-            pushAreaProfessionals(targetService, booking.area || '').catch(() => {});
+            pushAreaProfessionals(targetService, booking.area || '', booking.fullName, booking.city).catch(() => {});
             router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });
         } catch (error) {
             Alert.alert('Error', 'Failed to confirm booking');
