@@ -28,7 +28,7 @@ export default function AdminOtpVerify() {
         <Header2 />
         <View style={styles.container}>
           <Text style={styles.thankYouText}>
-            Thank you! OTP verified successfully. Your booking is now confirmed!
+            Thank you! OTP verified successfully. Your booking request has been received and is pending review by our staff.
           </Text>
           <View style={styles.imageContainer}>
             <Image
@@ -36,7 +36,7 @@ export default function AdminOtpVerify() {
               style={styles.image}
             />
             <Text style={styles.confirmationText}>
-              OTP confirmed — booking successful!
+              OTP confirmed — pending confirmation!
             </Text>
           </View>
         </View>

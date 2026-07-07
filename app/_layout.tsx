@@ -2,8 +2,8 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
-import { BackHandler, Platform } from 'react-native';
-import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
+import { BackHandler, DeviceEventEmitter, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { markSplashReady } from '../src/utils/splashGate';
 
 // Prevent splash screen from hiding automatically
@@ -31,39 +31,47 @@ export function syncPushUser(userId: string, role: 'admin' | 'career' | 'user') 
 
 export default function RootLayout() {
   const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  
+  const [adminPhone, setAdminPhone] = useState<string | null>(null);
+
   const segments = useSegments();
   const router = useRouter();
 
-  // --- FEATURE 1: FIREBASE AUTH PERSISTENCE TRACKER ---
+  // --- FEATURE 1: ADMIN SESSION TRACKER ---
+  // Login/logout is Supabase phone+PIN, remembered in AsyncStorage (see AdminLogin.tsx) —
+  // there is no Firebase session to watch, so we read that directly and refresh on the
+  // 'authChanged' event AdminLogin/logout emit.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getAuth(), (firebaseUser) => {
-      setUser(firebaseUser);
+    const loadSession = async () => {
+      const phone = await AsyncStorage.getItem('adminPhone');
+      setAdminPhone(phone);
       setInitializing(false);
 
       // Report auth check done — splash hides once every check has reported in
       markSplashReady();
-    });
+    };
 
-    return unsubscribe;
+    loadSession();
+    const sub = DeviceEventEmitter.addListener('authChanged', loadSession);
+    return () => sub.remove();
   }, []);
 
   // --- FEATURE 2: CENTRALIZED SECURITY BOUNCER ---
   useEffect(() => {
     if (initializing) return;
 
-    // Evaluates if the current directory route segment matches your protected folder path
-    const inAdminGroup = segments[0] === 'admin';
+    // Admin screens live under (drawer)/admin/... — AdminLogin itself must stay reachable
+    // even when logged out, since that's the only way to establish a session.
+    const inAdminGroup = segments[0] === '(drawer)' && segments[1] === 'admin' && segments[2] !== 'AdminLogin';
+    const onAdminGate = segments[0] === '(drawer)' && segments[1] === 'Admin';
 
-    if (!user && inAdminGroup) {
-      // Drop session context found while browsing protected assets: Redirect out
+    if (!adminPhone && inAdminGroup) {
+      // No session found while browsing protected admin screens: redirect out
       router.replace('/Admin');
-    } else if (user && segments[0] === 'Admin') {
-      // Active context found when viewing public forms: Forward into panel
+    } else if (adminPhone && onAdminGate) {
+      // Active session found when viewing the public admin gate: forward into panel
       router.replace('/admin/BookingHistory');
     }
-  }, [user, initializing, segments]);
+  }, [adminPhone, initializing, segments]);
 
   // --- FEATURE 3: HARDWARE BACK BUTTON — COLLAPSE TO HOME, THEN EXIT ---
   useEffect(() => {

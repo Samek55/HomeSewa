@@ -158,8 +158,8 @@ export default function AdminNotifications() {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     useEffect(() => {
-        AsyncStorage.getItem('adminTable').then(table => {
-            if (table !== 'admins') {
+        AsyncStorage.getItem('adminRole').then(role => {
+            if (role !== 'super_admin') {
                 Alert.alert('Access Denied', 'Super Admin only.');
                 router.back();
                 return;

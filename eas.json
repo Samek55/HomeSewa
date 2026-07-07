@@ -14,10 +14,6 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_CLOUDINARY_URL": "https://api.cloudinary.com/v1_1/diohz8nqk/image/upload",
-        "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "tackles",
-        "EXPO_PUBLIC_TWILIO_BASE_URL": "https://rocketsingh-7319.twil.io",
-        "EXPO_PUBLIC_VERIFY_SERVICE_SID": "VA9cc0e4fd3a838162354e0e7a53c6229a",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "6088a935-58f5-4645-8290-80633f2bdbc5",
         "ONESIGNAL_APP_ID": "6088a935-58f5-4645-8290-80633f2bdbc5",
         "EXPO_PUBLIC_NOTIFY_PROFESSIONALS_URL": "https://us-central1-homesewa-ad5d9.cloudfunctions.net/notifyProfessionals",
@@ -36,10 +32,6 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_CLOUDINARY_URL": "https://api.cloudinary.com/v1_1/diohz8nqk/image/upload",
-        "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "tackles",
-        "EXPO_PUBLIC_TWILIO_BASE_URL": "https://rocketsingh-7319.twil.io",
-        "EXPO_PUBLIC_VERIFY_SERVICE_SID": "VA9cc0e4fd3a838162354e0e7a53c6229a",
         "EXPO_PUBLIC_ONESIGNAL_APP_ID": "6088a935-58f5-4645-8290-80633f2bdbc5",
         "ONESIGNAL_APP_ID": "6088a935-58f5-4645-8290-80633f2bdbc5",
         "EXPO_PUBLIC_NOTIFY_PROFESSIONALS_URL": "https://us-central1-homesewa-ad5d9.cloudfunctions.net/notifyProfessionals",

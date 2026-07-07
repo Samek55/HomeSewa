@@ -1,4 +1,4 @@
-import { auth } from "@/src/firebase/firebaseConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
@@ -6,11 +6,13 @@ import { useCallback } from "react";
 export default function Admin() {
   useFocusEffect(
     useCallback(() => {
-      if (auth.currentUser) {
-        router.replace("/admin/BookingHistory");
-      } else {
-        router.replace("/admin/AdminLogin");
-      }
+      AsyncStorage.getItem('adminPhone').then((phone) => {
+        if (phone) {
+          router.replace("/admin/BookingHistory");
+        } else {
+          router.replace("/admin/AdminLogin");
+        }
+      });
     }, [])
   );
 

@@ -28,7 +28,7 @@ const scaleFont = (size: number) => (size * width) / 375;
 const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
 
 const sendSparrowOtp = async (phone: string, otp: string) => {
-    const to = '977' + phone;
+    const to = '977' + phone.replace(/\D/g, '').slice(-10);
     console.log('[Sparrow] token:', SPARROW_TOKEN);
     console.log('[Sparrow] to:', to);
     const response = await fetch('https://api.sparrowsms.com/v2/sms/', {

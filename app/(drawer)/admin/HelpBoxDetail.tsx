@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     Alert, ActivityIndicator, ScrollView, DeviceEventEmitter, Linking, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
@@ -29,6 +30,15 @@ export default function HelpBoxDetail() {
     const [issue, setIssue] = useState<string>(item.issue || '');
     const [showIssueDrop, setShowIssueDrop] = useState(false);
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        AsyncStorage.getItem('adminTable').then(table => {
+            if (table !== 'admins') {
+                Alert.alert('Access Denied', 'Admin access only.');
+                router.back();
+            }
+        });
+    }, []);
 
     const formatDate = (iso: string) => {
         try { return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }

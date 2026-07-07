@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
@@ -64,6 +65,15 @@ export default function HelpBox() {
     const [statusFilter, setStatusFilter] = useState<'All' | 'open' | 'solved'>('All');
     const [showDurationDrop, setShowDurationDrop] = useState(false);
     const [showStatusDrop, setShowStatusDrop] = useState(false);
+
+    useEffect(() => {
+        AsyncStorage.getItem('adminTable').then(table => {
+            if (table !== 'admins') {
+                Alert.alert('Access Denied', 'Admin access only.');
+                router.back();
+            }
+        });
+    }, []);
 
     const load = useCallback(async () => {
         setLoading(true);

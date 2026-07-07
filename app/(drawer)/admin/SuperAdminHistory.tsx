@@ -1,9 +1,10 @@
-import React, { useMemo, useCallback, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import {
     View, Text, Image, TouchableOpacity,
-    StyleSheet, TextInput, FlatList,
+    StyleSheet, TextInput, FlatList, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import SearchIcon from '../../../assets/images/TabIcon/searchbar.png';
 import BookingCard from '../../../components/admin/BookingCard';
@@ -77,6 +78,15 @@ export default function SuperAdminHistory() {
     const [searchQuery, setSearchQuery] = useState('');
     const lastDataRef = useRef<string>('');
     const intervalRef = useRef<any>(null);
+
+    useEffect(() => {
+        AsyncStorage.getItem('adminRole').then(role => {
+            if (role !== 'super_admin') {
+                Alert.alert('Access Denied', 'Super Admin only.');
+                router.back();
+            }
+        });
+    }, []);
 
     const loadBookings = useCallback(async () => {
         try {

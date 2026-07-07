@@ -10,7 +10,7 @@ import { fetchBookings } from '../../../api/helper/fetchBookingData';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams } from 'expo-router';
-import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
+import { claimBooking } from '../../../api/helper/updateBookingStatus';
 import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import { pushAreaProfessionals } from '../../../api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -88,7 +88,11 @@ export default function BookingDetails() {
                 router.push({ pathname: '/admin/WorkCompletionOTP', params: { customerName, customerPhone, budget: booking.budget || '' } });
                 return;
             }
-            await updateBookingStatus(booking.id, workStatus);
+            const claimed = await claimBooking(String(booking.id), booking.status, workStatus);
+            if (!claimed) {
+                Alert.alert('Status Changed', 'This booking was already updated by someone else. Please reload and try again.');
+                return;
+            }
             router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });
         } catch (error) {
             Alert.alert('Error', 'Failed to update status');
@@ -103,7 +107,12 @@ export default function BookingDetails() {
         if (!booking?.id) return;
         setConfirming(true);
         try {
-            await updateBookingStatus(booking.id, 'New / Open');
+            const claimed = await claimBooking(String(booking.id), 'Pending Confirmation', 'New / Open');
+            if (!claimed) {
+                Alert.alert('Already Confirmed', 'This booking was already confirmed.');
+                router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });
+                return;
+            }
             const targetService = String(booking.service || '').split(',')[0].trim();
             pushAreaProfessionals(targetService, booking.area || '', booking.fullName, booking.city).catch(() => {});
             router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });

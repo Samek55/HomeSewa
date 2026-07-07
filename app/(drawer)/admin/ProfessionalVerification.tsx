@@ -67,8 +67,8 @@ export default function ProfessionalVerification() {
     const navigation = useNavigation();
 
     useEffect(() => {
-        AsyncStorage.getItem('adminTable').then(table => {
-            if (table !== 'admins') {
+        AsyncStorage.getItem('adminRole').then(role => {
+            if (role !== 'super_admin') {
                 Alert.alert('Access Denied', 'Super Admin only.');
                 router.back();
                 return;
@@ -147,21 +147,28 @@ export default function ProfessionalVerification() {
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Approve', onPress: async () => {
-                    await supabase.from('workforce').update({ profile_status: 'Active' }).eq('uin', uin);
+                    const { error: wfError } = await supabase.from('workforce').update({ profile_status: 'Active' }).eq('uin', uin);
                     // The professional row (with login PIN) was created at signup with status 'Pending' — activate it now.
-                    const { data: proRow } = await supabase
+                    const { data: proRow, error: proError } = await supabase
                         .from('professional')
                         .update({ status: 'Active' })
                         .eq('phone', phone)
                         .select('pin')
                         .single();
+
+                    if (wfError || proError || !proRow) {
+                        console.error('Approval failed:', wfError || proError);
+                        Alert.alert('Approval Failed', `Could not activate ${name}'s account. Please try again.`);
+                        return;
+                    }
+
                     setPending(prev => prev.filter(p => p.uin !== uin));
                     setSelected(null);
 
                     // Send login details SMS now that they're approved
                     const firstName = name.split(' ')[0] || 'Professional';
                     const approvalText =
-                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${proRow?.pin || 'Contact support'}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
+                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${proRow.pin}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
                     sendSparrowSms(phone, approvalText).catch(() => {});
 
                     Alert.alert('Approved', `${name} has been approved. Login details sent via SMS.`);

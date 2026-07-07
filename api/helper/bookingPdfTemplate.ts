@@ -4,6 +4,16 @@ const HELPLINE = '+977 98520 24 365';
 const WEBSITE  = 'www.homesewa.app';
 const PRIMARY  = '#295C59';
 
+// Booking fields come from customer-entered form data — escape before interpolating
+// into HTML so a name/work-description containing markup can't corrupt the receipt.
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export function buildBookingPdfHtml(booking: any): string {
   const location = [booking.area, booking.city].filter(Boolean).join(', ');
   const approxDays = booking.approxDays != null
@@ -13,8 +23,8 @@ export function buildBookingPdfHtml(booking: any): string {
   const row = (label: string, value: string | null | undefined) =>
     value
       ? `<tr>
-           <td class="lbl">${label}</td>
-           <td class="val">${value}</td>
+           <td class="lbl">${escapeHtml(label)}</td>
+           <td class="val">${escapeHtml(value)}</td>
          </tr>`
       : '';
 
@@ -198,15 +208,15 @@ export function buildBookingPdfHtml(booking: any): string {
   <!-- RECEIPT BAR -->
   <div class="receipt-bar">
     <div class="receipt-title">Booking Receipt</div>
-    <div class="booking-id">ID #${booking.bookingId ?? '—'}</div>
+    <div class="booking-id">ID #${escapeHtml(booking.bookingId ?? '—')}</div>
   </div>
 
   <!-- DETAIL CARD -->
   <div class="card">
     <div class="card-header">
-      <div class="customer-name">${booking.fullName ?? '—'}</div>
-      <div class="customer-phone">📞 +977 ${booking.phone ?? '—'}</div>
-      ${booking.status ? `<div class="status-badge">${booking.status}</div>` : ''}
+      <div class="customer-name">${escapeHtml(booking.fullName ?? '—')}</div>
+      <div class="customer-phone">📞 +977 ${escapeHtml(booking.phone ?? '—')}</div>
+      ${booking.status ? `<div class="status-badge">${escapeHtml(booking.status)}</div>` : ''}
     </div>
     <table>
       ${row('Service',               booking.service)}

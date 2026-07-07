@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Image,
 } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
 } from 'react-native-reanimated';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 const { width: SW } = Dimensions.get('window');
@@ -94,6 +96,40 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
     savedScale.value = next;
   };
 
+  const getImageSize = (uri: string): Promise<{ width: number; height: number }> =>
+    new Promise((resolve, reject) => {
+      Image.getSize(uri, (width, height) => resolve({ width, height }), reject);
+    });
+
+  // Maps the visible circular viewport back onto the original image's pixel
+  // coordinates (accounting for the "cover" fit plus the user's pinch/pan) so the
+  // saved photo is actually cropped to what's shown, not the full original image.
+  const handleSave = async () => {
+    try {
+      const { width: origW, height: origH } = await getImageSize(imageUri);
+      const coverScale = Math.max(CIRCLE / origW, CIRCLE / origH);
+      const totalScale = coverScale * scale.value;
+      const displayedW = origW * totalScale;
+      const displayedH = origH * totalScale;
+      const imageTopLeftX = CIRCLE / 2 + tx.value - displayedW / 2;
+      const imageTopLeftY = CIRCLE / 2 + ty.value - displayedH / 2;
+
+      const cropSize = Math.min(CIRCLE / totalScale, origW, origH);
+      const originX = Math.max(0, Math.min(-imageTopLeftX / totalScale, origW - cropSize));
+      const originY = Math.max(0, Math.min(-imageTopLeftY / totalScale, origH - cropSize));
+
+      const result = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ crop: { originX, originY, width: cropSize, height: cropSize } }],
+        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      onSave(result.uri);
+    } catch (e) {
+      console.warn('Headshot crop failed, using original image:', e);
+      onSave(imageUri);
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <View style={styles.overlay}>
@@ -142,7 +178,7 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.btnSave}
-              onPress={() => onSave(imageUri)}
+              onPress={handleSave}
               activeOpacity={0.8}
             >
               <Text style={styles.btnSaveText}>{'Crop &\nSave'}</Text>

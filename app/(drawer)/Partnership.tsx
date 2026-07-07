@@ -186,7 +186,7 @@ export default function PartnershipScreen() {
         "Full Name": name,
         "Name of Organisation": organizationName,
         "Phone Number": cleanNumber,
-        "eMail": email,
+        "Email": email,
         "City": selectedArea,
         "Number of Employees": Number(employees),
         "Business Type": selectedBusinessType,

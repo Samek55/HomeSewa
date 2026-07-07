@@ -30,6 +30,7 @@ import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { notifyUsers, notifyProfessionalsAccepted } from '@/api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isLeadUnlocked } from '@/api/leadUnlocks';
+import { recordLeadRejection } from '@/api/leadRejections';
 import { maskCustomerName } from '@/src/utils/maskName';
 import { LEAD_FEE_NPR } from '@/src/constants/leadFee';
 
@@ -159,15 +160,39 @@ export default function BookingDetails() {
             });
         } catch (error) {
             console.error("Failed to process order acceptance:", error);
-
-            router.push({
-                pathname: '/admin/BookingDetails_2',
-                params: { id: booking?.id?.toString() },
-            });
+            Alert.alert('Error', 'Could not accept this booking. Please try again.');
         }
     };
 
     const handleSharePDF = () => shareBookingPdf(booking);
+
+    // Passing on a lead only affects this professional's own view — the booking stays
+    // "New / Open" and fully available for every other professional to accept.
+    const handleReject = () => {
+        if (!booking) return;
+
+        Alert.alert(
+            'Pass on this job?',
+            'It will no longer appear in your list, but stays open for other professionals to accept.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Yes, Pass',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
+                            await recordLeadRejection(String(booking.id), adminPhone);
+                        } catch (error) {
+                            console.error('Failed to record lead rejection:', error);
+                        } finally {
+                            router.push('/admin/BookingHistory');
+                        }
+                    },
+                },
+            ]
+        );
+    };
 
     return (
         <View style={{ flex: 1 }}>
@@ -330,9 +355,9 @@ export default function BookingDetails() {
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.RejectButton}
-                                            onPress={()=> router.push('/admin/BookingHistory')}
+                                            onPress={handleReject}
                                         >
-                                            <Text style={styles.AcceptText}>Cancel</Text>
+                                            <Text style={styles.AcceptText}>Reject</Text>
                                         </TouchableOpacity>
                                     </>
                                 ) : (

@@ -97,7 +97,7 @@ export default function CareerOTP() {
       const stored = await AsyncStorage.getItem('pendingCareerData');
       if (!stored) throw new Error('Form data not found. Please go back and try again.');
       const careerData = JSON.parse(stored);
-      const result = await createCareer(careerData);
+      await createCareer(careerData);
       await AsyncStorage.removeItem('pendingCareerData');
 
       // Send "application received, pending approval" SMS — login details come only after admin approves

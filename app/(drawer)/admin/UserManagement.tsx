@@ -76,7 +76,7 @@ export default function UserManagement() {
     useEffect(() => {
         AsyncStorage.getItem('adminTable').then(table => {
             if (table !== 'admins') {
-                Alert.alert('Access Denied', 'Super Admin only.');
+                Alert.alert('Access Denied', 'Admin access only.');
                 router.back();
                 return;
             }

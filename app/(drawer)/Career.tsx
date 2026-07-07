@@ -229,7 +229,7 @@ export default function CareerScreen() {
         "Years of Experience": experience,
         "Preferred City": selectedCity,
         "Preferred Working Area": selectedArea,
-        "Emergency Contact Number": emergencyNumber,
+        "Emergency Contact Number": cleanEmergencyNumber,
         "Referral Phone Number": referralNumber,
         "Message": message,
         "Citizenship / Driving Licence / NID": idProofImages.map((url: string) => ({ url })),
@@ -259,8 +259,8 @@ export default function CareerScreen() {
         <HeadshotCropModal
           visible={showCropModal}
           imageUri={tempHeadshotUri}
-          onSave={() => {
-            setSelectedHeadshot([{ uri: tempHeadshotUri }]);
+          onSave={(uri) => {
+            setSelectedHeadshot([{ uri }]);
             setShowCropModal(false);
           }}
           onCancel={() => {

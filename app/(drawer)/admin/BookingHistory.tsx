@@ -18,6 +18,7 @@ import BookingCard from '../../../components/admin/BookingCard';
 import Header4 from '@/components/Header4Admin';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchBookings } from '../../../api/helper/fetchBookingData';
+import { getRejectedBookingIds } from '../../../api/leadRejections';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { maskCustomerName } from '../../../src/utils/maskName';
@@ -58,6 +59,7 @@ export default function BookingHistory() {
     const [calendarMonth, setCalendarMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
 
     const lastDataRef = useRef<string>('');
     const intervalRef = useRef<any>(null);
@@ -90,6 +92,9 @@ export default function BookingHistory() {
         useCallback(() => {
             loadBookings();
             AsyncStorage.getItem('adminTable').then(t => setIsSuperAdmin(t === 'admins'));
+            AsyncStorage.getItem('adminPhone').then(async phone => {
+                if (phone) setRejectedIds(await getRejectedBookingIds(phone));
+            });
             intervalRef.current = setInterval(loadBookings, 15000);
             return () => clearInterval(intervalRef.current);
         }, [loadBookings])
@@ -114,9 +119,12 @@ export default function BookingHistory() {
         // they only appear once an Admin/Super Admin has confirmed them.
         const visible = isSuperAdmin
             ? bookings
-            : bookings.filter(b => (b.status || '').toLowerCase().trim() !== 'pending confirmation');
+            : bookings.filter(b =>
+                (b.status || '').toLowerCase().trim() !== 'pending confirmation' &&
+                !rejectedIds.has(b.id)
+              );
         return [...visible].sort((a, b) => (Number(b.bookingId) || 0) - (Number(a.bookingId) || 0));
-    }, [bookings, isSuperAdmin]);
+    }, [bookings, isSuperAdmin, rejectedIds]);
 
     // Count bookings per YYYY-MM-DD using startingDate
     const countsByDate = useMemo(() => {

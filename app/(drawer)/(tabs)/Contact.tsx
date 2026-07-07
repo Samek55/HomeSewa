@@ -9,7 +9,7 @@ const MAP_URL = 'https://maps.app.goo.gl/pfWTFfxpxqXRfXha7?g_st=ac';
 export default function ContactScreen() {
   const openWebsite = useCallback(() => { Linking.openURL('https://homesewa.app'); }, []);
   const handleEmailPress = useCallback(() => { Linking.openURL('mailto:homesewa@sriyog.com'); }, []);
-  const handlePhonePress = useCallback(() => { Linking.openURL('tel:+97798520 24365'); }, []);
+  const handlePhonePress = useCallback(() => { Linking.openURL('tel:+9779852024365'); }, []);
   const handleMapPress = useCallback(() => { Linking.openURL(MAP_URL); }, []);
 
   return (
