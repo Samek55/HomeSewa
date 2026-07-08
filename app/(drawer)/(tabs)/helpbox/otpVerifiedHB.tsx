@@ -17,7 +17,7 @@ const scaleFont = (size: number) => {
 
 const VerifiedScreen = () => {
   useEffect(() => {
-    const timer = setTimeout(() => router.replace('/Home'), 2000);
+    const timer = setTimeout(() => router.replace('/Home'), 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -28,7 +28,7 @@ const VerifiedScreen = () => {
         <Header2 />
         <View style={styles.container}>
           <Text style={styles.thankYouText}>
-            Thank you! OTP verified successfully. Your booking is now confirmed!
+            Thank you! OTP verified successfully. Your help request has been submitted!
           </Text>
           <View style={styles.imageContainer}>
             <Image
@@ -36,7 +36,7 @@ const VerifiedScreen = () => {
               style={styles.image}
             />
             <Text style={styles.confirmationText}>
-              OTP confirmed — booking successful!
+              OTP confirmed — request submitted!
             </Text>
           </View>
         </View>

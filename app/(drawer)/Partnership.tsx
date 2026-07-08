@@ -47,6 +47,12 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 
 export default function PartnershipScreen() {
   const scrollRef = useRef<any>(null);
+  const fieldYPositions = useRef<Partial<Record<string, number>>>({});
+  const scrollToField = (key: string) => {
+    if (!scrollRef.current) return;
+    const y = fieldYPositions.current[key] ?? 0;
+    scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
+  };
   const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
@@ -409,16 +415,18 @@ export default function PartnershipScreen() {
 
           {/* Message TextArea */}
           <Text style={styles.label}>Message</Text>
-          <TextArea
-            value={message}
-            onChangeText={setMessage}
-            placeholder=""
-            placeholderTextColor="#4B4B4B"
-            maxHeight={160}
-            onFocus={() => setActiveInput('message')}
-            onBlur={() => setActiveInput(null)}
-            style={activeInput === 'message' && styles.inputActive}
-          />
+          <View onLayout={(e) => { fieldYPositions.current['message'] = e.nativeEvent.layout.y; }}>
+            <TextArea
+              value={message}
+              onChangeText={setMessage}
+              placeholder=""
+              placeholderTextColor="#4B4B4B"
+              maxHeight={160}
+              onFocus={() => { setActiveInput('message'); scrollToField('message'); }}
+              onBlur={() => setActiveInput(null)}
+              style={activeInput === 'message' && styles.inputActive}
+            />
+          </View>
 
           {/* Form Actions */}
           <View style={styles.buttonContainer}>
@@ -445,6 +453,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     flexGrow: 1,
+    paddingBottom: hp('4%'),
   },
   formContainer: {
     paddingHorizontal: width * 0.06, // Optimized padding grid alignment

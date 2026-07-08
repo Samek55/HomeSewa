@@ -520,16 +520,18 @@ export default function ServiceBookingScreen() {
 
             {/* Message */}
             <Text style={styles.label}>Message</Text>
-            <TextArea
-              value={message}
-              onChangeText={setMessage}
-              placeholder=""
-              placeholderTextColor="#4B4B4B"
-              maxHeight={160}
-              onFocus={() => setActiveInput('message')}
-              onBlur={() => setActiveInput(null)}
-              style={activeInput === 'message' ? styles.inputActive : undefined}
-            />
+            <View onLayout={(e) => { fieldYPositions.current['message'] = e.nativeEvent.layout.y; }}>
+              <TextArea
+                value={message}
+                onChangeText={setMessage}
+                placeholder=""
+                placeholderTextColor="#4B4B4B"
+                maxHeight={160}
+                onFocus={() => { setActiveInput('message'); scrollToField('message'); }}
+                onBlur={() => setActiveInput(null)}
+                style={activeInput === 'message' ? styles.inputActive : undefined}
+              />
+            </View>
 
             {/* Bottom Actions: Clear left | Submit right */}
             <View style={styles.bottomRow}>
@@ -557,7 +559,7 @@ export default function ServiceBookingScreen() {
 
 // ... styles remain unchanged ...
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#295C59', flexGrow: 1 },
+  container: { backgroundColor: '#295C59', flexGrow: 1, paddingBottom: hp('4%') },
   formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: '#295C59' },
   title: { fontSize: width * 0.06, fontWeight: '700', color: 'white', paddingLeft: 8, marginBottom: 10 },
   inputGroup: { marginTop: height * 0.015, padding: 20, borderRadius: 20, backgroundColor: '#fff', elevation: 10, marginBottom: height * 0.05 },

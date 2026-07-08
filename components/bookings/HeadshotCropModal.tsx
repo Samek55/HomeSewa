@@ -13,7 +13,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
 } from 'react-native-reanimated';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 const { width: SW } = Dimensions.get('window');
@@ -106,6 +105,11 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
   // saved photo is actually cropped to what's shown, not the full original image.
   const handleSave = async () => {
     try {
+      // Required lazily (not statically imported) so a dev client built before this
+      // native module was added degrades to "uncropped image" instead of crashing
+      // the whole screen at bundle-load time.
+      const ImageManipulator = require('expo-image-manipulator');
+
       const { width: origW, height: origH } = await getImageSize(imageUri);
       const coverScale = Math.max(CIRCLE / origW, CIRCLE / origH);
       const totalScale = coverScale * scale.value;

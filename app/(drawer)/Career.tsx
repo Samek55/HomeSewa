@@ -25,7 +25,7 @@ import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
 import HeadshotCropModal from '../../components/bookings/HeadshotCropModal';
 import Header3 from '@/components/Header3drawer';
-import { uploadMultipleToStorage } from '@/api/uploadToStorage';
+import { uploadMultipleToStorage, uploadMultiplePrivateDocuments } from '@/api/uploadToStorage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,6 +50,12 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 
 export default function CareerScreen() {
   const scrollRef = useRef<any>(null);
+  const fieldYPositions = useRef<Partial<Record<string, number>>>({});
+  const scrollToField = (key: string) => {
+    if (!scrollRef.current) return;
+    const y = fieldYPositions.current[key] ?? 0;
+    scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
+  };
   const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
@@ -188,6 +194,9 @@ export default function CareerScreen() {
     if (!experience.trim()) {
       return Alert.alert('Validation Error', 'Experience is required');
     }
+    if (Number(experience) < 1 || Number(experience) > 68) {
+      return Alert.alert('Validation Error', 'Years of Experience must be between 1 and 68');
+    }
 
     if (!selectedID || selectedID.length === 0) {
       return Alert.alert('Validation Error', 'Please upload your Citizenship / Driving Licence / NID');
@@ -211,7 +220,8 @@ export default function CareerScreen() {
 
     try {
       const [idProofImages, headshotImages] = await Promise.all([
-        uploadMultipleToStorage(
+        // Citizenship/ID documents are sensitive — stored in a private bucket, never a public URL.
+        uploadMultiplePrivateDocuments(
           selectedID.map(item => ({ uri: item.uri, fileName: item.fileName }))
         ),
         selectedHeadshot.length > 0
@@ -401,7 +411,8 @@ export default function CareerScreen() {
             onBlur={() => setActiveInput(null)}
             onChangeText={(text) => {
               const onlyNumbers = text.replace(/[^0-9]/g, '');
-              setExperience(onlyNumbers);
+              const clamped = onlyNumbers && Number(onlyNumbers) > 68 ? '68' : onlyNumbers;
+              setExperience(clamped);
             }}
             style={[
               styles.input,
@@ -409,6 +420,7 @@ export default function CareerScreen() {
             ]}
             placeholderTextColor={'#4B4B4B'}
             keyboardType="numeric"
+            maxLength={2}
           />
 
           {/* ID Proof */}
@@ -518,16 +530,18 @@ export default function CareerScreen() {
 
           {/* Message */}
           <Text style={styles.label}>Message</Text>
-          <TextArea
-            value={message}
-            onChangeText={setMessage}
-            placeholder=""
-            placeholderTextColor="#4B4B4B"
-            maxHeight={160}
-            onFocus={() => setActiveInput('message')}
-            onBlur={() => setActiveInput(null)}
-            style={activeInput === 'message' && styles.inputActive}
-          />
+          <View onLayout={(e) => { fieldYPositions.current['message'] = e.nativeEvent.layout.y; }}>
+            <TextArea
+              value={message}
+              onChangeText={setMessage}
+              placeholder=""
+              placeholderTextColor="#4B4B4B"
+              maxHeight={160}
+              onFocus={() => { setActiveInput('message'); scrollToField('message'); }}
+              onBlur={() => setActiveInput(null)}
+              style={activeInput === 'message' && styles.inputActive}
+            />
+          </View>
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
@@ -554,6 +568,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     flexGrow: 1,
+    paddingBottom: hp('4%'),
   },
   formContainer: {
     paddingHorizontal: width * 0.06, // Optimized padding grid alignment

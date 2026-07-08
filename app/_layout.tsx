@@ -1,4 +1,4 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, router, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
@@ -119,11 +119,24 @@ export default function RootLayout() {
         console.error('OneSignal App ID missing from environment variables.');
       }
 
-      // Handle push notification click events
+      // Handle push notification click events — routes to whichever screen the
+      // notification is about, using the `data` payload set in api/notifications.ts.
       const handleNotificationClick = (event: any) => {
-        if (isMounted) {
-          console.log('Push notification clicked:', event.notification.body);
-          // Handle deep routing here if needed
+        if (!isMounted) return;
+        console.log('Push notification clicked:', event.notification.body);
+
+        const data = event.notification.additionalData;
+        const screen = data?.screen;
+        if (!screen) return;
+
+        try {
+          if (data.id) {
+            router.push({ pathname: screen, params: { id: String(data.id) } });
+          } else {
+            router.push(screen);
+          }
+        } catch (navError) {
+          console.warn('Notification deep-link navigation failed:', navError);
         }
       };
 

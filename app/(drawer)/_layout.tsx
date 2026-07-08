@@ -82,6 +82,11 @@ export default function DrawerLayout() {
         name="AdminChangePassword"
         options={{ drawerItemStyle: { display: 'none' } }}
       />
+
+      <Drawer.Screen
+        name="Notifications"
+        options={{ drawerItemStyle: { display: 'none' } }}
+      />
     </Drawer>
   );
 }

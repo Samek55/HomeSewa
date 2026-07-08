@@ -108,7 +108,7 @@ export default function CareerOTP() {
       sendSparrowSms(cleanPhone, pendingText).catch(() => {});
 
       // Notify super admin to review the new application
-      const positions = Array.isArray(careerData['Positions']) ? careerData['Positions'] : [];
+      const positions = Array.isArray(careerData['Your Expertise']) ? careerData['Your Expertise'] : [];
       notifyAdminNewProfessional(careerData['Full Name'] || firstName, positions).catch(() => {});
 
       setOverlayStatus('success');

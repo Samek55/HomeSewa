@@ -22,13 +22,16 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
     const [adminPhone, setAdminPhone] = useState<string | null>(null);
     const [adminTable, setAdminTable] = useState<string | null>(null);
+    const [adminRole, setAdminRole] = useState<string | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
 
     const loadProfile = useCallback(async () => {
         const phone = await AsyncStorage.getItem('adminPhone');
         const table = await AsyncStorage.getItem('adminTable');
+        const role = await AsyncStorage.getItem('adminRole');
         setAdminPhone(phone);
         setAdminTable(table);
+        setAdminRole(role);
 
         if (!phone) { setProfile(null); return; }
 
@@ -104,37 +107,45 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
                 {/* MENU */}
                 <View style={styles.menu}>
-                    <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => navigate('/Home')} superAdmin={adminTable === 'admins'} />
+                    <MenuItem icon="home-outline" label="Home" active={isActive('/Home')} onPress={() => navigate('/Home')} superAdmin={adminTable === 'admins'} compact={!isLoggedIn} />
                     {adminTable !== 'admins' && (
-                        <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => navigate('/Service')} />
+                        <MenuItem icon="construct-outline" label="Services" active={isActive('/Service')} onPress={() => navigate('/Service')} compact={!isLoggedIn} />
                     )}
                     {isLoggedIn && (
                         <MenuItem icon="time-outline" label="Booking History" active={isActive('/admin/BookingHistory')} onPress={() => navigate('/admin/BookingHistory')} superAdmin={adminTable === 'admins'} />
                     )}
+                    <MenuItem
+                        icon="notifications-outline"
+                        label="Notifications"
+                        active={isActive('/Notifications') || isActive('/admin/AdminNotifications')}
+                        onPress={() => navigate(adminRole === 'super_admin' ? '/admin/AdminNotifications' : '/Notifications')}
+                        superAdmin={adminTable === 'admins'}
+                        compact={!isLoggedIn}
+                    />
                     {adminTable === 'admins' && (
                         <MenuItem icon="chatbox-ellipses-outline" label="Help Box" active={isActive('/admin/HelpBox')} onPress={() => navigate('/admin/HelpBox')} superAdmin />
                     )}
 
                     {!isLoggedIn && (
-                        <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => navigate('/Book')} />
+                        <MenuItem icon="calendar-outline" label="Book a Service" active={isActive('/Book')} onPress={() => navigate('/Book')} compact />
                     )}
                     {!isLoggedIn && (
-                        <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => navigate('/Career')} />
+                        <MenuItem icon="briefcase-outline" label="Join as Professional" active={isActive('/Career')} onPress={() => navigate('/Career')} compact />
                     )}
 
                     {adminTable !== 'admins' && <View style={styles.divider} />}
 
                     {adminTable !== 'admins' && (
-                        <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => navigate('/About')} />
+                        <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => navigate('/About')} compact={!isLoggedIn} />
                     )}
                     {adminTable !== 'admins' && (
-                        <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => navigate('/Contact')} />
+                        <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => navigate('/Contact')} compact={!isLoggedIn} />
                     )}
                     {adminTable !== 'admins' && (
-                        <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => navigate('/FAQs')} />
+                        <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => navigate('/FAQs')} compact={!isLoggedIn} />
                     )}
                     {adminTable !== 'admins' && (
-                        <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} />
+                        <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} compact={!isLoggedIn} />
                     )}
 
                     {adminTable === 'admins' && (
@@ -143,14 +154,13 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                             <Text style={styles.sectionLabel}>Super Admin</Text>
                             <MenuItem icon="people-outline" label="User Management" active={isActive('/admin/UserManagement')} onPress={() => navigate('/admin/UserManagement')} superAdmin />
                             <MenuItem icon="shield-checkmark-outline" label="Verification" active={isActive('/admin/ProfessionalVerification')} onPress={() => navigate('/admin/ProfessionalVerification')} superAdmin />
-                            <MenuItem icon="notifications-outline" label="Notifications" active={isActive('/admin/AdminNotifications')} onPress={() => navigate('/admin/AdminNotifications')} superAdmin />
                         </>
                     )}
 
                     {!isLoggedIn && <View style={styles.divider} />}
 
                     {!isLoggedIn && (
-                        <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => navigate('/Partnership')} />
+                        <MenuItem icon="people-outline" label="Become a Partner" active={isActive('/Partnership')} onPress={() => navigate('/Partnership')} compact />
                     )}
 
                     {isLoggedIn && (
@@ -181,8 +191,8 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
     );
 }
 
-function MenuItem({ icon, label, onPress, active, superAdmin }: any) {
-    const compact = !!superAdmin;
+function MenuItem({ icon, label, onPress, active, superAdmin, compact: compactProp }: any) {
+    const compact = !!superAdmin || !!compactProp;
     return (
         <TouchableOpacity
             style={[styles.item, active && styles.itemActive, compact && styles.itemCompact]}
@@ -205,7 +215,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     card: {
-        height: SCREEN_H * 0.88,
+        height: SCREEN_H * 0.90,
         backgroundColor: '#fff',
         borderRadius: 30,
         marginHorizontal: 10,
@@ -264,7 +274,7 @@ const styles = StyleSheet.create({
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 9,
+        paddingVertical: 7,
         paddingHorizontal: 10,
         borderRadius: 14,
     },
@@ -272,7 +282,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#E8F4F3',
     },
     itemCompact: {
-        paddingVertical: 9,
+        paddingVertical: 6,
     },
     iconBox: {
         width: 40,

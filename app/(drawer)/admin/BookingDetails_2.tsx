@@ -114,7 +114,7 @@ export default function BookingDetails() {
                 return;
             }
             const targetService = String(booking.service || '').split(',')[0].trim();
-            pushAreaProfessionals(targetService, booking.area || '', booking.fullName, booking.city).catch(() => {});
+            pushAreaProfessionals(targetService, booking.area || '', booking.fullName, booking.city, String(booking.id)).catch(() => {});
             router.replace({ pathname: '/admin/BookingHistory', params: { refresh: Date.now() } });
         } catch (error) {
             Alert.alert('Error', 'Failed to confirm booking');

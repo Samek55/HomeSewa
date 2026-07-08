@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getSignedDocumentUrl } from '@/api/uploadToStorage';
 
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 const sendSparrowSms = async (phone: string, text: string) => {
@@ -64,7 +65,24 @@ export default function ProfessionalVerification() {
     const [loading, setLoading] = useState(true);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [selected, setSelected] = useState<Professional | null>(null);
+    const [openingDoc, setOpeningDoc] = useState(false);
     const navigation = useNavigation();
+
+    // ID documents are stored in a private bucket — resolve a short-lived signed URL right
+    // before opening rather than storing/using a permanent public link. Old records created
+    // before this fix still hold a full public URL, which we can just open directly.
+    const handleViewIdProof = async (idProof: string) => {
+        if (openingDoc) return;
+        setOpeningDoc(true);
+        try {
+            const url = idProof.startsWith('http') ? idProof : await getSignedDocumentUrl(idProof);
+            await Linking.openURL(url);
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Could not open document.');
+        } finally {
+            setOpeningDoc(false);
+        }
+    };
 
     useEffect(() => {
         AsyncStorage.getItem('adminRole').then(role => {
@@ -186,6 +204,11 @@ export default function ProfessionalVerification() {
                     await supabase.from('professional').update({ status: 'Rejected' }).eq('phone', phone);
                     setPending(prev => prev.filter(p => p.uin !== uin));
                     setSelected(null);
+
+                    const firstName = name.split(' ')[0] || 'Applicant';
+                    const rejectionText =
+                        `Dear ${firstName}, your request for joining HomeSewa App as a professional has been rejected. Please contact our call center on 9852024365.`;
+                    sendSparrowSms(phone, rejectionText).catch(() => {});
                 }
             },
         ]);
@@ -323,12 +346,13 @@ export default function ProfessionalVerification() {
 
                                 {selected.id_proof && (
                                     <TouchableOpacity
-                                        style={styles.idProofBtn}
-                                        onPress={() => Linking.openURL(selected.id_proof!)}
+                                        style={[styles.idProofBtn, openingDoc && { opacity: 0.6 }]}
+                                        onPress={() => handleViewIdProof(selected.id_proof!)}
+                                        disabled={openingDoc}
                                         activeOpacity={0.8}
                                     >
                                         <Ionicons name="document-text-outline" size={16} color="#295C59" />
-                                        <Text style={styles.idProofText}>View ID / Document</Text>
+                                        <Text style={styles.idProofText}>{openingDoc ? 'Opening…' : 'View ID / Document'}</Text>
                                         <Ionicons name="open-outline" size={14} color="#9BBAB8" />
                                     </TouchableOpacity>
                                 )}

@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notifyAll, notifyProfessionalsInCity, notifyCustomers } from '../../../api/notifications';
+import { supabase } from '../../../lib/supabase';
 
 const SERVICES = [
     'Deep Cleaning', 'Garden Care', 'Masonry Repair', 'Plumbing Repair',
@@ -27,7 +28,7 @@ const SERVICES = [
 
 const CITIES = ['Kathmandu', 'Bhaktapur', 'Lalitpur'];
 
-type Tab = 'all' | 'professionals' | 'customers';
+type Tab = 'all' | 'professionals' | 'customers' | 'history';
 
 const TAB_CONFIG: { key: Tab; label: string; icon: string; description: string }[] = [
     {
@@ -48,7 +49,33 @@ const TAB_CONFIG: { key: Tab; label: string; icon: string; description: string }
         icon: 'people-outline',
         description: 'Send only to customers who have booked services.',
     },
+    {
+        key: 'history',
+        label: 'All Notifications',
+        icon: 'time-outline',
+        description: 'Every notification sent so far, across every category.',
+    },
 ];
+
+type NotificationRow = {
+    id: number;
+    created_at: string;
+    title: string;
+    body: string;
+    audience: string;
+};
+
+const formatDate = (iso: string) => {
+    try {
+        const d = new Date(iso);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = d.toLocaleDateString('en-US', { month: 'short' });
+        const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return `${day} ${month} ${d.getFullYear()}, ${time}`;
+    } catch {
+        return '';
+    }
+};
 
 function MultiSelectDropdown({ label, options, selected, onChange, placeholder }: {
     label: string;
@@ -155,18 +182,40 @@ export default function AdminNotifications() {
     const [selectedServices, setSelectedServices] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [sending, setSending] = useState(false);
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+    const [hasAccess, setHasAccess] = useState(false);
+    const [history, setHistory] = useState<NotificationRow[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     useEffect(() => {
         AsyncStorage.getItem('adminRole').then(role => {
             if (role !== 'super_admin') {
-                Alert.alert('Access Denied', 'Super Admin only.');
+                Alert.alert('Access Denied', 'Super Admin access only.');
                 router.back();
                 return;
             }
-            setIsSuperAdmin(true);
+            setHasAccess(true);
         });
     }, []);
+
+    const loadHistory = async () => {
+        setHistoryLoading(true);
+        try {
+            const { data } = await supabase
+                .from('notifications')
+                .select('id, created_at, title, body, audience')
+                .order('created_at', { ascending: false })
+                .limit(200);
+            setHistory(data || []);
+        } catch (e) {
+            console.error('Failed to load notification history:', e);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (tab === 'history') loadHistory();
+    }, [tab]);
 
     const resetFields = () => {
         setTitle('');
@@ -213,7 +262,7 @@ export default function AdminNotifications() {
         ]);
     };
 
-    if (!isSuperAdmin) return null;
+    if (!hasAccess) return null;
 
     const activeTab = TAB_CONFIG.find(t => t.key === tab)!;
 
@@ -240,6 +289,32 @@ export default function AdminNotifications() {
                 ))}
             </View>
 
+            {tab === 'history' ? (
+                historyLoading ? (
+                    <View style={styles.historyCenter}>
+                        <ActivityIndicator size="large" color="#295C59" />
+                    </View>
+                ) : history.length === 0 ? (
+                    <View style={styles.historyCenter}>
+                        <Ionicons name="notifications-off-outline" size={40} color="#9BBAB8" />
+                        <Text style={styles.emptyText}>No notifications sent yet.</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={history}
+                        keyExtractor={item => String(item.id)}
+                        contentContainerStyle={styles.historyList}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => (
+                            <View style={styles.historyCard}>
+                                <Text style={styles.historyCardTitle}>{item.title}</Text>
+                                <Text style={styles.historyCardBody}>{item.body}</Text>
+                                <Text style={styles.historyCardDate}>{formatDate(item.created_at)}</Text>
+                            </View>
+                        )}
+                    />
+                )
+            ) : (
             <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
@@ -318,6 +393,7 @@ export default function AdminNotifications() {
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
+            )}
         </View>
     );
 }
@@ -372,6 +448,19 @@ const styles = StyleSheet.create({
     },
     dropdownValue: { fontSize: 14, color: '#1C2B2A', fontWeight: '500', flex: 1 },
     dropdownPlaceholder: { fontSize: 14, color: '#B0BEC5', flex: 1 },
+
+    // History (All Notifications)
+    historyCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+    emptyText: { fontSize: 14, color: '#9BBAB8', fontWeight: '500' },
+    historyList: { padding: wp('4%'), paddingBottom: hp('5%') },
+    historyCard: {
+        backgroundColor: '#fff', borderRadius: 14,
+        borderWidth: 1, borderColor: '#E8F4F3',
+        padding: wp('4%'), marginBottom: hp('1.5%'),
+    },
+    historyCardTitle: { fontSize: 15, fontWeight: '700', color: '#1C2B2A', marginBottom: 4 },
+    historyCardBody: { fontSize: 13.5, fontWeight: '500', color: '#5A7270', lineHeight: 19, marginBottom: 6 },
+    historyCardDate: { fontSize: 11, fontWeight: '600', color: '#9BBAB8' },
 
     // Chips
     chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },

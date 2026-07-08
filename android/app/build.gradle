@@ -87,7 +87,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.pracas.homesewa'
+    namespace 'com.pracasinfosys.sriyog.com'
     defaultConfig {
         applicationId 'com.pracasinfosys.sriyog.com'
         minSdkVersion rootProject.ext.minSdkVersion

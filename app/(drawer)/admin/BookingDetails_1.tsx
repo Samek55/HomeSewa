@@ -27,7 +27,7 @@ import {
 } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { notifyUsers, notifyProfessionalsAccepted } from '@/api/notifications';
+import { notifyUsers, notifyProfessionalsAccepted, notifyProfessionalsRejected } from '@/api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isLeadUnlocked } from '@/api/leadUnlocks';
 import { recordLeadRejection } from '@/api/leadRejections';
@@ -49,18 +49,18 @@ const sendAcceptanceSms = async (customerPhone: string, customerName: string, pr
     console.log('[Sparrow Accept SMS] status:', response.status, 'body:', JSON.stringify(data));
 };
 
-const fetchProfessionalName = async (phone: string): Promise<string> => {
+const fetchProfessionalInfo = async (phone: string): Promise<{ name: string; gender: string | null }> => {
     try {
         const clean = phone.replace(/\D/g, '');
         const { data } = await supabase
             .from('workforce')
-            .select('first_name, middle_name, last_name')
+            .select('first_name, middle_name, last_name, gender')
             .or(`phone.eq.${clean},phone.eq.977${clean}`)
             .maybeSingle();
         const fullName = data ? [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ') : '';
-        return fullName || 'HomeSewa Professional';
+        return { name: fullName || 'HomeSewa Professional', gender: data?.gender || null };
     } catch {
-        return 'HomeSewa Professional';
+        return { name: 'HomeSewa Professional', gender: null };
     }
 };
 
@@ -141,14 +141,15 @@ export default function BookingDetails() {
 
             console.log("Passing customer phone directly to notification:", customerPhone);
 
-            await notifyUsers(booking?.service, booking?.area, customerPhone, adminPhone);
+            const { name: professionalName, gender: professionalGender } = await fetchProfessionalInfo(adminPhone);
+
+            await notifyUsers(booking?.service, customerPhone, customerName, adminPhone, professionalName, professionalGender);
 
             const bookingService = String(booking?.service || '').split(',')[0].trim();
-            notifyProfessionalsAccepted(bookingService, booking?.city || '', booking?.area || '', adminPhone).catch(() => {});
+            notifyProfessionalsAccepted(bookingService, booking?.city || '', booking?.area || '', adminPhone, professionalName).catch(() => {});
 
             // Send acceptance SMS to customer
             try {
-                const professionalName = await fetchProfessionalName(adminPhone);
                 await sendAcceptanceSms(customerPhone, customerName, professionalName, adminPhone);
             } catch (smsErr) {
                 console.error('[Sparrow Accept SMS] failed:', smsErr);
@@ -183,6 +184,9 @@ export default function BookingDetails() {
                         try {
                             const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
                             await recordLeadRejection(String(booking.id), adminPhone);
+
+                            const bookingService = String(booking?.service || '').split(',')[0].trim();
+                            notifyProfessionalsRejected(bookingService, booking?.city || '', adminPhone, String(booking.id), booking?.fullName || '', booking?.area || '').catch(() => {});
                         } catch (error) {
                             console.error('Failed to record lead rejection:', error);
                         } finally {

@@ -56,6 +56,14 @@ export default function AdminChangePassword() {
     // 'reset'  = forgot PIN, phone number required
     const isChangePinMode = mode === 'change';
 
+    const scrollRef = useRef<any>(null);
+    const fieldYPositions = useRef<Partial<Record<string, number>>>({});
+    const scrollToField = (key: string) => {
+        if (!scrollRef.current) return;
+        const y = fieldYPositions.current[key] ?? 0;
+        scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
+    };
+
     const [loading, setLoading] = useState(false);
     const [loggedInPhone, setLoggedInPhone] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -215,8 +223,9 @@ export default function AdminChangePassword() {
 
     return (
         <KeyboardAwareScrollView
+            ref={scrollRef}
             style={styles.screen}
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: hp('4%') }}
             keyboardShouldPersistTaps="handled"
             enableOnAndroid
             extraScrollHeight={20}
@@ -289,7 +298,7 @@ export default function AdminChangePassword() {
                                 <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
                             </TouchableOpacity>
                         </View>
-                        <View style={styles.pinBoxRow}>
+                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['oldPin'] = e.nativeEvent.layout.y; }}>
                             {oldBoxes.map((d, i) => (
                                 <TextInput
                                     key={i}
@@ -299,6 +308,7 @@ export default function AdminChangePassword() {
                                     keyboardType="number-pad"
                                     maxLength={1}
                                     value={d}
+                                    onFocus={() => scrollToField('oldPin')}
                                     onChangeText={t => {
                                         const digit = t.replace(/[^0-9]/g, '').slice(-1);
                                         const next = [...oldBoxes]; next[i] = digit; setOldBoxes(next);
@@ -315,7 +325,7 @@ export default function AdminChangePassword() {
                 {!isChangePinMode && otpSent && (
                     <>
                         <Text style={styles.label}>Verification Code</Text>
-                        <View style={styles.pinBoxRow}>
+                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['otp'] = e.nativeEvent.layout.y; }}>
                             {otpBoxes.map((d, i) => (
                                 <TextInput
                                     key={i}
@@ -324,6 +334,7 @@ export default function AdminChangePassword() {
                                     keyboardType="number-pad"
                                     maxLength={1}
                                     value={d}
+                                    onFocus={() => scrollToField('otp')}
                                     onChangeText={t => {
                                         const digit = t.replace(/[^0-9]/g, '').slice(-1);
                                         const next = [...otpBoxes]; next[i] = digit; setOtpBoxes(next);
@@ -346,7 +357,7 @@ export default function AdminChangePassword() {
                 {(isChangePinMode || otpSent) && (
                     <>
                         <Text style={styles.label}>New PIN</Text>
-                        <View style={styles.pinBoxRow}>
+                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['newPin'] = e.nativeEvent.layout.y; }}>
                             {newBoxes.map((d, i) => (
                                 <TextInput
                                     key={i}
@@ -356,6 +367,7 @@ export default function AdminChangePassword() {
                                     keyboardType="number-pad"
                                     maxLength={1}
                                     value={d}
+                                    onFocus={() => scrollToField('newPin')}
                                     onChangeText={t => {
                                         const digit = t.replace(/[^0-9]/g, '').slice(-1);
                                         const next = [...newBoxes]; next[i] = digit; setNewBoxes(next);
@@ -368,7 +380,7 @@ export default function AdminChangePassword() {
 
                         {/* Confirm New PIN */}
                         <Text style={styles.label}>Confirm New PIN</Text>
-                        <View style={styles.pinBoxRow}>
+                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['confirmPin'] = e.nativeEvent.layout.y; }}>
                             {confirmBoxes.map((d, i) => (
                                 <TextInput
                                     key={i}
@@ -378,6 +390,7 @@ export default function AdminChangePassword() {
                                     keyboardType="number-pad"
                                     maxLength={1}
                                     value={d}
+                                    onFocus={() => scrollToField('confirmPin')}
                                     onChangeText={t => {
                                         const digit = t.replace(/[^0-9]/g, '').slice(-1);
                                         const next = [...confirmBoxes]; next[i] = digit; setConfirmBoxes(next);

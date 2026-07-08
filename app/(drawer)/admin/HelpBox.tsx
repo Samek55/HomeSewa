@@ -81,7 +81,7 @@ export default function HelpBox() {
             const { data, error } = await supabase
                 .from('helpbox')
                 .select('*')
-                .order('created_at', { ascending: true });
+                .order('created_at', { ascending: false });
             if (error) throw error;
             if (data) setEntries(data as HelpEntry[]);
         } catch (e: any) {

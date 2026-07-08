@@ -96,10 +96,10 @@ export default function UserManagement() {
 
         if (!proRows) { setProfessionals([]); setLoading(false); return; }
 
-        // Best-effort enrichment with profile info (services/areas) from workforce.
+        // Best-effort enrichment with profile info (services/city) from workforce.
         const { data: wfRows } = await supabase
             .from('workforce')
-            .select('phone, services, working_areas');
+            .select('phone, services, preferred_city');
         const wfByPhone = new Map<string, any>();
         (wfRows || []).forEach(w => wfByPhone.set(normalizePhone(w.phone), w));
 
@@ -109,7 +109,7 @@ export default function UserManagement() {
                 ...a,
                 phone: normalizePhone(a.phone),
                 positions: wf?.services || [],
-                preferred_city: wf?.working_areas?.length > 0 ? wf.working_areas.join(', ') : '—',
+                preferred_city: wf?.preferred_city || '—',
             };
         }));
         setLoading(false);
@@ -229,7 +229,7 @@ export default function UserManagement() {
                 ? {
                     ...data,
                     positions: data.services || [],
-                    preferred_city: data.working_areas?.length > 0 ? data.working_areas.join(', ') : '—',
+                    preferred_city: data.preferred_city || '—',
                     ...item, // professional table fields (full_name, phone, status, id) are the source of truth
                 }
                 : item);
