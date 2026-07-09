@@ -10,7 +10,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notifyAll, notifyProfessionalsInCity, notifyCustomers, notifyCustomersByService } from '../../../api/notifications';
+import { notifyAll, notifyProfessionalsInCity, notifyCustomers, notifyCustomersByService, notifyAdminsBroadcast, notifyPublic } from '../../../api/notifications';
 import { supabase } from '../../../lib/supabase';
 
 const SERVICES = [
@@ -28,26 +28,38 @@ const SERVICES = [
 
 const CITIES = ['Kathmandu', 'Bhaktapur', 'Lalitpur'];
 
-type Tab = 'all' | 'professionals' | 'customers' | 'history';
+type Tab = 'admin' | 'customers' | 'professionals' | 'public' | 'all' | 'history';
 
 const TAB_CONFIG: { key: Tab; label: string; icon: string; description: string }[] = [
     {
-        key: 'all',
-        label: 'All Users',
-        icon: 'globe-outline',
-        description: 'Send to ALL app users — customers, professionals & admins.',
+        key: 'admin',
+        label: 'Admin',
+        icon: 'shield-checkmark-outline',
+        description: 'Flash a notification to Admin and Super Admin accounts only.',
+    },
+    {
+        key: 'customers',
+        label: 'Customer',
+        icon: 'people-outline',
+        description: 'Send to all customers, or target only those who booked a specific service.',
     },
     {
         key: 'professionals',
-        label: 'Professionals',
+        label: 'Professional',
         icon: 'construct-outline',
         description: 'Target professionals by their service type and city.',
     },
     {
-        key: 'customers',
-        label: 'Customers',
-        icon: 'people-outline',
-        description: 'Send to all customers, or target only those who booked a specific service.',
+        key: 'public',
+        label: 'Public',
+        icon: 'megaphone-outline',
+        description: 'Reach installs that have not registered as a customer or professional yet.',
+    },
+    {
+        key: 'all',
+        label: 'All',
+        icon: 'globe-outline',
+        description: 'Send to every app install — customers, professionals, admins & public.',
     },
     {
         key: 'history',
@@ -311,9 +323,13 @@ export default function AdminNotifications() {
                     try {
                         if (tab === 'all') {
                             await notifyAll(title.trim(), message.trim());
+                        } else if (tab === 'admin') {
+                            await notifyAdminsBroadcast(title.trim(), message.trim());
+                        } else if (tab === 'public') {
+                            await notifyPublic(title.trim(), message.trim());
                         } else if (tab === 'professionals') {
                             await notifyProfessionalsInCity(selectedServices, selectedCities, message.trim());
-                        } else if (selectedCustomerServices.length > 0) {
+                        } else if (tab === 'customers' && selectedCustomerServices.length > 0) {
                             await notifyCustomersByService(selectedCustomerServices, title.trim(), message.trim());
                         } else {
                             await notifyCustomers(title.trim(), message.trim());
@@ -431,9 +447,13 @@ export default function AdminNotifications() {
                             <TextInput
                                 style={[styles.input, styles.textarea]}
                                 placeholder={
-                                    tab === 'all'
-                                        ? 'Type your announcement or notice...'
-                                        : 'Type your offer or message to customers...'
+                                    tab === 'customers'
+                                        ? 'Type your offer or message to customers...'
+                                        : tab === 'admin'
+                                        ? 'Type your message to admins...'
+                                        : tab === 'public'
+                                        ? 'Type your message to public installs...'
+                                        : 'Type your announcement or notice...'
                                 }
                                 placeholderTextColor="#B0BEC5"
                                 value={message}

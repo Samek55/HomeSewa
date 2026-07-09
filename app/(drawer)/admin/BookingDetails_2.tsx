@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
         paddingBottom: hp('3%'),
     },
 
-    heading: { fontSize: hp('2.2%'), fontWeight: '700', color: '#222' },
+    heading: { fontSize: hp('2.2%'), fontWeight: '700', color: '#222', marginBottom: hp('0.6%') },
     phone: { fontSize: hp('1.5%'), color: '#295C59', fontWeight: '600', marginTop: hp('0.4%') },
 
     divider: { height: 1, backgroundColor: '#E8F4F3', marginVertical: hp('1%') },

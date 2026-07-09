@@ -448,6 +448,7 @@ const styles = StyleSheet.create({
         fontSize: hp('2.8%'),
         fontWeight: '700',
         color: '#222',
+        marginBottom: hp('0.6%'),
     },
     phoneLink: {
         fontSize: hp('1.8%'),
@@ -508,8 +509,9 @@ const styles = StyleSheet.create({
     ButtonContainer: {
         marginTop: hp('1%'),
         marginBottom: hp('2%'),
-        flexDirection: 'column',
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: wp('3%'),
         width: '100%',
     },
     AcceptButton: {
@@ -521,7 +523,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
         elevation: 3,
-        width: '100%',
+        flex: 1,
     },
     AcceptText: {
         fontSize: hp('1.6%'),
@@ -529,7 +531,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         letterSpacing: 0.5,
     },
-        RejectButton: {
+    RejectButton: {
         paddingVertical: hp('1.5%'),
         borderRadius: 8,
         justifyContent: 'center',
@@ -537,9 +539,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'red',
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
+        flex: 1,
         elevation: 3,
-        width: '100%',
-        marginTop:hp('2%')
     },
 
     photos: {

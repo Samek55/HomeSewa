@@ -35,7 +35,7 @@ const sendNotification = async (payload: object) => {
 
 // Persists a copy of every notification sent so the in-app "My Notifications" screen can show
 // history — never blocks or fails the actual push send if this write has a problem.
-type NotificationAudience = 'professional_open' | 'customer_specific' | 'customer_all' | 'admin_all' | 'super_admin' | 'all';
+type NotificationAudience = 'professional_open' | 'customer_specific' | 'customer_all' | 'admin_all' | 'super_admin' | 'public_all' | 'all';
 const logNotification = async (row: {
   title: string;
   body: string;
@@ -224,6 +224,25 @@ export async function notifyAdmins(applicantName: string) {
     console.log('Admin notification sent for partnership:', applicantName);
   } catch (error: any) {
     console.log('Admin notification error:', error?.response?.data || error.message);
+  }
+}
+
+// Manual broadcast from the Send Notification screen → Admin/Super Admin accounts only.
+export async function notifyAdminsBroadcast(title: string, message: string) {
+  try {
+    await sendNotification({
+      filters: [
+        { field: 'tag', key: 'role', relation: '=', value: 'admin' },
+      ],
+      headings: { en: title },
+      contents: { en: message },
+      data: { screen: '/Home' },
+    });
+    logNotification({ title, body: message, screen: '/Home', audience: 'admin_all' }).catch(() => {});
+    console.log('Admin broadcast notification sent:', title);
+  } catch (error: any) {
+    console.log('notifyAdminsBroadcast error:', error?.response?.data || error.message);
+    throw error;
   }
 }
 
@@ -459,6 +478,25 @@ export async function notifyCustomers(title: string, message: string) {
     console.log('Customer notification sent:', title);
   } catch (error: any) {
     console.log('Customer notification error:', error?.response?.data || error.message);
+  }
+}
+
+// Push to installs that have never registered as a customer or professional (no
+// 'role' tag set at all — see app/_layout.tsx and BookingOtp.tsx for where 'user'/
+// 'career'/'admin' tags get assigned). Reaches people who only have the app installed.
+export async function notifyPublic(title: string, message: string) {
+  try {
+    await sendNotification({
+      filters: [{ field: 'tag', key: 'role', relation: 'not_exists' }],
+      headings: { en: title },
+      contents: { en: message },
+      data: { screen: '/Home' },
+    });
+    logNotification({ title, body: message, screen: '/Home', audience: 'public_all' }).catch(() => {});
+    console.log('Public notification sent:', title);
+  } catch (error: any) {
+    console.log('notifyPublic error:', error?.response?.data || error.message);
+    throw error;
   }
 }
 

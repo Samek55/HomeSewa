@@ -9,7 +9,7 @@ const formatDate = (dateString?: string | null) => {
   const month = d.toLocaleDateString('en-US', { month: 'long' });
   const year = d.getFullYear();
   const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
-  return `${weekday} ${month} ${day} ${year}`;
+  return `${day} ${month} ${year}, ${weekday}`;
 };
 
 const formatBudget = (budget?: string | null) => {
@@ -43,7 +43,9 @@ export const fetchBookings = async () => {
         const start = Date.parse(item.starting_date);
         const end = Date.parse(item.service_completion_date);
         if (isNaN(start) || isNaN(end) || end < start) return null;
-        return Math.round((end - start) / (1000 * 60 * 60 * 24));
+        // Inclusive of both the starting and ending day — work finishing the same
+        // day it starts is 1 day of work, not 0.
+        return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
       })(),
       shift: item.select_shift,
       priority: item.priority,
