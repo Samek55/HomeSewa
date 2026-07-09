@@ -208,7 +208,7 @@ export function buildBookingPdfHtml(booking: any): string {
   <!-- RECEIPT BAR -->
   <div class="receipt-bar">
     <div class="receipt-title">Booking Receipt</div>
-    <div class="booking-id">ID #${escapeHtml(booking.bookingId ?? '—')}</div>
+    <div class="booking-id">ID #B${escapeHtml(booking.bookingId ?? '—')}</div>
   </div>
 
   <!-- DETAIL CARD -->

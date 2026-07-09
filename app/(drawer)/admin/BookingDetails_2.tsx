@@ -142,7 +142,7 @@ export default function BookingDetails() {
                     <Image source={leftArrowIcon} style={styles.backIcon} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>
-                    {booking?.bookingId ? `Booking ID: ${booking.bookingId}` : 'Booking Details'}
+                    {booking?.bookingId ? `Booking ID: B${booking.bookingId}` : 'Booking Details'}
                 </Text>
                 <TouchableOpacity onPress={handleSharePDF} style={styles.shareBtn} disabled={!booking}>
                     <Ionicons name="share-outline" size={22} color="#295C59" />

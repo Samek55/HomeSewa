@@ -157,6 +157,7 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                             <Text style={styles.sectionLabel}>Super Admin</Text>
                             <MenuItem icon="people-outline" label="User Management" active={isActive('/admin/UserManagement')} onPress={() => navigate('/admin/UserManagement')} superAdmin />
                             <MenuItem icon="shield-checkmark-outline" label="Verification" active={isActive('/admin/ProfessionalVerification')} onPress={() => navigate('/admin/ProfessionalVerification')} superAdmin />
+                            <MenuItem icon="briefcase-outline" label="Partnerships" active={isActive('/admin/PartnershipApplications')} onPress={() => navigate('/admin/PartnershipApplications')} superAdmin />
                         </>
                     )}
 

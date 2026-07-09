@@ -22,6 +22,7 @@ type Professional = {
     status: string;
     modified_at?: string;
     created_at?: string;
+    uin?: number | null;
 };
 
 type Customer = {
@@ -30,6 +31,7 @@ type Customer = {
     blocked: boolean;
     city?: string;
     area?: string;
+    displayId?: string | null;
 };
 
 type AdminAccount = {
@@ -180,10 +182,10 @@ export default function UserManagement() {
 
         if (!proRows) { setProfessionals([]); setLoading(false); return; }
 
-        // Best-effort enrichment with profile info (services/city) from workforce.
+        // Best-effort enrichment with profile info (services/city/uin) from workforce.
         const { data: wfRows } = await supabase
             .from('workforce')
-            .select('phone, services, preferred_city');
+            .select('phone, services, preferred_city, uin');
         const wfByPhone = new Map<string, any>();
         (wfRows || []).forEach(w => wfByPhone.set(normalizePhone(w.phone), w));
 
@@ -194,6 +196,7 @@ export default function UserManagement() {
                 phone: normalizePhone(a.phone),
                 positions: wf?.services || [],
                 preferred_city: wf?.preferred_city || '—',
+                uin: wf?.uin ?? null,
             };
         }));
         setLoading(false);
@@ -210,7 +213,20 @@ export default function UserManagement() {
         const { data: blocked } = await supabase.from('blocked_customers').select('phone');
         const blockedPhones = new Set((blocked || []).map((b: any) => b.phone));
         const unique = [...new Map((bookings || []).map((item: any) => [item.phone, item])).values()];
-        setCustomers(unique.map((c: any) => ({ ...c, blocked: blockedPhones.has(c.phone) })));
+
+        // Best-effort C-prefixed id lookup — the `customers` table/display_id column only
+        // exists once the 0004 migration has been run; silently skip enrichment until then.
+        const displayIdByPhone = new Map<string, string>();
+        const { data: custRows, error: custErr } = await supabase.from('customers').select('phone, display_id');
+        if (!custErr) {
+            (custRows || []).forEach((c: any) => displayIdByPhone.set(c.phone, c.display_id));
+        }
+
+        setCustomers(unique.map((c: any) => ({
+            ...c,
+            blocked: blockedPhones.has(c.phone),
+            displayId: displayIdByPhone.get(c.phone) || null,
+        })));
         setLoading(false);
     }, []);
 
@@ -692,7 +708,19 @@ export default function UserManagement() {
                                     </Text>
                                 </View>
                                 <View style={styles.cardInfo}>
-                                    <Text style={styles.name}>{item.full_name || 'Unknown'}</Text>
+                                    <View style={styles.nameRow}>
+                                        <Text style={styles.name}>{item.full_name || 'Unknown'}</Text>
+                                        {tab === 'professionals' && item.uin != null && (
+                                            <View style={styles.idPill}>
+                                                <Text style={styles.idPillText}>W{item.uin}</Text>
+                                            </View>
+                                        )}
+                                        {tab === 'customers' && item.displayId && (
+                                            <View style={styles.idPill}>
+                                                <Text style={styles.idPillText}>{item.displayId}</Text>
+                                            </View>
+                                        )}
+                                    </View>
                                     <Text style={styles.sub}>+977 {item.phone}</Text>
                                     {tab === 'professionals' && (
                                         <Text style={styles.sub} numberOfLines={2}>
@@ -788,6 +816,16 @@ export default function UserManagement() {
                                         </Text>
                                     </View>
                                     <Text style={styles.modalName}>{detailData.full_name || 'Unknown'}</Text>
+                                    {selectedItem?._type === 'professionals' && detailData.uin != null && (
+                                        <View style={styles.idPillLarge}>
+                                            <Text style={styles.idPillText}>W{detailData.uin}</Text>
+                                        </View>
+                                    )}
+                                    {selectedItem?._type === 'customers' && detailData.displayId && (
+                                        <View style={styles.idPillLarge}>
+                                            <Text style={styles.idPillText}>{detailData.displayId}</Text>
+                                        </View>
+                                    )}
                                     {selectedItem?._type === 'professionals' && (
                                         <View style={[styles.statusPill,
                                             detailData.status === 'Active' ? styles.pillActive
@@ -1203,7 +1241,10 @@ const styles = StyleSheet.create({
     },
     avatarText: { fontSize: 18, fontWeight: '800', color: '#295C59' },
     cardInfo: { flex: 1 },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
     name: { fontSize: 14, fontWeight: '700', color: '#1C2B2A', marginBottom: 2 },
+    idPill: { backgroundColor: '#E8F4F3', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, marginBottom: 2 },
+    idPillText: { fontSize: 10.5, fontWeight: '800', color: '#295C59' },
     sub: { fontSize: 11, color: '#9BBAB8', marginTop: 1 },
     cardRight: { alignItems: 'flex-end', gap: 6 },
     statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
@@ -1253,6 +1294,7 @@ const styles = StyleSheet.create({
     },
     modalAvatarText: { fontSize: 30, fontWeight: '800', color: '#295C59' },
     modalName: { fontSize: 20, fontWeight: '800', color: '#1C2B2A', textAlign: 'center' },
+    idPillLarge: { backgroundColor: '#E8F4F3', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
 
     detailCard: {
         backgroundColor: '#fff', borderRadius: 16,

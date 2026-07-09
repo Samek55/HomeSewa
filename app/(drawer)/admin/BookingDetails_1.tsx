@@ -214,7 +214,7 @@ export default function BookingDetails() {
                         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                             <Image source={leftArrowIcon} style={styles.backIcon} />
                             <Text style={styles.title}>
-                                {booking?.bookingId ? `Booking ID: ${booking.bookingId}` : 'Booking Details'}
+                                {booking?.bookingId ? `Booking ID: B${booking.bookingId}` : 'Booking Details'}
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleSharePDF} disabled={!booking} style={{ padding: 4 }}>
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
         elevation: 3,
-        flex: 1,
+        flex: 1.6,
     },
     AcceptText: {
         fontSize: hp('1.6%'),

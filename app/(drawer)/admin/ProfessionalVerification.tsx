@@ -254,7 +254,12 @@ export default function ProfessionalVerification() {
                                     </View>
                                 )}
                                 <View style={styles.cardInfo}>
-                                    <Text style={styles.name}>{item.full_name}</Text>
+                                    <View style={styles.nameRow}>
+                                        <Text style={styles.name}>{item.full_name}</Text>
+                                        <View style={styles.idPill}>
+                                            <Text style={styles.idPillText}>W{item.uin}</Text>
+                                        </View>
+                                    </View>
                                     {item.application_date && (
                                         <Text style={styles.appliedDate}>Applied: {formatDate(item.application_date)}</Text>
                                     )}
@@ -298,7 +303,12 @@ export default function ProfessionalVerification() {
                                         </View>
                                     )}
                                     <View style={styles.cardInfo}>
-                                        <Text style={styles.name}>{selected.full_name}</Text>
+                                        <View style={styles.nameRow}>
+                                            <Text style={styles.name}>{selected.full_name}</Text>
+                                            <View style={styles.idPill}>
+                                                <Text style={styles.idPillText}>W{selected.uin}</Text>
+                                            </View>
+                                        </View>
                                         {selected.application_date && (
                                             <Text style={styles.appliedDate}>Applied: {formatDate(selected.application_date)}</Text>
                                         )}
@@ -466,7 +476,10 @@ const styles = StyleSheet.create({
     },
     avatarText: { fontSize: 22, fontWeight: '800', color: '#295C59' },
     cardInfo: { flex: 1 },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
     name: { fontSize: 15, fontWeight: '800', color: '#1C2B2A', marginBottom: 2 },
+    idPill: { backgroundColor: '#E8F4F3', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
+    idPillText: { fontSize: 11, fontWeight: '800', color: '#295C59' },
     appliedDate: { fontSize: 11, color: '#B0BEC5' },
     summarySub: { fontSize: 12, color: '#9BBAB8', marginTop: 2 },
 

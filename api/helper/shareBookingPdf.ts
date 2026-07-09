@@ -28,7 +28,7 @@ export async function shareBookingPdf(booking: any) {
 
             await Sharing.shareAsync(namedUri, {
                 mimeType: 'application/pdf',
-                dialogTitle: `HomeSewa Booking #${bookingId}`,
+                dialogTitle: `HomeSewa Booking #B${bookingId}`,
                 UTI: 'com.adobe.pdf',
             });
             return;
@@ -42,7 +42,7 @@ export async function shareBookingPdf(booking: any) {
         await Share.share({
             message: [
                 `HomeSewa Booking Receipt`,
-                `Booking ID: #${bookingId}`,
+                `Booking ID: #B${bookingId}`,
                 ``,
                 `Customer: ${booking.fullName ?? '—'}`,
                 `Phone: +977 ${booking.phone ?? '—'}`,
@@ -59,7 +59,7 @@ export async function shareBookingPdf(booking: any) {
                 `Helpline: +977 98520 24 365`,
                 `www.homesewa.app`,
             ].filter(Boolean).join('\n'),
-            title: `HomeSewa Booking #${bookingId}`,
+            title: `HomeSewa Booking #B${bookingId}`,
         });
     } catch {
         Alert.alert('Error', 'Could not share booking details.');
