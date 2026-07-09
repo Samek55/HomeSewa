@@ -18,6 +18,7 @@ type HelpEntry = {
     modified_at?: string;
     status: 'open' | 'solved';
     issue?: string;
+    reply?: string;
 };
 
 const formatDate = (iso: string) => {
@@ -29,6 +30,16 @@ const formatDate = (iso: string) => {
 
 const DURATIONS = ['Today', 'Yesterday', 'This Week', 'This Month', '3 Months', '6 Months', '1 Year', 'All'] as const;
 type Duration = typeof DURATIONS[number];
+
+const PAGE_SIZE = 15;
+
+// Shared per-column layout so the header and body cells can never drift out of alignment.
+const COL = {
+    uid: { flex: 1.3 },
+    phone: { flex: 2.1, marginLeft: wp('3%') },
+    date: { flex: 1.5, textAlign: 'center' as const },
+    status: { flex: 0.8, textAlign: 'center' as const },
+};
 
 function filterByDuration(data: HelpEntry[], duration: Duration): HelpEntry[] {
     if (duration === 'All') return data;
@@ -65,6 +76,7 @@ export default function HelpBox() {
     const [statusFilter, setStatusFilter] = useState<'All' | 'open' | 'solved'>('All');
     const [showDurationDrop, setShowDurationDrop] = useState(false);
     const [showStatusDrop, setShowStatusDrop] = useState(false);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         AsyncStorage.getItem('adminTable').then(table => {
@@ -94,8 +106,8 @@ export default function HelpBox() {
         load();
         const sub = DeviceEventEmitter.addListener(
             'helpbox:update',
-            ({ id, status, modified_at }: { id: string; status: 'open' | 'solved'; modified_at?: string }) => {
-                setEntries(prev => prev.map(e => e.id === id ? { ...e, status, modified_at } : e));
+            ({ id, status, modified_at, reply, issue }: { id: string; status: 'open' | 'solved'; modified_at?: string; reply?: string; issue?: string }) => {
+                setEntries(prev => prev.map(e => e.id === id ? { ...e, status, modified_at, reply, issue } : e));
             }
         );
         return () => sub.remove();
@@ -107,6 +119,16 @@ export default function HelpBox() {
         if (search.trim()) data = data.filter(e => e.phone?.includes(search.trim()));
         return data;
     }, [entries, duration, statusFilter, search]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [duration, statusFilter, search]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paginated = useMemo(
+        () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+        [filtered, page]
+    );
 
     return (
         <View style={styles.screen}>
@@ -207,45 +229,72 @@ export default function HelpBox() {
                 ) : (
                     <View style={styles.table}>
                         <View style={styles.tableHeader}>
-                            <Text style={[styles.colHeader, { flex: 0.6 }]}>UID</Text>
-                            <Text style={[styles.colHeader, { flex: 1.8 }]}>Phone</Text>
-                            <Text style={[styles.colHeader, { flex: 1.4, textAlign: 'center' }]}>Date</Text>
-                            <Text style={[styles.colHeader, { flex: 0.8, textAlign: 'center' }]}>Status</Text>
+                            <Text style={[styles.colHeader, COL.uid]}>UID</Text>
+                            <Text style={[styles.colHeader, COL.phone]}>Phone</Text>
+                            <Text style={[styles.colHeader, COL.date]}>Date</Text>
+                            <Text style={[styles.colHeader, COL.status]}>Status</Text>
                         </View>
 
-                        {filtered.map((item, idx) => (
-                            <TouchableOpacity
-                                key={`${item.phone}-${idx}`}
-                                style={[styles.tableRow, idx % 2 === 0 && styles.tableRowAlt]}
-                                onPress={() => router.push({
-                                    pathname: '/admin/HelpBoxDetail',
-                                    params: { entry: JSON.stringify(item) },
-                                } as any)}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={[styles.cell, { flex: 0.6 }]} numberOfLines={1}>
-                                    H{String(item.ticket_no ?? idx + 1).padStart(4, '0')}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 1.8 }]} numberOfLines={1}>
-                                    {item.phone}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 1.4, textAlign: 'center' }]} numberOfLines={1}>
-                                    {item.created_at ? formatDate(item.created_at) : '—'}
-                                </Text>
-                                <View style={{ flex: 0.8, alignItems: 'center' }}>
-                                    {item.status === 'solved' ? (
-                                        <Text style={styles.solvedText}>✓</Text>
-                                    ) : (
-                                        <Text style={styles.openText}>!?</Text>
-                                    )}
-                                </View>
-                            </TouchableOpacity>
-                        ))}
+                        {paginated.map((item, idx) => {
+                            const globalIdx = (page - 1) * PAGE_SIZE + idx;
+                            return (
+                                <TouchableOpacity
+                                    key={`${item.phone}-${globalIdx}`}
+                                    style={[styles.tableRow, globalIdx % 2 === 0 && styles.tableRowAlt]}
+                                    onPress={() => router.push({
+                                        pathname: '/admin/HelpBoxDetail',
+                                        params: { entry: JSON.stringify(item) },
+                                    } as any)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.cell, styles.uidCell, COL.uid]}>
+                                        H{String(item.ticket_no ?? globalIdx + 1).padStart(4, '0')}
+                                    </Text>
+                                    <Text style={[styles.cell, COL.phone]} numberOfLines={1}>
+                                        {item.phone}
+                                    </Text>
+                                    <Text style={[styles.cell, COL.date]} numberOfLines={1}>
+                                        {item.created_at ? formatDate(item.created_at) : '—'}
+                                    </Text>
+                                    <View style={[{ flex: COL.status.flex }, styles.statusCell]}>
+                                        {item.status === 'solved' ? (
+                                            <Text style={styles.solvedText}>✓</Text>
+                                        ) : (
+                                            <Text style={styles.openText}>!?</Text>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 )}
 
                 {!loading && filtered.length > 0 && (
-                    <Text style={styles.countText}>{filtered.length} request{filtered.length !== 1 ? 's' : ''}</Text>
+                    <>
+                        <Text style={styles.countText}>{filtered.length} request{filtered.length !== 1 ? 's' : ''}</Text>
+
+                        {totalPages > 1 && (
+                            <View style={styles.paginationRow}>
+                                <TouchableOpacity
+                                    style={[styles.pageBtn, page === 1 && styles.pageBtnDisabled]}
+                                    onPress={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                >
+                                    <Ionicons name="chevron-back" size={18} color={page === 1 ? '#B9CFCD' : '#295C59'} />
+                                </TouchableOpacity>
+
+                                <Text style={styles.pageIndicator}>Page {page} of {totalPages}</Text>
+
+                                <TouchableOpacity
+                                    style={[styles.pageBtn, page === totalPages && styles.pageBtnDisabled]}
+                                    onPress={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={page === totalPages}
+                                >
+                                    <Ionicons name="chevron-forward" size={18} color={page === totalPages ? '#B9CFCD' : '#295C59'} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </>
                 )}
             </ScrollView>
         </View>
@@ -322,6 +371,8 @@ const styles = StyleSheet.create({
     },
     tableRowAlt: { backgroundColor: '#FAFEFE' },
     cell: { fontSize: 13, fontWeight: '500', color: '#1C2B2A' },
+    uidCell: { fontWeight: '700', letterSpacing: 0.5 },
+    statusCell: { alignItems: 'center' },
 
     solvedText: {
         fontSize: 18, fontWeight: '800', color: '#22c55e',
@@ -334,4 +385,16 @@ const styles = StyleSheet.create({
         textAlign: 'center', fontSize: 13, color: '#9BBAB8',
         fontWeight: '500', marginTop: hp('2%'),
     },
+
+    paginationRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: wp('4%'), marginTop: hp('1.5%'),
+    },
+    pageBtn: {
+        width: 36, height: 36, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+    },
+    pageBtnDisabled: { backgroundColor: '#F5F9F8', borderColor: '#EAF2F1' },
+    pageIndicator: { fontSize: 13, fontWeight: '700', color: '#295C59', minWidth: wp('28%'), textAlign: 'center' },
 });

@@ -42,20 +42,23 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
             const isProfessional = table === 'workforce';
             const { data: accountRow } = await supabase
                 .from(isProfessional ? 'professional' : 'admin')
-                .select('full_name')
+                .select('full_name, photo_url')
                 .eq('phone', phone)
                 .maybeSingle();
 
             let photoUrl: string | null = null;
             if (isProfessional) {
-                // Enrich with their headshot from workforce, matching either
-                // phone format (legacy rows store a 977 prefix).
+                // Prefer their richer workforce headshot, matching either phone format
+                // (legacy rows store a 977 prefix); fall back to the professional record's
+                // own photo_url if no workforce row/headshot exists.
                 const { data: wf } = await supabase
                     .from('workforce')
                     .select('headshot_url')
                     .or(`phone.eq.${phone},phone.eq.977${phone}`)
                     .maybeSingle();
-                photoUrl = wf?.headshot_url || null;
+                photoUrl = wf?.headshot_url || accountRow?.photo_url || null;
+            } else {
+                photoUrl = accountRow?.photo_url || null;
             }
 
             setProfile(accountRow ? { fullName: accountRow.full_name || '', phone, photoUrl } : null);

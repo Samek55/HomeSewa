@@ -58,12 +58,13 @@ export default function UpdateProfile() {
                     const cleanP = p.replace(/\D/g, '').slice(-10);
                     const { data } = await supabase
                         .from('admin')
-                        .select('full_name, status')
+                        .select('full_name, status, photo_url')
                         .eq('phone', cleanP)
                         .single();
                     if (data) {
                         setFullName(data.full_name || '');
                         setStatus(data.status || '');
+                        setPhotoUrl(data.photo_url || null);
                     }
                 } else {
                     // Professional — full profile from workforce table.
@@ -130,16 +131,18 @@ export default function UpdateProfile() {
             const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
             if (adminTable === 'admins') {
-                // Super admin — only update full_name, nothing else
-                const { error } = await supabase
+                // Super admin — only full_name and photo are editable here.
+                const { data: updated, error } = await supabase
                     .from('admin')
-                    .update({ full_name: fullName.trim() })
-                    .eq('phone', cleanPhone);
+                    .update({ full_name: fullName.trim(), photo_url: newPhotoUrl })
+                    .eq('phone', cleanPhone)
+                    .select();
                 if (error) throw error;
+                if (!updated || updated.length === 0) throw new Error('No admin record matched this phone number.');
             } else {
                 // Professional — update full workforce profile.
                 const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
-                const { error } = await supabase
+                const { data: updated, error } = await supabase
                     .from('workforce')
                     .update({
                         first_name: nameParts[0] || null,
@@ -153,8 +156,10 @@ export default function UpdateProfile() {
                         years_experience: experience ? Number(experience) : null,
                         services: positions,
                     })
-                    .or(`phone.eq.${cleanPhone},phone.eq.977${cleanPhone}`);
+                    .or(`phone.eq.${cleanPhone},phone.eq.977${cleanPhone}`)
+                    .select();
                 if (error) throw error;
+                if (!updated || updated.length === 0) throw new Error('No workforce profile matched this phone number.');
             }
             DeviceEventEmitter.emit('authChanged');
             Alert.alert('Saved', 'Profile updated successfully!', [

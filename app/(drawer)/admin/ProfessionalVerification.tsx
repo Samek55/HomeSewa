@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
-    ActivityIndicator, Alert, FlatList, Image, Linking, Modal, ScrollView,
+    ActivityIndicator, Alert, FlatList, Image, Modal, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useNavigation } from 'expo-router';
@@ -66,17 +66,20 @@ export default function ProfessionalVerification() {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [selected, setSelected] = useState<Professional | null>(null);
     const [openingDoc, setOpeningDoc] = useState(false);
+    const [previewUri, setPreviewUri] = useState<string | null>(null);
     const navigation = useNavigation();
 
     // ID documents are stored in a private bucket — resolve a short-lived signed URL right
-    // before opening rather than storing/using a permanent public link. Old records created
-    // before this fix still hold a full public URL, which we can just open directly.
+    // before previewing rather than storing/using a permanent public link. Old records created
+    // before this fix still hold a full public URL, which we can just preview directly.
+    // Rendered in an in-app Modal (not Linking.openURL) so it never leaves the app or lands
+    // in a browser tab/history where the signed link could linger.
     const handleViewIdProof = async (idProof: string) => {
         if (openingDoc) return;
         setOpeningDoc(true);
         try {
             const url = idProof.startsWith('http') ? idProof : await getSignedDocumentUrl(idProof);
-            await Linking.openURL(url);
+            setPreviewUri(url);
         } catch (e: any) {
             Alert.alert('Error', e.message || 'Could not open document.');
         } finally {
@@ -352,8 +355,8 @@ export default function ProfessionalVerification() {
                                         activeOpacity={0.8}
                                     >
                                         <Ionicons name="document-text-outline" size={16} color="#295C59" />
-                                        <Text style={styles.idProofText}>{openingDoc ? 'Opening…' : 'View ID / Document'}</Text>
-                                        <Ionicons name="open-outline" size={14} color="#9BBAB8" />
+                                        <Text style={styles.idProofText}>{openingDoc ? 'Loading…' : 'View ID / Document'}</Text>
+                                        <Ionicons name="eye-outline" size={14} color="#9BBAB8" />
                                     </TouchableOpacity>
                                 )}
 
@@ -378,6 +381,34 @@ export default function ProfessionalVerification() {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── ID/Document Preview — in-app only, never a browser tab or public link ── */}
+            <Modal
+                visible={!!previewUri}
+                animationType="fade"
+                transparent
+                onRequestClose={() => setPreviewUri(null)}
+            >
+                <View style={styles.previewOverlay}>
+                    <TouchableOpacity
+                        style={[styles.previewClose, { top: insets.top + 12 }]}
+                        onPress={() => setPreviewUri(null)}
+                    >
+                        <Ionicons name="close" size={26} color="#fff" />
+                    </TouchableOpacity>
+                    {previewUri && (
+                        <ScrollView
+                            style={{ flex: 1, width: '100%' }}
+                            contentContainerStyle={styles.previewScrollContent}
+                            maximumZoomScale={4}
+                            minimumZoomScale={1}
+                            centerContent
+                        >
+                            <Image source={{ uri: previewUri }} style={styles.previewImage} resizeMode="contain" />
+                        </ScrollView>
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -400,6 +431,15 @@ const infoStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
     screen: { flex: 1, backgroundColor: '#F5F9F8' },
+    previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
+    previewClose: {
+        position: 'absolute', right: 16, zIndex: 10,
+        width: 40, height: 40, borderRadius: 20,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    previewScrollContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
+    previewImage: { width: wp('100%'), height: hp('90%') },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: '#295C59',

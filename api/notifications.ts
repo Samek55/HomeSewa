@@ -407,6 +407,45 @@ export async function notifyProfessionalsRejected(service: string, city: string,
   }
 }
 
+// Push to customers who have booked one or more of the given service types
+export async function notifyCustomersByService(service: string | string[], title: string, message: string) {
+  try {
+    const services = (Array.isArray(service) ? service : [service]).map(s => s.trim());
+    const serviceLabel = services.join(', ');
+
+    const { data } = await supabase
+      .from('booking')
+      .select('phone')
+      .overlaps('services', services);
+
+    if (!data || data.length === 0) {
+      throw new Error(`No customers found who booked "${serviceLabel}".`);
+    }
+
+    const phones = [...new Set(
+      data
+        .map((b: any) => String(b.phone).replace(/\D/g, '').slice(-10))
+        .filter((p: string) => p.length === 10)
+    )];
+
+    if (phones.length === 0) throw new Error('No valid phone numbers found for matching customers.');
+
+    await sendNotification({
+      include_aliases: { external_id: phones },
+      target_channel: 'push',
+      headings: { en: title },
+      contents: { en: message },
+      data: { screen: '/Home' },
+    });
+    logNotification({ title, body: message, screen: '/Home', audience: 'customer_specific', service: serviceLabel }).catch(() => {});
+
+    console.log(`Service push sent to ${phones.length} customers for "${serviceLabel}"`);
+  } catch (error: any) {
+    console.log('notifyCustomersByService error:', error?.response?.data || error.message);
+    throw error;
+  }
+}
+
 // Push to customers only
 export async function notifyCustomers(title: string, message: string) {
   try {

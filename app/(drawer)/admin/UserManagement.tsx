@@ -28,6 +28,8 @@ type Customer = {
     phone: string;
     full_name: string;
     blocked: boolean;
+    city?: string;
+    area?: string;
 };
 
 type AdminAccount = {
@@ -36,7 +38,10 @@ type AdminAccount = {
     phone: string;
     role: string;
     status: string;
+    allowed_cities?: string[] | null;
 };
+
+const CITIES = ['Kathmandu', 'Bhaktapur', 'Lalitpur'];
 
 // `professional` is the source of truth for who actually has login access —
 // it's what Professional Verification promotes an applicant into once
@@ -50,6 +55,67 @@ const normalizePhone = (raw: string) => {
 };
 
 const isPendingStatus = (status: string) => /pending|waiting/i.test(status || '');
+
+const PAGE_SIZE = 15;
+
+function FilterDropdown({ label, value, options, isOpen, onToggle, onChange, zIndex }: {
+    label: string;
+    value: string;
+    options: string[];
+    isOpen: boolean;
+    onToggle: () => void;
+    onChange: (v: string) => void;
+    zIndex: number;
+}) {
+    return (
+        <View style={[styles.filterGroup, { zIndex }]}>
+            <Text style={styles.filterLabel}>{label}</Text>
+            <TouchableOpacity style={styles.dropBtn} onPress={onToggle} activeOpacity={0.8}>
+                <Text style={styles.dropBtnText} numberOfLines={1}>{value}</Text>
+                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#295C59" />
+            </TouchableOpacity>
+            {isOpen && (
+                <ScrollView style={styles.dropMenu} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                    {options.map(opt => (
+                        <TouchableOpacity
+                            key={opt}
+                            style={[styles.dropItem, value === opt && styles.dropItemActive]}
+                            onPress={() => onChange(opt)}
+                        >
+                            <Text style={[styles.dropItemText, value === opt && styles.dropItemTextActive]}>{opt}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            )}
+        </View>
+    );
+}
+
+function CitySelector({ selected, onChange }: { selected: string[]; onChange: (v: string[]) => void }) {
+    const allSelected = selected.length === 0;
+    return (
+        <View style={styles.cityChipsWrap}>
+            <TouchableOpacity
+                style={[styles.cityChip, allSelected && styles.cityChipActive]}
+                onPress={() => onChange([])}
+            >
+                <Text style={[styles.cityChipText, allSelected && styles.cityChipTextActive]}>All Cities</Text>
+            </TouchableOpacity>
+            {CITIES.map(c => {
+                const active = selected.includes(c);
+                return (
+                    <TouchableOpacity
+                        key={c}
+                        style={[styles.cityChip, active && styles.cityChipActive]}
+                        onPress={() => onChange(active ? selected.filter(x => x !== c) : [...selected, c])}
+                    >
+                        <Text style={[styles.cityChipText, active && styles.cityChipTextActive]}>{c}</Text>
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
+}
 
 export default function UserManagement() {
     const insets = useSafeAreaInsets();
@@ -66,12 +132,30 @@ export default function UserManagement() {
     const [detailData, setDetailData] = useState<any>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
 
+    // Filters
+    const [cityFilter, setCityFilter] = useState('All');
+    const [serviceFilter, setServiceFilter] = useState('All');
+    const [customerCityFilter, setCustomerCityFilter] = useState('All');
+    const [customerAreaFilter, setCustomerAreaFilter] = useState('All');
+    const [openFilter, setOpenFilter] = useState<'city' | 'service' | 'area' | null>(null);
+    const [page, setPage] = useState(1);
+
     // Add Admin form
     const [showAddAdmin, setShowAddAdmin] = useState(false);
     const [newAdminName, setNewAdminName] = useState('');
     const [newAdminPhone, setNewAdminPhone] = useState('');
     const [newAdminPin, setNewAdminPin] = useState('');
     const [addingAdmin, setAddingAdmin] = useState(false);
+    const [userSearchQuery, setUserSearchQuery] = useState('');
+    const [userSearchResults, setUserSearchResults] = useState<{ type: 'professional' | 'customer'; full_name: string; phone: string }[]>([]);
+    const [searchingUsers, setSearchingUsers] = useState(false);
+    const [pickedUserType, setPickedUserType] = useState<'professional' | 'customer' | null>(null);
+    const [newAdminCities, setNewAdminCities] = useState<string[]>([]); // empty = all cities
+
+    // Edit an existing admin's city access
+    const [editingCitiesAdmin, setEditingCitiesAdmin] = useState<AdminAccount | null>(null);
+    const [editCitiesSelection, setEditCitiesSelection] = useState<string[]>([]);
+    const [savingCities, setSavingCities] = useState(false);
 
     useEffect(() => {
         AsyncStorage.getItem('adminTable').then(table => {
@@ -117,7 +201,12 @@ export default function UserManagement() {
 
     const loadCustomers = useCallback(async () => {
         setLoading(true);
-        const { data: bookings } = await supabase.from('booking').select('full_name, phone');
+        // Ordered so the Map dedupe below keeps each customer's most recent booking
+        // (and therefore their most recent city/area) rather than an arbitrary one.
+        const { data: bookings } = await supabase
+            .from('booking')
+            .select('full_name, phone, city, area')
+            .order('service_booking_datetime', { ascending: false });
         const { data: blocked } = await supabase.from('blocked_customers').select('phone');
         const blockedPhones = new Set((blocked || []).map((b: any) => b.phone));
         const unique = [...new Map((bookings || []).map((item: any) => [item.phone, item])).values()];
@@ -129,7 +218,7 @@ export default function UserManagement() {
         setLoading(true);
         const { data } = await supabase
             .from('admin')
-            .select('id, full_name, phone, role, status')
+            .select('id, full_name, phone, role, status, allowed_cities')
             .in('role', ['admin', 'super_admin'])
             .order('full_name');
         setAdmins(data || []);
@@ -269,6 +358,62 @@ export default function UserManagement() {
         setAdmins(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
     };
 
+    const openEditCities = (account: AdminAccount) => {
+        setEditingCitiesAdmin(account);
+        setEditCitiesSelection(account.allowed_cities || []);
+    };
+
+    const saveEditCities = async () => {
+        if (!editingCitiesAdmin) return;
+        setSavingCities(true);
+        const cities = editCitiesSelection.length > 0 ? editCitiesSelection : null;
+        const { data: updated, error } = await supabase
+            .from('admin')
+            .update({ allowed_cities: cities })
+            .eq('id', editingCitiesAdmin.id)
+            .select();
+        setSavingCities(false);
+        if (error) return Alert.alert('Error', error.message);
+        if (!updated || updated.length === 0) return Alert.alert('Error', 'No admin record matched.');
+        setAdmins(prev => prev.map(a => a.id === editingCitiesAdmin.id ? { ...a, allowed_cities: cities } : a));
+        setEditingCitiesAdmin(null);
+    };
+
+    // Debounced phone lookup across Professionals and Customers, so a super admin can
+    // find an existing user and pre-fill the Add Admin form instead of retyping their
+    // details from memory.
+    useEffect(() => {
+        const digits = userSearchQuery.replace(/\D/g, '');
+        if (digits.length < 3) { setUserSearchResults([]); return; }
+
+        let cancelled = false;
+        setSearchingUsers(true);
+        const timer = setTimeout(async () => {
+            const [{ data: proRows }, { data: bookingRows }] = await Promise.all([
+                supabase.from('professional').select('full_name, phone').ilike('phone', `%${digits}%`).limit(5),
+                supabase.from('booking').select('full_name, phone').ilike('phone', `%${digits}%`).limit(5),
+            ]);
+            if (cancelled) return;
+            const results: { type: 'professional' | 'customer'; full_name: string; phone: string }[] = [
+                ...(proRows || []).map(p => ({ type: 'professional' as const, full_name: p.full_name, phone: normalizePhone(p.phone) })),
+                ...[...new Map((bookingRows || []).map((b: any) => [normalizePhone(b.phone), b])).values()]
+                    .map((b: any) => ({ type: 'customer' as const, full_name: b.full_name, phone: normalizePhone(b.phone) })),
+            ];
+            setUserSearchResults(results);
+            setSearchingUsers(false);
+        }, 350);
+
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [userSearchQuery]);
+
+    const pickSearchResult = (r: { type: 'professional' | 'customer'; full_name: string; phone: string }) => {
+        setNewAdminName(r.full_name || '');
+        setNewAdminPhone(r.phone);
+        setPickedUserType(r.type);
+        setUserSearchQuery('');
+        setUserSearchResults([]);
+    };
+
     const handleAddAdmin = async () => {
         const cleanPhone = newAdminPhone.replace(/\D/g, '');
         if (cleanPhone.length !== 10) return Alert.alert('Validation', 'Enter a valid 10-digit phone number.');
@@ -287,6 +432,8 @@ export default function UserManagement() {
                 return;
             }
 
+            const citiesToSave = newAdminCities.length > 0 ? newAdminCities : null;
+
             if (existingPro) {
                 const { error: insertErr } = await supabase.from('admin').insert([{
                     full_name: existingPro.full_name,
@@ -294,6 +441,7 @@ export default function UserManagement() {
                     pin: existingPro.pin,
                     role: 'admin',
                     status: 'Active',
+                    allowed_cities: citiesToSave,
                 }]);
                 if (insertErr) throw insertErr;
                 const { error: deleteErr } = await supabase.from('professional').delete().eq('id', existingPro.id);
@@ -311,6 +459,7 @@ export default function UserManagement() {
                     pin: newAdminPin,
                     role: 'admin',
                     status: 'Active',
+                    allowed_cities: citiesToSave,
                 }]);
                 if (error) throw error;
                 Alert.alert('Added', 'New Admin account created.');
@@ -320,6 +469,10 @@ export default function UserManagement() {
             setNewAdminName('');
             setNewAdminPhone('');
             setNewAdminPin('');
+            setNewAdminCities([]);
+            setUserSearchQuery('');
+            setUserSearchResults([]);
+            setPickedUserType(null);
             loadAdmins();
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Could not save.');
@@ -328,15 +481,32 @@ export default function UserManagement() {
         }
     };
 
+    const professionalCities = [...new Set(professionals.map(p => p.preferred_city).filter(c => c && c !== '—'))].sort();
+    const professionalServices = [...new Set(professionals.flatMap(p => p.positions || []))].sort();
+    const customerCities = [...new Set(customers.map(c => c.city).filter((c): c is string => !!c))].sort();
+    const customerAreas = [...new Set(customers.map(c => c.area).filter((a): a is string => !!a))].sort();
+
     const filteredProfessionals = professionals.filter(p =>
-        p.full_name?.toLowerCase().includes(search.toLowerCase()) || p.phone?.includes(search)
+        (p.full_name?.toLowerCase().includes(search.toLowerCase()) || p.phone?.includes(search)) &&
+        (cityFilter === 'All' || p.preferred_city === cityFilter) &&
+        (serviceFilter === 'All' || (p.positions || []).includes(serviceFilter))
     );
     const filteredCustomers = customers.filter(c =>
-        c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search)
+        (c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search)) &&
+        (customerCityFilter === 'All' || c.city === customerCityFilter) &&
+        (customerAreaFilter === 'All' || c.area === customerAreaFilter)
     );
     const filteredAdmins = admins.filter(a =>
         a.full_name?.toLowerCase().includes(search.toLowerCase()) || a.phone?.includes(search)
     );
+
+    const currentList = tab === 'professionals' ? filteredProfessionals : tab === 'customers' ? filteredCustomers : filteredAdmins;
+    const totalPages = Math.max(1, Math.ceil(currentList.length / PAGE_SIZE));
+    const paginatedList = currentList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    useEffect(() => {
+        setPage(1);
+    }, [tab, search, cityFilter, serviceFilter, customerCityFilter, customerAreaFilter]);
 
     if (!isSuperAdmin) return null;
 
@@ -358,7 +528,12 @@ export default function UserManagement() {
                     <TouchableOpacity
                         key={t}
                         style={[styles.tab, tab === t && styles.tabActive]}
-                        onPress={() => { setTab(t); setSearch(''); }}
+                        onPress={() => {
+                            setTab(t); setSearch('');
+                            setCityFilter('All'); setServiceFilter('All');
+                            setCustomerCityFilter('All'); setCustomerAreaFilter('All');
+                            setOpenFilter(null);
+                        }}
                     >
                         <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
                             {t === 'professionals' ? 'Professionals' : t === 'customers' ? 'Customers' : 'Admins'}
@@ -390,13 +565,64 @@ export default function UserManagement() {
                 )}
             </View>
 
+            {tab !== 'admins' && (
+                <View style={styles.filtersRow}>
+                    {tab === 'professionals' ? (
+                        <>
+                            <FilterDropdown
+                                label="City" value={cityFilter} options={['All', ...professionalCities]}
+                                isOpen={openFilter === 'city'} onToggle={() => setOpenFilter(f => f === 'city' ? null : 'city')}
+                                onChange={(v) => { setCityFilter(v); setOpenFilter(null); }} zIndex={30}
+                            />
+                            <FilterDropdown
+                                label="Service" value={serviceFilter} options={['All', ...professionalServices]}
+                                isOpen={openFilter === 'service'} onToggle={() => setOpenFilter(f => f === 'service' ? null : 'service')}
+                                onChange={(v) => { setServiceFilter(v); setOpenFilter(null); }} zIndex={20}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <FilterDropdown
+                                label="City" value={customerCityFilter} options={['All', ...customerCities]}
+                                isOpen={openFilter === 'city'} onToggle={() => setOpenFilter(f => f === 'city' ? null : 'city')}
+                                onChange={(v) => { setCustomerCityFilter(v); setOpenFilter(null); }} zIndex={30}
+                            />
+                            <FilterDropdown
+                                label="Area" value={customerAreaFilter} options={['All', ...customerAreas]}
+                                isOpen={openFilter === 'area'} onToggle={() => setOpenFilter(f => f === 'area' ? null : 'area')}
+                                onChange={(v) => { setCustomerAreaFilter(v); setOpenFilter(null); }} zIndex={20}
+                            />
+                        </>
+                    )}
+                </View>
+            )}
+
             {loading ? (
                 <ActivityIndicator size="large" color="#295C59" style={{ marginTop: hp('5%') }} />
             ) : (
                 <FlatList
-                    data={tab === 'professionals' ? filteredProfessionals : tab === 'customers' ? filteredCustomers : filteredAdmins as any[]}
+                    data={paginatedList as any[]}
                     keyExtractor={(item: any) => String(item.id ?? item.phone)}
                     contentContainerStyle={{ paddingHorizontal: wp('4%'), paddingBottom: hp('10%') }}
+                    ListFooterComponent={totalPages > 1 ? (
+                        <View style={styles.paginationRow}>
+                            <TouchableOpacity
+                                style={[styles.pageBtn, page === 1 && styles.pageBtnDisabled]}
+                                onPress={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                            >
+                                <Ionicons name="chevron-back" size={18} color={page === 1 ? '#B9CFCD' : '#295C59'} />
+                            </TouchableOpacity>
+                            <Text style={styles.pageIndicator}>Page {page} of {totalPages}</Text>
+                            <TouchableOpacity
+                                style={[styles.pageBtn, page === totalPages && styles.pageBtnDisabled]}
+                                onPress={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                            >
+                                <Ionicons name="chevron-forward" size={18} color={page === totalPages ? '#B9CFCD' : '#295C59'} />
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
@@ -415,6 +641,11 @@ export default function UserManagement() {
                                     <Text style={styles.name}>{item.full_name || 'Unknown'}</Text>
                                     <Text style={styles.sub}>+977 {item.phone}</Text>
                                     <Text style={styles.sub}>{item.role === 'super_admin' ? 'Super Admin' : 'Admin'}</Text>
+                                    {item.role !== 'super_admin' && (
+                                        <Text style={styles.sub} numberOfLines={1}>
+                                            {item.allowed_cities?.length ? `Cities: ${item.allowed_cities.join(', ')}` : 'All Cities'}
+                                        </Text>
+                                    )}
                                 </View>
                             </View>
                             <View style={styles.cardRight}>
@@ -425,6 +656,12 @@ export default function UserManagement() {
                                 </View>
                                 {item.role !== 'super_admin' && (
                                     <View style={styles.actionRow}>
+                                        <TouchableOpacity
+                                            style={[styles.toggleBtn, styles.btnCities]}
+                                            onPress={() => openEditCities(item)}
+                                        >
+                                            <Text style={styles.toggleBtnText}>Cities</Text>
+                                        </TouchableOpacity>
                                         <TouchableOpacity
                                             style={[styles.toggleBtn, item.status === 'Active' ? styles.btnDisable : styles.btnEnable]}
                                             onPress={() => Alert.alert(
@@ -697,7 +934,14 @@ export default function UserManagement() {
                 >
                     <View style={styles.modalSheet}>
                         <View style={styles.handleBar} />
-                        <TouchableOpacity style={styles.modalClose} onPress={() => setShowAddAdmin(false)}>
+                        <TouchableOpacity
+                            style={styles.modalClose}
+                            onPress={() => {
+                                setShowAddAdmin(false);
+                                setUserSearchQuery(''); setUserSearchResults([]); setPickedUserType(null);
+                                setNewAdminCities([]);
+                            }}
+                        >
                             <Ionicons name="close" size={22} color="#295C59" />
                         </TouchableOpacity>
 
@@ -708,7 +952,47 @@ export default function UserManagement() {
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ marginTop: hp('2%'), paddingBottom: hp('2%') + insets.bottom }}
                         >
-                            <Text style={styles.detailLabel}>Full Name</Text>
+                            <Text style={styles.detailLabel}>Find Existing Professional or Customer</Text>
+                            <View style={styles.userSearchBox}>
+                                <Ionicons name="search-outline" size={16} color="#9BBAB8" />
+                                <TextInput
+                                    style={styles.userSearchInput}
+                                    value={userSearchQuery}
+                                    onChangeText={t => { setUserSearchQuery(t); setPickedUserType(null); }}
+                                    placeholder="Search by phone number"
+                                    placeholderTextColor="#B0BEC5"
+                                    keyboardType="number-pad"
+                                />
+                                {searchingUsers && <ActivityIndicator size="small" color="#295C59" />}
+                            </View>
+                            {userSearchResults.length > 0 && (
+                                <View style={styles.userSearchResults}>
+                                    {userSearchResults.map(r => (
+                                        <TouchableOpacity
+                                            key={`${r.type}-${r.phone}`}
+                                            style={styles.userSearchItem}
+                                            onPress={() => pickSearchResult(r)}
+                                        >
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.userSearchItemName}>{r.full_name || 'Unknown'}</Text>
+                                                <Text style={styles.userSearchItemPhone}>+977 {r.phone}</Text>
+                                            </View>
+                                            <View style={[styles.userTypeTag, r.type === 'professional' ? styles.userTypeTagPro : styles.userTypeTagCust]}>
+                                                <Text style={styles.userTypeTagText}>{r.type === 'professional' ? 'Professional' : 'Customer'}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
+                            {pickedUserType && (
+                                <Text style={styles.addAdminHint}>
+                                    {pickedUserType === 'professional'
+                                        ? 'Existing Professional selected — their current PIN carries over, the PIN field below is ignored.'
+                                        : 'Existing Customer selected — they have no login yet, so set a PIN below to create their Admin access.'}
+                                </Text>
+                            )}
+
+                            <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>Full Name</Text>
                             <TextInput
                                 style={styles.formInput}
                                 value={newAdminName}
@@ -721,7 +1005,7 @@ export default function UserManagement() {
                             <TextInput
                                 style={styles.formInput}
                                 value={newAdminPhone}
-                                onChangeText={t => setNewAdminPhone(t.replace(/[^0-9]/g, '').slice(0, 10))}
+                                onChangeText={t => { setNewAdminPhone(t.replace(/[^0-9]/g, '').slice(0, 10)); setPickedUserType(null); }}
                                 placeholder="98XXXXXXXX"
                                 placeholderTextColor="#B0BEC5"
                                 keyboardType="number-pad"
@@ -744,6 +1028,12 @@ export default function UserManagement() {
                                 secureTextEntry
                             />
 
+                            <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>City Access</Text>
+                            <Text style={styles.addAdminHint}>
+                                Choose which cities this admin can operate in, or leave "All Cities" for unrestricted access.
+                            </Text>
+                            <CitySelector selected={newAdminCities} onChange={setNewAdminCities} />
+
                             <TouchableOpacity
                                 style={[styles.modalActionBtn, styles.btnEnableLarge, addingAdmin && { opacity: 0.6 }]}
                                 onPress={handleAddAdmin}
@@ -757,6 +1047,41 @@ export default function UserManagement() {
                         </ScrollView>
                     </View>
                 </KeyboardAvoidingView>
+            </Modal>
+
+            {/* ── Edit City Access Modal ── */}
+            <Modal
+                visible={!!editingCitiesAdmin}
+                animationType="slide"
+                transparent
+                onRequestClose={() => setEditingCitiesAdmin(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.handleBar} />
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setEditingCitiesAdmin(null)}>
+                            <Ionicons name="close" size={22} color="#295C59" />
+                        </TouchableOpacity>
+
+                        <Text style={styles.modalName}>{editingCitiesAdmin?.full_name}</Text>
+                        <Text style={[styles.detailLabel, { marginTop: hp('2%') }]}>City Access</Text>
+                        <Text style={styles.addAdminHint}>
+                            Choose which cities this admin can operate in, or leave "All Cities" for unrestricted access.
+                        </Text>
+                        <CitySelector selected={editCitiesSelection} onChange={setEditCitiesSelection} />
+
+                        <TouchableOpacity
+                            style={[styles.modalActionBtn, styles.btnEnableLarge, savingCities && { opacity: 0.6 }, { marginBottom: hp('2%') + insets.bottom }]}
+                            onPress={saveEditCities}
+                            disabled={savingCities}
+                        >
+                            {savingCities
+                                ? <ActivityIndicator color="#16a34a" />
+                                : <Text style={styles.modalActionText}>Save City Access</Text>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </Modal>
         </View>
     );
@@ -787,6 +1112,29 @@ const styles = StyleSheet.create({
     },
     addAdminBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
     addAdminHint: { fontSize: 11.5, color: '#9BBAB8', marginTop: 8, lineHeight: 16 },
+    userSearchBox: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: '#fff', borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('3.5%'), height: hp('5.8%'), marginTop: 6,
+    },
+    userSearchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
+    userSearchResults: {
+        backgroundColor: '#fff', borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        marginTop: 6, overflow: 'hidden',
+    },
+    userSearchItem: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.3%'),
+        borderBottomWidth: 1, borderBottomColor: '#F0F4F3',
+    },
+    userSearchItemName: { fontSize: 13.5, fontWeight: '700', color: '#1C2B2A' },
+    userSearchItemPhone: { fontSize: 11.5, color: '#9BBAB8', marginTop: 1 },
+    userTypeTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+    userTypeTagPro: { backgroundColor: '#dcfce7' },
+    userTypeTagCust: { backgroundColor: '#E8F4F3' },
+    userTypeTagText: { fontSize: 10.5, fontWeight: '700', color: '#295C59' },
     formInput: {
         backgroundColor: '#fff', borderRadius: 12,
         borderWidth: 1.5, borderColor: '#D6E8E7',
@@ -800,6 +1148,47 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp('4%'), height: hp('5.5%'),
     },
     searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
+
+    filtersRow: {
+        flexDirection: 'row', gap: wp('4%'),
+        paddingHorizontal: wp('4%'), marginBottom: hp('1.5%'),
+    },
+    filterGroup: { flex: 1 },
+    filterLabel: {
+        fontSize: 12, fontWeight: '700', color: '#295C59',
+        marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4,
+    },
+    dropBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: '#fff', borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('3%'), paddingVertical: hp('1.2%'),
+    },
+    dropBtnText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A', flex: 1 },
+    dropMenu: {
+        position: 'absolute', top: '100%', left: 0, right: 0,
+        backgroundColor: '#fff', borderRadius: 12,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        marginTop: 4, zIndex: 999, maxHeight: hp('30%'),
+        elevation: 8, shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8,
+    },
+    dropItem: { paddingHorizontal: wp('3%'), paddingVertical: hp('1.3%') },
+    dropItemActive: { backgroundColor: '#E8F4F3' },
+    dropItemText: { fontSize: 14, fontWeight: '500', color: '#1C2B2A' },
+    dropItemTextActive: { color: '#295C59', fontWeight: '700' },
+
+    paginationRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: wp('4%'), marginTop: hp('1%'), marginBottom: hp('2%'),
+    },
+    pageBtn: {
+        width: 36, height: 36, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+    },
+    pageBtnDisabled: { backgroundColor: '#F5F9F8', borderColor: '#EAF2F1' },
+    pageIndicator: { fontSize: 13, fontWeight: '700', color: '#295C59', minWidth: wp('28%'), textAlign: 'center' },
     card: {
         backgroundColor: '#fff', borderRadius: 16,
         padding: wp('3.5%'), marginBottom: hp('1.2%'),
@@ -826,6 +1215,15 @@ const styles = StyleSheet.create({
     toggleBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 },
     btnDisable: { backgroundColor: '#fee2e2' },
     btnEnable: { backgroundColor: '#dcfce7' },
+    btnCities: { backgroundColor: '#E8F4F3' },
+    cityChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: hp('1%') },
+    cityChip: {
+        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+    },
+    cityChipActive: { backgroundColor: '#295C59', borderColor: '#295C59' },
+    cityChipText: { fontSize: 13, fontWeight: '600', color: '#1C2B2A' },
+    cityChipTextActive: { color: '#fff' },
     toggleBtnText: { fontSize: 12, fontWeight: '700', color: '#1C2B2A' },
     empty: { alignItems: 'center', paddingVertical: hp('8%'), gap: 12 },
     emptyText: { fontSize: 15, color: '#9BBAB8', fontWeight: '500' },

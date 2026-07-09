@@ -45,20 +45,38 @@ export default function HelpBoxDetail() {
         catch { return iso; }
     };
 
-    const handleSave = async (newStatus: 'solved' | 'open') => {
-        setSaving(true);
+    const persist = async (newStatus: 'solved' | 'open') => {
         const now = new Date().toISOString();
+        const { data: updated, error } = await supabase
+            .from('helpbox')
+            .update({ reply: reply.trim(), status: newStatus, issue: issue || null, modified_at: now })
+            .eq('id', item.id)
+            .select();
+        if (error) throw error;
+        if (!updated || updated.length === 0) throw new Error(`No row updated — id: ${item.id}`);
+        setStatus(newStatus);
+        DeviceEventEmitter.emit('helpbox:update', {
+            id: item.id, status: newStatus, modified_at: now,
+            reply: reply.trim(), issue: issue || null,
+        });
+    };
+
+    const handleSaveNote = async () => {
+        setSaving(true);
         try {
-            const { data: updated, error } = await supabase
-                .from('helpbox')
-                .update({ reply: reply.trim(), status: newStatus, issue: issue || null, modified_at: now })
-                .eq('id', item.id)
-                .select();
-            if (error) throw error;
-            if (!updated || updated.length === 0) throw new Error(`No row updated — id: ${item.id}`);
-            setStatus(newStatus);
-            DeviceEventEmitter.emit('helpbox:update', { id: item.id, status: newStatus, modified_at: now });
-            Alert.alert('Saved', `Ticket marked as ${newStatus}.`, [
+            await persist('open');
+            Alert.alert('Saved', 'Note saved successfully.');
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Could not save.');
+        }
+        setSaving(false);
+    };
+
+    const handleMarkSolved = async () => {
+        setSaving(true);
+        try {
+            await persist('solved');
+            Alert.alert('Saved', 'Ticket marked as solved.', [
                 { text: 'OK', onPress: () => router.back() },
             ]);
         } catch (e: any) {
@@ -174,7 +192,7 @@ export default function HelpBoxDetail() {
                     <View style={styles.btnRow}>
                         <TouchableOpacity
                             style={[styles.btn, styles.btnOutline, saving && { opacity: 0.6 }]}
-                            onPress={() => handleSave('open')}
+                            onPress={handleSaveNote}
                             disabled={saving}
                         >
                             <Text style={styles.btnOutlineText}>Save Note</Text>
@@ -187,7 +205,7 @@ export default function HelpBoxDetail() {
                                     'Are you sure you want to close this request?',
                                     [
                                         { text: 'Cancel', style: 'cancel' },
-                                        { text: 'Confirm', onPress: () => handleSave('solved') },
+                                        { text: 'Confirm', onPress: handleMarkSolved },
                                     ]
                                 )
                             }

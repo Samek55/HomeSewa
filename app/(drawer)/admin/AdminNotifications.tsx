@@ -10,7 +10,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notifyAll, notifyProfessionalsInCity, notifyCustomers } from '../../../api/notifications';
+import { notifyAll, notifyProfessionalsInCity, notifyCustomers, notifyCustomersByService } from '../../../api/notifications';
 import { supabase } from '../../../lib/supabase';
 
 const SERVICES = [
@@ -47,7 +47,7 @@ const TAB_CONFIG: { key: Tab; label: string; icon: string; description: string }
         key: 'customers',
         label: 'Customers',
         icon: 'people-outline',
-        description: 'Send only to customers who have booked services.',
+        description: 'Send to all customers, or target only those who booked a specific service.',
     },
     {
         key: 'history',
@@ -143,6 +143,21 @@ function MultiSelectDropdown({ label, options, selected, onChange, placeholder }
                             data={options}
                             keyExtractor={item => item}
                             style={{ maxHeight: hp('50%') }}
+                            ListHeaderComponent={() => {
+                                const allChecked = options.length > 0 && temp.length === options.length;
+                                return (
+                                    <TouchableOpacity
+                                        style={styles.optionRow}
+                                        onPress={() => setTemp(allChecked ? [] : [...options])}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[styles.checkbox, allChecked && styles.checkboxChecked]}>
+                                            {allChecked && <Ionicons name="checkmark" size={13} color="#fff" />}
+                                        </View>
+                                        <Text style={[styles.optionText, styles.optionTextChecked]}>Select All</Text>
+                                    </TouchableOpacity>
+                                );
+                            }}
                             renderItem={({ item }) => {
                                 const checked = temp.includes(item);
                                 return (
@@ -160,7 +175,7 @@ function MultiSelectDropdown({ label, options, selected, onChange, placeholder }
                             }}
                         />
 
-                        <View style={[styles.modalFooter, { paddingBottom: hp('1.5%') + insets.bottom }]}>
+                        <View style={[styles.modalFooter, { paddingBottom: hp('1.5%') + Math.max(insets.bottom, hp('1.5%')) }]}>
                             <TouchableOpacity style={styles.clearBtn} onPress={() => setTemp([])}>
                                 <Text style={styles.clearBtnText}>Clear All</Text>
                             </TouchableOpacity>
@@ -175,12 +190,59 @@ function MultiSelectDropdown({ label, options, selected, onChange, placeholder }
     );
 }
 
+function TabDropdown({ value, onChange }: { value: Tab; onChange: (tab: Tab) => void }) {
+    const [open, setOpen] = useState(false);
+    const insets = useSafeAreaInsets();
+    const active = TAB_CONFIG.find(t => t.key === value)!;
+
+    return (
+        <>
+            <TouchableOpacity style={styles.tabDropdownBtn} onPress={() => setOpen(true)} activeOpacity={0.8}>
+                <Ionicons name={active.icon as any} size={18} color="#295C59" />
+                <Text style={styles.tabDropdownValue}>{active.label}</Text>
+                <Ionicons name="chevron-down" size={18} color="#9BBAB8" />
+            </TouchableOpacity>
+
+            <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Send To</Text>
+                            <TouchableOpacity onPress={() => setOpen(false)}>
+                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {TAB_CONFIG.map(t => {
+                            const selected = t.key === value;
+                            return (
+                                <TouchableOpacity
+                                    key={t.key}
+                                    style={styles.optionRow}
+                                    onPress={() => { onChange(t.key); setOpen(false); }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name={t.icon as any} size={18} color={selected ? '#295C59' : '#9BBAB8'} />
+                                    <Text style={[styles.optionText, selected && styles.optionTextChecked]}>{t.label}</Text>
+                                    {selected && <Ionicons name="checkmark" size={18} color="#295C59" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                        <View style={{ height: Math.max(insets.bottom, hp('1.5%')) }} />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+        </>
+    );
+}
+
 export default function AdminNotifications() {
     const [tab, setTab] = useState<Tab>('all');
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     const [selectedServices, setSelectedServices] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
+    const [selectedCustomerServices, setSelectedCustomerServices] = useState<string[]>([]);
     const [sending, setSending] = useState(false);
     const [hasAccess, setHasAccess] = useState(false);
     const [history, setHistory] = useState<NotificationRow[]>([]);
@@ -222,6 +284,7 @@ export default function AdminNotifications() {
         setMessage('');
         setSelectedServices([]);
         setSelectedCities([]);
+        setSelectedCustomerServices([]);
     };
 
     const handleSend = async () => {
@@ -236,6 +299,8 @@ export default function AdminNotifications() {
 
         const preview = tab === 'professionals'
             ? `To: ${selectedServices.join(', ')} professionals in ${selectedCities.join(', ')}\n\n${message}`
+            : tab === 'customers' && selectedCustomerServices.length > 0
+            ? `${title}\nTo: customers who booked ${selectedCustomerServices.join(', ')}\n\n${message}`
             : `${title}\n\n${message}`;
 
         Alert.alert('Confirm Send', preview, [
@@ -248,6 +313,8 @@ export default function AdminNotifications() {
                             await notifyAll(title.trim(), message.trim());
                         } else if (tab === 'professionals') {
                             await notifyProfessionalsInCity(selectedServices, selectedCities, message.trim());
+                        } else if (selectedCustomerServices.length > 0) {
+                            await notifyCustomersByService(selectedCustomerServices, title.trim(), message.trim());
                         } else {
                             await notifyCustomers(title.trim(), message.trim());
                         }
@@ -276,17 +343,8 @@ export default function AdminNotifications() {
                 <Text style={styles.headerTitle}>Send Notification</Text>
             </View>
 
-            <View style={styles.tabs}>
-                {TAB_CONFIG.map(t => (
-                    <TouchableOpacity
-                        key={t.key}
-                        style={[styles.tab, tab === t.key && styles.tabActive]}
-                        onPress={() => { setTab(t.key); resetFields(); }}
-                    >
-                        <Ionicons name={t.icon as any} size={16} color={tab === t.key ? '#295C59' : '#9BBAB8'} />
-                        <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
-                    </TouchableOpacity>
-                ))}
+            <View style={styles.tabDropdownWrap}>
+                <TabDropdown value={tab} onChange={(t) => { setTab(t); resetFields(); }} />
             </View>
 
             {tab === 'history' ? (
@@ -352,6 +410,15 @@ export default function AdminNotifications() {
                         </>
                     ) : (
                         <>
+                            {tab === 'customers' && (
+                                <MultiSelectDropdown
+                                    label="SERVICE TYPE (OPTIONAL)"
+                                    options={SERVICES}
+                                    selected={selectedCustomerServices}
+                                    onChange={setSelectedCustomerServices}
+                                    placeholder="All customers, or select service types..."
+                                />
+                            )}
                             <Text style={styles.label}>TITLE</Text>
                             <TextInput
                                 style={styles.input}
@@ -407,18 +474,17 @@ const styles = StyleSheet.create({
     },
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
-    tabs: {
-        flexDirection: 'row', backgroundColor: '#fff',
+    tabDropdownWrap: {
+        backgroundColor: '#fff', paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
         borderBottomWidth: 1, borderBottomColor: '#E8F4F3',
     },
-    tab: {
-        flex: 1, paddingVertical: hp('1.5%'),
-        alignItems: 'center', flexDirection: 'row',
-        justifyContent: 'center', gap: 4,
+    tabDropdownBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        backgroundColor: '#fff', borderRadius: 14,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('4%'), paddingVertical: hp('1.6%'),
     },
-    tabActive: { borderBottomWidth: 3, borderBottomColor: '#295C59' },
-    tabText: { fontSize: 11, fontWeight: '600', color: '#9BBAB8' },
-    tabTextActive: { color: '#295C59', fontWeight: '700' },
+    tabDropdownValue: { fontSize: 14, color: '#1C2B2A', fontWeight: '700', flex: 1 },
     content: { padding: wp('4%'), paddingBottom: hp('20%') },
     infoBanner: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 10,
