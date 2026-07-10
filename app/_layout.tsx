@@ -1,10 +1,11 @@
-import { Stack, router, useRouter, useSegments } from 'expo-router';
+import { Stack, router, usePathname, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { BackHandler, DeviceEventEmitter, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { markSplashReady } from '../src/utils/splashGate';
+import { logScreenView } from '../lib/analytics';
 
 // Prevent splash screen from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => { });
@@ -35,6 +36,7 @@ export default function RootLayout() {
 
   const segments = useSegments();
   const router = useRouter();
+  const pathname = usePathname();
 
   // --- FEATURE 1: ADMIN SESSION TRACKER ---
   // Login/logout is Supabase phone+PIN, remembered in AsyncStorage (see AdminLogin.tsx) —
@@ -156,6 +158,12 @@ export default function RootLayout() {
       console.warn('OneSignal Push Channel not available in this environment:', e);
     }
   }, []);
+
+  // --- FEATURE 5B: SCREEN VIEW TRACKING (Google Analytics via Firebase) ---
+  useEffect(() => {
+    if (initializing || !pathname) return;
+    logScreenView(pathname);
+  }, [pathname, initializing]);
 
   // --- FEATURE 5: REFRESH PROFESSIONAL ONESIGNAL TAGS ON EVERY LAUNCH ---
   useEffect(() => {

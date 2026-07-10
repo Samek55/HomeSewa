@@ -28,6 +28,8 @@ import { uploadMultipleToStorage } from '@/api/uploadToStorage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
+import TermsCheckbox from '../../components/bookings/TermsCheckbox';
+import { logEvent } from '@/lib/analytics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -81,6 +83,7 @@ export default function PartnershipScreen() {
 
   // Shared active focus state system mapping layout changes
   const [activeInput, setActiveInput] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const clearAllFields = () => {
     setName('');
@@ -97,6 +100,7 @@ export default function PartnershipScreen() {
     setSelectedHowHeard('Google Search');
     setSelectedServicesOffered([]);
     setActiveInput(null);
+    setAcceptedTerms(false);
   };
 
   useEffect(() => {
@@ -115,7 +119,7 @@ export default function PartnershipScreen() {
         {
           text: 'Yes, Clear',
           style: 'destructive',
-          onPress: clearAllFields,
+          onPress: () => { clearAllFields(); logEvent('partnership_form_cleared'); },
         },
       ]
     );
@@ -175,6 +179,10 @@ export default function PartnershipScreen() {
       return Alert.alert('Validation Error', 'Please upload CRC photos');
     }
 
+    if (!acceptedTerms) {
+      return Alert.alert('Validation Error', 'Please accept the Terms & Conditions');
+    }
+
     setOverlayStatus('loading');
     setOverlayVisible(true);
 
@@ -206,6 +214,15 @@ export default function PartnershipScreen() {
 
       await AsyncStorage.setItem('pendingPartnershipData', JSON.stringify(partnership));
       setOverlayVisible(false);
+
+      logEvent('partnership_application_submitted', {
+        business_type: selectedBusinessType,
+        partnership_interest: selectedPartnership,
+        city: selectedArea,
+        services_offered: selectedServicesOffered,
+        how_heard: selectedHowHeard,
+      });
+
       router.push({ pathname: '/PartnershipOTP', params: { phone: cleanNumber, name } });
 
     } catch (error) {
@@ -427,6 +444,8 @@ export default function PartnershipScreen() {
               style={activeInput === 'message' && styles.inputActive}
             />
           </View>
+
+          <TermsCheckbox checked={acceptedTerms} onChange={setAcceptedTerms} />
 
           {/* Form Actions */}
           <View style={styles.buttonContainer}>

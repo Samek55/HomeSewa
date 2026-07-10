@@ -31,6 +31,8 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import TermsCheckbox from '../../components/bookings/TermsCheckbox';
+import { logEvent } from '@/lib/analytics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -92,6 +94,7 @@ export default function CareerScreen() {
 
   // Shared active focus state system mapping layout changes
   const [activeInput, setActiveInput] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const clearAllFields = () => {
     setName('');
@@ -110,6 +113,7 @@ export default function CareerScreen() {
     setSelectedCity('');
     setSelectedArea([]);
     setActiveInput(null);
+    setAcceptedTerms(false);
   };
 
   useEffect(() => {
@@ -128,7 +132,7 @@ export default function CareerScreen() {
         {
           text: 'Yes, Clear',
           style: 'destructive',
-          onPress: clearAllFields,
+          onPress: () => { clearAllFields(); logEvent('career_form_cleared'); },
         },
       ]
     );
@@ -214,6 +218,10 @@ export default function CareerScreen() {
       return Alert.alert('Validation Error', 'Enter a valid emergency contact number');
     }
 
+    if (!acceptedTerms) {
+      return Alert.alert('Validation Error', 'Please accept the Terms & Conditions');
+    }
+
 
     setOverlayStatus('loading');
     setOverlayVisible(true);
@@ -247,6 +255,13 @@ export default function CareerScreen() {
 
       await AsyncStorage.setItem('pendingCareerData', JSON.stringify(career));
       setOverlayVisible(false);
+
+      logEvent('career_application_submitted', {
+        expertise: selectedExpertise,
+        experience_years: experience,
+        city: selectedCity,
+      });
+
       router.push({ pathname: '/CareerOTP', params: { phone: cleanNumber, name } });
 
     } catch (error) {
@@ -542,6 +557,8 @@ export default function CareerScreen() {
               style={activeInput === 'message' && styles.inputActive}
             />
           </View>
+
+          <TermsCheckbox checked={acceptedTerms} onChange={setAcceptedTerms} />
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>

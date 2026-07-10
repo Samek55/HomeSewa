@@ -32,6 +32,8 @@ import Header2 from '@/components/Header2';
 import ClearFormIcon from '../../../assets/icons/booking/clear.png';
 import { uploadMultipleToStorage } from '../../../api/uploadToStorage';
 import { supabase } from '../../../lib/supabase';
+import TermsCheckbox from '../../../components/bookings/TermsCheckbox';
+import { logEvent } from '../../../lib/analytics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -85,6 +87,7 @@ export default function ServiceBookingScreen() {
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const pickPhotos = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -143,6 +146,7 @@ export default function ServiceBookingScreen() {
     setSelectedBudget('');
     setMessage('');
     setActiveInput(null);
+    setAcceptedTerms(false);
   };
 
   const handleClearForm = () => {
@@ -151,7 +155,7 @@ export default function ServiceBookingScreen() {
       'Are you sure you want to clear all fields?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes, Clear', style: 'destructive', onPress: clearAllFields },
+        { text: 'Yes, Clear', style: 'destructive', onPress: () => { clearAllFields(); logEvent('booking_form_cleared'); } },
       ]
     );
   };
@@ -185,6 +189,7 @@ export default function ServiceBookingScreen() {
     if (!selectedArea.trim()) { return Alert.alert('Validation Error', 'Please enter your area'); }
     if (!selectedBudget.trim()) { return Alert.alert('Validation Error', 'Budget cannot be empty'); }
     if (!selectedPriority.trim()) { return Alert.alert('Validation Error', 'Please choose a Priority'); }
+    if (!acceptedTerms) { return Alert.alert('Validation Error', 'Please accept the Terms & Conditions'); }
 
 
     setIsSubmitting(true);
@@ -194,6 +199,7 @@ export default function ServiceBookingScreen() {
 
     if (isLimitReached) {
       setIsSubmitting(false);
+      logEvent('booking_limit_reached');
       Alert.alert(
         'Limit Reached',
         'This phone number has reached the maximum allowance of 5 bookings for today. Please try again tomorrow.'
@@ -208,6 +214,15 @@ export default function ServiceBookingScreen() {
           photos.map(uri => ({ uri, fileName: uri.split('/').pop() || 'photo.jpg' }))
         );
       }
+
+      logEvent('booking_submitted', {
+        service: selectedService,
+        city: selectedCity,
+        shift: selectedShift,
+        priority: selectedPriority,
+        budget: selectedBudget,
+        photo_count: photoUrls.length,
+      });
 
       router.push({
         pathname: '/booking/BookingDetail',
@@ -532,6 +547,8 @@ export default function ServiceBookingScreen() {
                 style={activeInput === 'message' ? styles.inputActive : undefined}
               />
             </View>
+
+            <TermsCheckbox checked={acceptedTerms} onChange={setAcceptedTerms} />
 
             {/* Bottom Actions: Clear left | Submit right */}
             <View style={styles.bottomRow}>
