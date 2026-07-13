@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,10 +9,11 @@ import {
     Alert,
     Image,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
+import OtpInput from '@/components/bookings/OtpInput';
 import { router } from 'expo-router';
 import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,30 +28,12 @@ export default function AdminLogin() {
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [pin, setPin] = useState(['', '', '', '']);
-    const pinRefs = useRef<Array<TextInput | null>>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [activeInput, setActiveInput] = useState<string | null>(null);
 
     useEffect(() => {
         AsyncStorage.getItem('adminPhone').then((phone) => setIsLoggedIn(!!phone));
     }, []);
-
-    const handlePinChange = (text: string, index: number) => {
-        const digit = text.replace(/[^0-9]/g, '').slice(-1);
-        const newPin = [...pin];
-        newPin[index] = digit;
-        setPin(newPin);
-
-        if (digit && index < pin.length - 1) {
-            pinRefs.current[index + 1]?.focus();
-        }
-    };
-
-    const handlePinKeyPress = (event: any, index: number) => {
-        if (event.nativeEvent.key === 'Backspace' && !pin[index] && index > 0) {
-            pinRefs.current[index - 1]?.focus();
-        }
-    };
 
     const handleSubmit = async () => {
         try {
@@ -176,8 +159,7 @@ export default function AdminLogin() {
             style={styles.screen}
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
-            enableOnAndroid
-            extraScrollHeight={20}
+            bottomOffset={20}
         >
             {/* HEADER NAV */}
             <Header4 />
@@ -234,21 +216,13 @@ export default function AdminLogin() {
                         />
                     </TouchableOpacity>
                 </View>
-                <View style={styles.pinBoxRow}>
-                    {pin.map((digit, index) => (
-                        <TextInput
-                            key={index}
-                            ref={(ref) => { pinRefs.current[index] = ref; }}
-                            style={styles.pinBox}
-                            secureTextEntry={!passwordVisible}
-                            keyboardType="number-pad"
-                            maxLength={1}
-                            value={digit}
-                            onChangeText={(text) => handlePinChange(text, index)}
-                            onKeyPress={(event) => handlePinKeyPress(event, index)}
-                        />
-                    ))}
-                </View>
+                <OtpInput
+                    value={pin}
+                    onChange={setPin}
+                    secureTextEntry={!passwordVisible}
+                    containerStyle={styles.pinBoxRow}
+                    boxStyle={styles.pinBox}
+                />
 
                 {/* Login Button */}
                 <TouchableOpacity style={styles.loginBtn} onPress={handleSubmit} activeOpacity={0.85}>

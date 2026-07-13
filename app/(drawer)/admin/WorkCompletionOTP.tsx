@@ -1,13 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-    View, Text, StyleSheet, TouchableOpacity, TextInput,
+    View, Text, StyleSheet, TouchableOpacity,
     Alert, Dimensions, TouchableWithoutFeedback, Keyboard, Image,
-    KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
 import Header4 from '@/components/Header4Admin';
+import OtpInput from '@/components/bookings/OtpInput';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import checkIcon from '../../../assets/icons/admin/check-mark.png';
 
@@ -19,19 +20,6 @@ export default function WorkCompletionOTP() {
     const [otp, setOtp] = useState(['', '', '', '']);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
-    const inputRefs = useRef<Array<TextInput | null>>([]);
-
-    const handleChange = (text: string, index: number) => {
-        const newOtp = [...otp];
-        newOtp[index] = text;
-        setOtp(newOtp);
-        if (text && index < 3) inputRefs.current[index + 1]?.focus();
-    };
-
-    const handleKeyPress = (event: any, index: number) => {
-        if (event.nativeEvent.key === 'Backspace' && !otp[index] && index > 0)
-            inputRefs.current[index - 1]?.focus();
-    };
 
     const handleVerify = async () => {
         const entered = otp.join('');
@@ -97,20 +85,7 @@ export default function WorkCompletionOTP() {
                         Ask the customer for their OTP and enter it below.
                     </Text>
 
-                    <View style={styles.otpBox}>
-                        {otp.map((_, index) => (
-                            <TextInput
-                                key={index}
-                                ref={ref => { inputRefs.current[index] = ref; }}
-                                style={styles.input}
-                                keyboardType="numeric"
-                                maxLength={1}
-                                value={otp[index]}
-                                onChangeText={text => handleChange(text, index)}
-                                onKeyPress={event => handleKeyPress(event, index)}
-                            />
-                        ))}
-                    </View>
+                    <OtpInput value={otp} onChange={setOtp} containerStyle={styles.otpBox} boxStyle={styles.input} />
 
                     <TouchableOpacity
                         style={[styles.button, isSubmitting && { opacity: 0.6 }]}

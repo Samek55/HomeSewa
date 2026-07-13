@@ -8,7 +8,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -136,7 +136,10 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <View style={styles.overlay}>
+      {/* RN's Modal opens a separate native window on Android, which doesn't inherit
+          the GestureHandlerRootView the rest of the app gets from expo-router/drawer —
+          without one here, GestureDetector never receives pinch/pan touches. */}
+      <GestureHandlerRootView style={styles.overlay}>
         <View style={styles.card}>
           <Text style={styles.title}>Crop Your Profile Picture</Text>
           <Text style={styles.hint}>Pinch to zoom  ·  Drag to reposition</Text>
@@ -189,7 +192,7 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

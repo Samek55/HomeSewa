@@ -66,6 +66,9 @@ export const createCareer = async (data: any) => {
 
   if (professionalError) {
     await supabase.from('workforce').delete().eq('uin', workforce.uin);
+    if (professionalError.code === '23505') {
+      throw new Error('This phone number is already registered. Please go to the login page to reset your PIN or log in from there.');
+    }
     throw new Error(professionalError.message);
   }
 

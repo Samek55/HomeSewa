@@ -2,6 +2,7 @@ package com.pracasinfosys.sriyog.com
 
 import android.app.Application
 import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -40,6 +41,12 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    // AppTheme extends Theme.AppCompat.DayNight, and nothing in this app is designed
+    // for a dark palette — left on "follow system", the theme (and the status bar's
+    // dark-mode-dependent appearance) resolves to a black/dark look whenever the
+    // device itself is in dark mode, independent of anything the app renders.
+    // Pin it to light so the UI is consistent regardless of the device's setting.
+    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
     DefaultNewArchitectureEntryPoint.releaseLevel = try {
       ReleaseLevel.valueOf(BuildConfig.REACT_NATIVE_RELEASE_LEVEL.uppercase())
     } catch (e: IllegalArgumentException) {

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     Alert, TextInput, ScrollView, ActivityIndicator,
-    KeyboardAvoidingView, Platform, Modal, FlatList,
+    Platform, Modal, FlatList,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';

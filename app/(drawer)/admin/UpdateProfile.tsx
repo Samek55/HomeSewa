@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import {
     View, Text, Image, TouchableOpacity,
     StyleSheet, TextInput, Alert, ActivityIndicator,
-    ScrollView, Dimensions, DeviceEventEmitter, KeyboardAvoidingView,
+    ScrollView, Dimensions, DeviceEventEmitter,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';

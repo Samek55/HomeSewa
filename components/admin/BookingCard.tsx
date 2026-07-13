@@ -78,9 +78,7 @@ const BookingCard = ({ item, isOpen, onToggle, onPress, displayName }: Props) =>
 
         {/* RIGHT SIDE */}
         <View style={styles.rightSection}>
-          <Text style={styles.dateTop}>  {item.bookingDate
-            ? new Date(item.bookingDate).toDateString()
-            : ''}</Text>
+          <Text style={styles.dateTop}>  {item.bookingDate}</Text>
 
           <TouchableOpacity
             style={styles.actionButton}

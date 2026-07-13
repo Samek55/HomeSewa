@@ -3,15 +3,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   Alert,
   Dimensions,
   TouchableWithoutFeedback,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import React, { useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { createBooking } from '../../../../api/PostApiBooking';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -19,6 +17,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
 import { OneSignal } from 'react-native-onesignal';
 import { supabase } from '../../../../lib/supabase';
+import OtpInput from '@/components/bookings/OtpInput';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -49,7 +49,6 @@ const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
 export default function BookingOtp() {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [sentOtp, setSentOtp] = useState('');
-  const inputRefs = useRef<Array<TextInput | null>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -88,21 +87,6 @@ export default function BookingOtp() {
     }, []),
   );
 
-  const handleChange = (text: string, index: number) => {
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-    if (text && index < otp.length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (event: any, index: number) => {
-    if (event.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
   const formatDate = (d: any) => new Date(d).toISOString().split('T')[0];
 
   const handleNavigate = async () => {
@@ -127,6 +111,11 @@ export default function BookingOtp() {
           OneSignal.login(String(number));
           OneSignal.User.addTags({ role: 'user', phone: String(number) });
         } catch {}
+        // Remembers this device's own customer phone so the in-app Notifications
+        // screen can pull back "customer_specific" pushes (e.g. Booking Accepted)
+        // addressed to this number — there's no login/session for plain customers
+        // to key that lookup on otherwise.
+        AsyncStorage.setItem('customerPhone', String(number)).catch(() => {});
       }
 
       const serviceNames = Array.isArray(selectedService)
@@ -197,20 +186,7 @@ export default function BookingOtp() {
 
           <Text style={styles.otpPromptText}>Enter your OTP to continue.</Text>
 
-          <View style={styles.otpBox}>
-            {otp.map((_, index) => (
-              <TextInput
-                key={index}
-                ref={ref => { inputRefs.current[index] = ref; }}
-                style={styles.input}
-                keyboardType="numeric"
-                maxLength={1}
-                value={otp[index]}
-                onChangeText={text => handleChange(text, index)}
-                onKeyPress={event => handleKeyPress(event, index)}
-              />
-            ))}
-          </View>
+          <OtpInput value={otp} onChange={setOtp} containerStyle={styles.otpBox} boxStyle={styles.input} />
 
           <TouchableOpacity onPress={sendOtp}>
             <Text style={styles.resendcode}>

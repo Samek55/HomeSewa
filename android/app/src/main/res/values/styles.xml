@@ -3,7 +3,19 @@
     <item name="android:enforceNavigationBarContrast" tools:targetApi="29">true</item>
     <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     <item name="colorPrimary">@color/colorPrimary</item>
-    <item name="android:statusBarColor">#ffffff</item>
+    <item name="android:statusBarColor">#295C59</item>
+    <!-- Android 15+ (targetSdk 35+) forces edge-to-edge regardless of gradle.properties'
+         edgeToEdgeEnabled=false, making android:statusBarColor a no-op unless the app
+         explicitly opts out — this app wants the classic non-overlapping status bar
+         (its own strip, header rendered separately below it), not an immersive one. -->
+    <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+    <!-- DayNight has no explicit windowBackground of its own, so it falls back to
+         AppCompat's default — which is black in the dark variant. That's the raw
+         native window background Android paints before any JS/React content exists,
+         so it briefly shows through on cold start (worst on the very first screen,
+         Home) regardless of what the app itself renders. Pin it to the splash
+         color so there's never a black flash, light or dark system theme alike. -->
+    <item name="android:windowBackground">@color/splashscreen_background</item>
   </style>
   <style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
     <item name="windowSplashScreenBackground">@color/splashscreen_background</item>

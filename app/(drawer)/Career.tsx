@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   Image,
   Pressable,
   Alert,
-  Platform,
 } from 'react-native';
 import { area, city } from '../../src/data/Data';
 import { servicesData2 } from '../../src/data/ServiceData';
@@ -26,7 +25,7 @@ import DropdownAdd from '../../components/bookings/DropdownAdd';
 import HeadshotCropModal from '../../components/bookings/HeadshotCropModal';
 import Header3 from '@/components/Header3drawer';
 import { uploadMultipleToStorage, uploadMultiplePrivateDocuments } from '@/api/uploadToStorage';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -51,13 +50,6 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 };
 
 export default function CareerScreen() {
-  const scrollRef = useRef<any>(null);
-  const fieldYPositions = useRef<Partial<Record<string, number>>>({});
-  const scrollToField = (key: string) => {
-    if (!scrollRef.current) return;
-    const y = fieldYPositions.current[key] ?? 0;
-    scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
-  };
   const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
@@ -163,13 +155,17 @@ export default function CareerScreen() {
       return Alert.alert('Validation Error', 'Enter a valid 10-digit phone number');
     }
 
-    const { data: existingWorker } = await supabase
-      .from('workforce')
+    // Checked against `professional`, not `workforce` — that's the table with the
+    // unique phone constraint and the one that actually gates login, so it's the
+    // source of truth for "already registered" (a workforce-only check can miss
+    // professionals whose workforce row was removed separately).
+    const { data: existingProfessional } = await supabase
+      .from('professional')
       .select('phone')
       .eq('phone', cleanNumber)
       .maybeSingle();
 
-    if (existingWorker) {
+    if (existingProfessional) {
       return Alert.alert(
         'Already Registered',
         'This number is already registered. Please go to the login page to reset your PIN or log in from there.',
@@ -295,15 +291,10 @@ export default function CareerScreen() {
         />
       )}
       <KeyboardAwareScrollView
-        ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        enableOnAndroid={true}
-        extraScrollHeight={120}
+        bottomOffset={120}
         keyboardShouldPersistTaps="handled"
-        enableResetScrollToCoords={false}
-        resetScrollToCoords={undefined}
-        enableAutomaticScroll={Platform.OS === 'ios'}
         keyboardDismissMode="on-drag"
       >
         <View style={[styles.formContainer, { marginBottom: hp('5%') }]}>
@@ -545,18 +536,16 @@ export default function CareerScreen() {
 
           {/* Message */}
           <Text style={styles.label}>Message</Text>
-          <View onLayout={(e) => { fieldYPositions.current['message'] = e.nativeEvent.layout.y; }}>
-            <TextArea
-              value={message}
-              onChangeText={setMessage}
-              placeholder=""
-              placeholderTextColor="#4B4B4B"
-              maxHeight={160}
-              onFocus={() => { setActiveInput('message'); scrollToField('message'); }}
-              onBlur={() => setActiveInput(null)}
-              style={activeInput === 'message' && styles.inputActive}
-            />
-          </View>
+          <TextArea
+            value={message}
+            onChangeText={setMessage}
+            placeholder=""
+            placeholderTextColor="#4B4B4B"
+            maxHeight={160}
+            onFocus={() => setActiveInput('message')}
+            onBlur={() => setActiveInput(null)}
+            style={activeInput === 'message' && styles.inputActive}
+          />
 
           <TermsCheckbox checked={acceptedTerms} onChange={setAcceptedTerms} />
 

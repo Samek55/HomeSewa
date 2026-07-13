@@ -1,15 +1,16 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, TouchableOpacity,
   Alert, Dimensions, TouchableWithoutFeedback, Keyboard,
-  KeyboardAvoidingView, Platform,
 } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import React, { useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createPartnership } from '@/api/PostApiPartnership';
 import { notifyAdmins } from '@/api/notifications';
 import SubmitOverlay from '@/components/bookings/SubmitOverlay';
+import OtpInput from '@/components/bookings/OtpInput';
 import Header3 from '@/components/Header3drawer';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
@@ -40,7 +41,6 @@ export default function PartnershipOTP() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [overlayStatus, setOverlayStatus] = useState<'loading' | 'success'>('loading');
-  const inputRefs = useRef<Array<TextInput | null>>([]);
 
   const sendOtp = async () => {
     const code = generateOtp();
@@ -56,18 +56,6 @@ export default function PartnershipOTP() {
   useEffect(() => { sendOtp(); }, []);
 
   useFocusEffect(React.useCallback(() => { setOtp(['', '', '', '']); }, []));
-
-  const handleChange = (text: string, index: number) => {
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-    if (text && index < 3) inputRefs.current[index + 1]?.focus();
-  };
-
-  const handleKeyPress = (event: any, index: number) => {
-    if (event.nativeEvent.key === 'Backspace' && !otp[index] && index > 0)
-      inputRefs.current[index - 1]?.focus();
-  };
 
   const handleVerify = async () => {
     const entered = otp.join('');
@@ -111,20 +99,7 @@ export default function PartnershipOTP() {
           </Text>
           <Text style={styles.prompt}>Enter your OTP to continue.</Text>
 
-          <View style={styles.otpBox}>
-            {otp.map((_, index) => (
-              <TextInput
-                key={index}
-                ref={ref => { inputRefs.current[index] = ref; }}
-                style={styles.input}
-                keyboardType="numeric"
-                maxLength={1}
-                value={otp[index]}
-                onChangeText={text => handleChange(text, index)}
-                onKeyPress={event => handleKeyPress(event, index)}
-              />
-            ))}
-          </View>
+          <OtpInput value={otp} onChange={setOtp} containerStyle={styles.otpBox} boxStyle={styles.input} />
 
           <TouchableOpacity onPress={sendOtp}>
             <Text style={styles.resend}>

@@ -4,7 +4,6 @@ import {
     Text,
     Image,
     TouchableOpacity,
-    KeyboardAvoidingView,
     ScrollView,
     Platform,
     StyleSheet,
@@ -12,6 +11,7 @@ import {
     Alert,
     Linking,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';

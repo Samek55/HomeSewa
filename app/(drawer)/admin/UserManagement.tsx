@@ -2,8 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     ActivityIndicator, Alert, TextInput, FlatList, RefreshControl,
-    Modal, ScrollView, Linking, KeyboardAvoidingView, Platform,
+    Modal, ScrollView, Linking, Platform,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';

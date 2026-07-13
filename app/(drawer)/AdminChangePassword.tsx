@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,7 @@ import {
     Dimensions,
     StyleSheet,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -20,6 +20,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
+import OtpInput from '@/components/bookings/OtpInput';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
@@ -56,14 +57,6 @@ export default function AdminChangePassword() {
     // 'reset'  = forgot PIN, phone number required
     const isChangePinMode = mode === 'change';
 
-    const scrollRef = useRef<any>(null);
-    const fieldYPositions = useRef<Partial<Record<string, number>>>({});
-    const scrollToField = (key: string) => {
-        if (!scrollRef.current) return;
-        const y = fieldYPositions.current[key] ?? 0;
-        scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
-    };
-
     const [loading, setLoading] = useState(false);
     const [loggedInPhone, setLoggedInPhone] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -77,15 +70,11 @@ export default function AdminChangePassword() {
     const [sentOtp, setSentOtp] = useState('');
     const [resetRecord, setResetRecord] = useState<{ table: 'admin' | 'professional'; full_name: string } | null>(null);
     const [otpBoxes, setOtpBoxes] = useState(['', '', '', '']);
-    const otpRefs = useRef<Array<TextInput | null>>([]);
 
     // 4-box PIN state — used by both modes
     const [oldBoxes, setOldBoxes] = useState(['', '', '', '']);
     const [newBoxes, setNewBoxes] = useState(['', '', '', '']);
     const [confirmBoxes, setConfirmBoxes] = useState(['', '', '', '']);
-    const oldRefs = useRef<Array<TextInput | null>>([]);
-    const newRefs = useRef<Array<TextInput | null>>([]);
-    const confirmRefs = useRef<Array<TextInput | null>>([]);
 
     useEffect(() => {
         if (isChangePinMode) {
@@ -223,12 +212,10 @@ export default function AdminChangePassword() {
 
     return (
         <KeyboardAwareScrollView
-            ref={scrollRef}
             style={styles.screen}
             contentContainerStyle={{ flexGrow: 1, paddingBottom: hp('4%') }}
             keyboardShouldPersistTaps="handled"
-            enableOnAndroid
-            extraScrollHeight={20}
+            bottomOffset={20}
         >
             <Header4 />
 
@@ -298,26 +285,13 @@ export default function AdminChangePassword() {
                                 <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
                             </TouchableOpacity>
                         </View>
-                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['oldPin'] = e.nativeEvent.layout.y; }}>
-                            {oldBoxes.map((d, i) => (
-                                <TextInput
-                                    key={i}
-                                    ref={r => { oldRefs.current[i] = r; }}
-                                    style={styles.pinBox}
-                                    secureTextEntry={!pinVisible}
-                                    keyboardType="number-pad"
-                                    maxLength={1}
-                                    value={d}
-                                    onFocus={() => scrollToField('oldPin')}
-                                    onChangeText={t => {
-                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                        const next = [...oldBoxes]; next[i] = digit; setOldBoxes(next);
-                                        if (digit && i < 3) oldRefs.current[i + 1]?.focus();
-                                    }}
-                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) oldRefs.current[i - 1]?.focus(); }}
-                                />
-                            ))}
-                        </View>
+                        <OtpInput
+                            value={oldBoxes}
+                            onChange={setOldBoxes}
+                            secureTextEntry={!pinVisible}
+                            containerStyle={styles.pinBoxRow}
+                            boxStyle={styles.pinBox}
+                        />
                     </>
                 )}
 
@@ -325,25 +299,12 @@ export default function AdminChangePassword() {
                 {!isChangePinMode && otpSent && (
                     <>
                         <Text style={styles.label}>Verification Code</Text>
-                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['otp'] = e.nativeEvent.layout.y; }}>
-                            {otpBoxes.map((d, i) => (
-                                <TextInput
-                                    key={i}
-                                    ref={r => { otpRefs.current[i] = r; }}
-                                    style={styles.pinBox}
-                                    keyboardType="number-pad"
-                                    maxLength={1}
-                                    value={d}
-                                    onFocus={() => scrollToField('otp')}
-                                    onChangeText={t => {
-                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                        const next = [...otpBoxes]; next[i] = digit; setOtpBoxes(next);
-                                        if (digit && i < 3) otpRefs.current[i + 1]?.focus();
-                                    }}
-                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) otpRefs.current[i - 1]?.focus(); }}
-                                />
-                            ))}
-                        </View>
+                        <OtpInput
+                            value={otpBoxes}
+                            onChange={setOtpBoxes}
+                            containerStyle={styles.pinBoxRow}
+                            boxStyle={styles.pinBox}
+                        />
                         <TouchableOpacity onPress={handleSendOtp} disabled={sendingOtp}>
                             <Text style={styles.resendText}>
                                 {"Didn't get code? "}
@@ -357,49 +318,23 @@ export default function AdminChangePassword() {
                 {(isChangePinMode || otpSent) && (
                     <>
                         <Text style={styles.label}>New PIN</Text>
-                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['newPin'] = e.nativeEvent.layout.y; }}>
-                            {newBoxes.map((d, i) => (
-                                <TextInput
-                                    key={i}
-                                    ref={r => { newRefs.current[i] = r; }}
-                                    style={styles.pinBox}
-                                    secureTextEntry={!pinVisible}
-                                    keyboardType="number-pad"
-                                    maxLength={1}
-                                    value={d}
-                                    onFocus={() => scrollToField('newPin')}
-                                    onChangeText={t => {
-                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                        const next = [...newBoxes]; next[i] = digit; setNewBoxes(next);
-                                        if (digit && i < 3) newRefs.current[i + 1]?.focus();
-                                    }}
-                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) newRefs.current[i - 1]?.focus(); }}
-                                />
-                            ))}
-                        </View>
+                        <OtpInput
+                            value={newBoxes}
+                            onChange={setNewBoxes}
+                            secureTextEntry={!pinVisible}
+                            containerStyle={styles.pinBoxRow}
+                            boxStyle={styles.pinBox}
+                        />
 
                         {/* Confirm New PIN */}
                         <Text style={styles.label}>Confirm New PIN</Text>
-                        <View style={styles.pinBoxRow} onLayout={(e) => { fieldYPositions.current['confirmPin'] = e.nativeEvent.layout.y; }}>
-                            {confirmBoxes.map((d, i) => (
-                                <TextInput
-                                    key={i}
-                                    ref={r => { confirmRefs.current[i] = r; }}
-                                    style={styles.pinBox}
-                                    secureTextEntry={!pinVisible}
-                                    keyboardType="number-pad"
-                                    maxLength={1}
-                                    value={d}
-                                    onFocus={() => scrollToField('confirmPin')}
-                                    onChangeText={t => {
-                                        const digit = t.replace(/[^0-9]/g, '').slice(-1);
-                                        const next = [...confirmBoxes]; next[i] = digit; setConfirmBoxes(next);
-                                        if (digit && i < 3) confirmRefs.current[i + 1]?.focus();
-                                    }}
-                                    onKeyPress={e => { if (e.nativeEvent.key === 'Backspace' && !d && i > 0) confirmRefs.current[i - 1]?.focus(); }}
-                                />
-                            ))}
-                        </View>
+                        <OtpInput
+                            value={confirmBoxes}
+                            onChange={setConfirmBoxes}
+                            secureTextEntry={!pinVisible}
+                            containerStyle={styles.pinBoxRow}
+                            boxStyle={styles.pinBox}
+                        />
 
                         {/* BUTTONS */}
                         <View style={styles.btnRow}>

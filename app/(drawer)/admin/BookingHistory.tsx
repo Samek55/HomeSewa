@@ -4,13 +4,13 @@ import {
     Text,
     Image,
     TouchableOpacity,
-    KeyboardAvoidingView,
     Platform,
     StyleSheet,
     TextInput,
     FlatList,
     ScrollView,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
 import SearchIcon from '../../../assets/images/TabIcon/searchbar.png';

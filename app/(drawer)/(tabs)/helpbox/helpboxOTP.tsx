@@ -3,15 +3,13 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    TextInput,
     Alert,
     Dimensions,
     TouchableWithoutFeedback,
     Keyboard,
-    KeyboardAvoidingView,
-    Platform,
 } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import React, { useEffect, useState } from 'react';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 const { width, height } = Dimensions.get('window');
@@ -19,6 +17,7 @@ import { createHelpbox } from '../../../../api/PostApiHelpbox';
 import { router } from 'expo-router';
 import Header2 from '@/components/Header3drawer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import OtpInput from '@/components/bookings/OtpInput';
 
 const LAST_HELP_REQUEST_KEY = 'lastHelpRequestAt';
 const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
@@ -49,7 +48,6 @@ const sendSparrowOtp = async (phone: string, otp: string) => {
 export default function HelpboxOTP() {
     const [otp, setOtp] = useState(['', '', '', '']);
     const [sentOtp, setSentOtp] = useState('');
-    const inputRefs = useRef<Array<TextInput | null>>([]);
     const route = useRoute<any>();
     const phone = route.params?.phone;
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,21 +71,6 @@ export default function HelpboxOTP() {
             setOtp(['', '', '', '']);
         }, []),
     );
-
-    const handleChange = (text: string, index: number) => {
-        const newOtp = [...otp];
-        newOtp[index] = text;
-        setOtp(newOtp);
-        if (text && index < otp.length - 1) {
-            inputRefs.current[index + 1]?.focus();
-        }
-    };
-
-    const handleKeyPress = (event: any, index: number) => {
-        if (event.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-            inputRefs.current[index - 1]?.focus();
-        }
-    };
 
     const handleNavigate = async () => {
         const enteredOtp = otp.join('');
@@ -130,20 +113,7 @@ export default function HelpboxOTP() {
 
                     <Text style={styles.otpPromptText}>Enter your OTP to continue.</Text>
 
-                    <View style={styles.otpBox}>
-                        {otp.map((_, index) => (
-                            <TextInput
-                                key={index}
-                                ref={ref => { inputRefs.current[index] = ref; }}
-                                style={styles.input}
-                                keyboardType="numeric"
-                                maxLength={1}
-                                value={otp[index]}
-                                onChangeText={text => handleChange(text, index)}
-                                onKeyPress={event => handleKeyPress(event, index)}
-                            />
-                        ))}
-                    </View>
+                    <OtpInput value={otp} onChange={setOtp} containerStyle={styles.otpBox} boxStyle={styles.input} />
 
                     <TouchableOpacity onPress={sendOtp}>
                         <Text style={styles.resendcode}>

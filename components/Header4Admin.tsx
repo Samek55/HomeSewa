@@ -1,4 +1,4 @@
-import { TouchableOpacity, StyleSheet, View, Image, Text, Platform, StatusBar, Linking } from 'react-native';
+import { TouchableOpacity, StyleSheet, View, Image, Text, StatusBar, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { DrawerActions } from '@react-navigation/native';
@@ -10,6 +10,11 @@ export default function Header4() {
 
   return (
     <>
+      {/* Edge-to-edge is disabled (see gradle.properties / styles.xml), so the OS
+          reserves its own space for the status bar — the header no longer needs to
+          calculate/pad for it, it just renders as a normal block below it. The bar
+          itself is colored to match the header (android:statusBarColor), so its
+          icons stay light. */}
       <StatusBar barStyle="light-content" backgroundColor="#295C59" />
       <View style={styles.wrapper}>
 
@@ -55,7 +60,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#295C59',
-    paddingTop: Platform.OS === 'ios' ? 52 : 38,
+    paddingTop: 14,
     paddingBottom: 14,
     paddingHorizontal: 16,
   },

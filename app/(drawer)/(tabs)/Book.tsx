@@ -13,6 +13,7 @@ import {
   Image,
   Pressable,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import Dropdown from '../../../components/bookings/Dropdown';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ import { areasByCity, city, services, shifts, budget, priority } from '../../../
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CalenderIcon from '../../../assets/icons/booking/calendar.png';
 import TextArea from '../../../components/bookings/TextArea';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
 import {
   widthPercentageToDP as wp,
@@ -55,14 +56,14 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
 };
 
 export default function ServiceBookingScreen() {
-  const scrollRef = useRef<any>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const inputGroupY = useRef<number>(0);
   const fieldYPositions = useRef<Partial<Record<string, number>>>({});
 
   const scrollToField = (key: string) => {
     if (!scrollRef.current) return;
     const y = inputGroupY.current + (fieldYPositions.current[key] ?? 0);
-    scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
+    scrollRef.current.scrollTo({ y: Math.max(0, y - 80), animated: true });
   };
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
@@ -90,11 +91,12 @@ export default function ServiceBookingScreen() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const pickPhotos = useCallback(async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photos.');
-      return;
-    }
+    // No manual permission gate here — launchImageLibraryAsync opens the OS's
+    // native Photo Picker (Android) / PHPickerViewController (iOS), neither of
+    // which needs app-level media permission at all. Gating it behind
+    // requestMediaLibraryPermissionsAsync() (which also asks for write access
+    // that this read-only picker never needs) was causing "Permission needed"
+    // even when the user had already allowed photo access.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsMultipleSelection: true,
@@ -129,6 +131,7 @@ export default function ServiceBookingScreen() {
     setSelectedArea(a);
     setAreaQuery(a);
     setShowSuggestions(false);
+    Keyboard.dismiss();
   };
 
   const clearAllFields = () => {
@@ -256,12 +259,8 @@ export default function ServiceBookingScreen() {
         ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        enableOnAndroid={true}
-        extraScrollHeight={120}
+        bottomOffset={120}
         keyboardShouldPersistTaps="handled"
-        enableResetScrollToCoords={false}
-        resetScrollToCoords={undefined}
-        enableAutomaticScroll
         keyboardDismissMode="on-drag"
       >
         <View style={styles.formContainer}>
@@ -429,10 +428,19 @@ export default function ServiceBookingScreen() {
                   setActiveInput('area');
                   if (selectedCity) setShowSuggestions(true);
                 }}
-                onBlur={() => setTimeout(() => {
-                  setShowSuggestions(false);
-                  setActiveInput(null);
-                }, 200)}
+                onBlur={() => {
+                  // Explicitly close the keyboard the moment Area loses focus. Without
+                  // this, Android can leave the keyboard open with no clear focus target
+                  // (keyboardShouldPersistTaps="handled" below means the tap that blurred
+                  // us isn't itself treated as "dismiss the keyboard") and auto-refocuses
+                  // the next real text input in the tree — the Message field — to keep
+                  // the keyboard attached to something.
+                  Keyboard.dismiss();
+                  setTimeout(() => {
+                    setShowSuggestions(false);
+                    setActiveInput(null);
+                  }, 200);
+                }}
                 placeholder={activeInput === 'area' ? '' : (selectedCity ? 'Find your area...' : 'Select a city first')}
                 placeholderTextColor="#4B4B4B"
                 editable={!!selectedCity}

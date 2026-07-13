@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/homesewa.png",
     "scheme": "homesewa",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -22,7 +22,7 @@
         "icon": "./assets/images/homesewa.png",
         "color": "#295C59"
       },
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "package": "com.pracasinfosys.sriyog.com"
     },

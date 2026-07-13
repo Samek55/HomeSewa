@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   Image,
   Pressable,
   Alert,
-  Platform,
 } from 'react-native';
 import Dropdown from '../../components/bookings/Dropdown';
 import { businessType, city, howduhear, partnershipInterest, services } from '../../src/data/Data';
@@ -25,7 +24,7 @@ import ClearFormIcon from '../../assets/icons/booking/clear.png'
 import DropdownAdd from '../../components/bookings/DropdownAdd';
 import Header3 from '@/components/Header3drawer';
 import { uploadMultipleToStorage } from '@/api/uploadToStorage';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import TermsCheckbox from '../../components/bookings/TermsCheckbox';
@@ -48,13 +47,6 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 };
 
 export default function PartnershipScreen() {
-  const scrollRef = useRef<any>(null);
-  const fieldYPositions = useRef<Partial<Record<string, number>>>({});
-  const scrollToField = (key: string) => {
-    if (!scrollRef.current) return;
-    const y = fieldYPositions.current[key] ?? 0;
-    scrollRef.current.scrollToPosition(0, Math.max(0, y - 80), true);
-  };
   const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
@@ -241,15 +233,10 @@ export default function PartnershipScreen() {
         onClose={() => setOverlayVisible(false)}
       />
       <KeyboardAwareScrollView
-        ref={scrollRef}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
-        enableOnAndroid={true}
-        extraScrollHeight={120}
+        bottomOffset={120}
         keyboardShouldPersistTaps="handled"
-        enableResetScrollToCoords={false}
-        resetScrollToCoords={undefined}
-        enableAutomaticScroll={Platform.OS === 'ios'}
         keyboardDismissMode="on-drag"
       >
         <View style={[styles.formContainer, { marginBottom: hp('5%') }]}>
@@ -432,18 +419,16 @@ export default function PartnershipScreen() {
 
           {/* Message TextArea */}
           <Text style={styles.label}>Message</Text>
-          <View onLayout={(e) => { fieldYPositions.current['message'] = e.nativeEvent.layout.y; }}>
-            <TextArea
-              value={message}
-              onChangeText={setMessage}
-              placeholder=""
-              placeholderTextColor="#4B4B4B"
-              maxHeight={160}
-              onFocus={() => { setActiveInput('message'); scrollToField('message'); }}
-              onBlur={() => setActiveInput(null)}
-              style={activeInput === 'message' && styles.inputActive}
-            />
-          </View>
+          <TextArea
+            value={message}
+            onChangeText={setMessage}
+            placeholder=""
+            placeholderTextColor="#4B4B4B"
+            maxHeight={160}
+            onFocus={() => setActiveInput('message')}
+            onBlur={() => setActiveInput(null)}
+            style={activeInput === 'message' && styles.inputActive}
+          />
 
           <TermsCheckbox checked={acceptedTerms} onChange={setAcceptedTerms} />
 
