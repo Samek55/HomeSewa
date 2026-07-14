@@ -118,20 +118,24 @@ export default function Notifications() {
                 );
                 setNotifications(filtered);
             } else if (adminTable === 'admins') {
-                // Only a super admin ever sees the full admin feed (admin_all + the
-                // super_admin-only category + public broadcasts). A regular admin
-                // never sees 'super_admin' rows, and nobody outside `admins` sees
-                // any admin category at all.
-                const audiences = adminRole === 'super_admin'
-                    ? ['admin_all', 'super_admin', 'all']
-                    : ['admin_all', 'all'];
-
-                const { data } = await supabase
-                    .from('notifications')
-                    .select('*')
-                    .in('audience', audiences)
-                    .order('created_at', { ascending: false });
-                setNotifications(data || []);
+                if (adminRole === 'super_admin') {
+                    // Super admin sees every notification ever sent, across every
+                    // audience (customer, professional, admin, public) — no filter.
+                    const { data } = await supabase
+                        .from('notifications')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    setNotifications(data || []);
+                } else {
+                    // A regular admin only sees the admin feed (admin_all + public
+                    // broadcasts) — never 'super_admin' rows or other audiences.
+                    const { data } = await supabase
+                        .from('notifications')
+                        .select('*')
+                        .in('audience', ['admin_all', 'all'])
+                        .order('created_at', { ascending: false });
+                    setNotifications(data || []);
+                }
             } else {
                 setNotifications([]);
             }

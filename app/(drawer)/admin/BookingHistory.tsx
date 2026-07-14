@@ -181,14 +181,6 @@ export default function BookingHistory() {
         />
     ), [openId, toggleCard, handlePress, isSuperAdmin]);
 
-    const handleLogout = async () => {
-        try {
-            await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole']);
-            try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
-            router.replace('/admin/AdminLogin');
-        } catch (e: any) { alert('Logout error: ' + e.message); }
-    };
-
     // ── Calendar helpers ──────────────────────────────────────
     const year = calendarMonth.getFullYear();
     const month = calendarMonth.getMonth();
@@ -226,7 +218,7 @@ export default function BookingHistory() {
             >
                 {/* HEADER */}
                 <View style={styles.headerRow}>
-                    <TouchableOpacity style={styles.backButton} onPress={handleLogout}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/Home')}>
                         <Image source={leftArrowIcon} style={styles.backBtn} />
                     </TouchableOpacity>
                     <Text style={styles.title}>Booking History</Text>
