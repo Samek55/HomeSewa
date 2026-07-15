@@ -7,6 +7,7 @@ import { BackHandler, DeviceEventEmitter, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { markSplashReady } from '../src/utils/splashGate';
 import { logScreenView } from '../lib/analytics';
+import RoadBlockPopup from '../components/RoadBlockPopup';
 
 // Prevent splash screen from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => { });
@@ -206,10 +207,15 @@ export default function RootLayout() {
     return null;
   }
 
+  // Popup banners are a customer-facing promo surface — skip them inside the
+  // admin area so they never interrupt someone doing admin work.
+  const inAdminArea = segments[0] === '(drawer)' && (segments[1] === 'admin' || segments[1] === 'Admin');
+
   return (
     <KeyboardProvider>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: false }} />
+        {!inAdminArea && <RoadBlockPopup />}
       </SafeAreaProvider>
     </KeyboardProvider>
   );

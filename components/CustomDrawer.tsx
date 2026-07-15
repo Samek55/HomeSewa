@@ -126,6 +126,9 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                         compact={!isLoggedIn}
                     />
                     {adminTable === 'admins' && (
+                        <MenuItem icon="pricetags-outline" label="Popup Banner" active={isActive('/admin/AdminRoadBlock')} onPress={() => navigate('/admin/AdminRoadBlock')} superAdmin />
+                    )}
+                    {adminTable === 'admins' && (
                         <MenuItem icon="chatbox-ellipses-outline" label="Help Box" active={isActive('/admin/HelpBox')} onPress={() => navigate('/admin/HelpBox')} superAdmin />
                     )}
 

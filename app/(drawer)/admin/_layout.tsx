@@ -14,6 +14,7 @@ export default function AdminLayout() {
       <Stack.Screen name="UserManagement" />
       <Stack.Screen name="ProfessionalVerification" />
       <Stack.Screen name="AdminNotifications" />
+      <Stack.Screen name="AdminRoadBlock" />
       <Stack.Screen name="SuperAdminHistory" />
       <Stack.Screen name="WorkCompletionOTP" />
       <Stack.Screen name="LeadPayment" />

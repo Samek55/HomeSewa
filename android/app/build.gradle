@@ -87,15 +87,22 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    // Pinned above the default 3.22.1: that version bundles ninja 1.10.2, which
-    // hard-fails ("Filename longer than 260 characters") on the long object-file
-    // paths the New Architecture's autolinked codegen produces on Windows. 3.31.x
-    // bundles ninja 1.12.1, which supports long paths — without jumping to CMake
-    // 4.x, whose stricter minimum cmake_minimum_required() policy can break older
-    // third-party CMakeLists.txt files bundled with some native modules.
-    externalNativeBuild {
-        cmake {
-            version "3.31.6"
+    // Pinned above the default 3.22.1 ONLY on Windows: that version bundles ninja
+    // 1.10.2, which hard-fails ("Filename longer than 260 characters") on the long
+    // object-file paths the New Architecture's autolinked codegen produces under
+    // Windows' path-length limit. 3.31.x bundles ninja 1.12.1, which supports long
+    // paths — without jumping to CMake 4.x, whose stricter minimum
+    // cmake_minimum_required() policy can break older third-party CMakeLists.txt
+    // files bundled with some native modules. Linux/macOS builds (WSL, EAS cloud
+    // build servers, CI) never hit the 260-character path limit this works around,
+    // and requiring this exact version there just adds a package that isn't
+    // preinstalled on those images for no benefit — so leave them on whatever
+    // default AGP/the build image already provides.
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        externalNativeBuild {
+            cmake {
+                version "3.31.6"
+            }
         }
     }
 
