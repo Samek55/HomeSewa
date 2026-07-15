@@ -59,11 +59,8 @@ export default function RoadBlockPopup() {
                                 ? (roadBlock.button_text_custom || 'View More')
                                 : roadBlock.button_text,
                             countdownSeconds: roadBlock.countdown_seconds,
-                            startAt: roadBlock.start_at,
-                            endAt: roadBlock.end_at,
                         }}
                         onPressButton={handlePressButton}
-                        onDismiss={dismiss}
                         onClose={dismiss}
                         runCountdown
                     />

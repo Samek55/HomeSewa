@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     Alert, TextInput, ScrollView, ActivityIndicator,
-    FlatList, Image as RNImage,
+    FlatList, Image as RNImage, Modal,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,12 +14,39 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import Header4 from '@/components/Header4Admin';
 import RoadBlockCard from '@/components/RoadBlockCard';
 import { uploadToStorage } from '../../../api/uploadToStorage';
+import { servicesData2 } from '../../../src/data/ServiceData';
 import {
     ROAD_BLOCK_BUTTON_TEXT_OPTIONS, RoadBlockButtonText, RoadBlock,
     listRoadBlocks, createRoadBlock, updateRoadBlock, setRoadBlockActive,
 } from '../../../api/roadBlocks';
 
 type Tab = 'compose' | 'history';
+
+// Every page a button link could reasonably point to — kept in sync with the
+// service catalog automatically, so a new service shows up here for free.
+// Screens that only make sense mid-flow (OTP steps, booking confirmation,
+// admin/login screens) are deliberately left out since a cold deep link
+// into them has nothing to show.
+type LinkSuggestion = { label: string; path: string };
+const STATIC_PAGE_LINKS: LinkSuggestion[] = [
+    { label: 'Home', path: '/Home' },
+    { label: 'All Services', path: '/Service' },
+    { label: 'Book a Service', path: '/Book' },
+    { label: 'About Us', path: '/About' },
+    { label: 'Contact', path: '/Contact' },
+    { label: 'FAQs', path: '/FAQs' },
+    { label: 'Glossary', path: '/Glossary' },
+    { label: 'Notifications', path: '/Notifications' },
+    { label: 'Join as Professional', path: '/Career' },
+    { label: 'Become a Partner', path: '/Partnership' },
+];
+const LINK_SUGGESTIONS: LinkSuggestion[] = [
+    ...STATIC_PAGE_LINKS,
+    ...servicesData2.flatMap(s => [
+        { label: `${s.name} — Service Details`, path: `/service/ServiceDetail?id=${s.id}` },
+        { label: `${s.name} — Book Now`, path: `/Book?preSelectedService=${encodeURIComponent(s.name)}` },
+    ]),
+];
 
 const startOfDay = (d: Date) => { const n = new Date(d); n.setHours(0, 0, 0, 0); return n; };
 const endOfDay = (d: Date) => { const n = new Date(d); n.setHours(23, 59, 59, 999); return n; };
@@ -39,6 +66,113 @@ function getStatus(rb: RoadBlock): { label: string; color: string } {
     return { label: 'Live', color: '#2F7D5A' };
 }
 
+function ButtonTextDropdown({ value, onChange }: { value: RoadBlockButtonText; onChange: (v: RoadBlockButtonText) => void }) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <TouchableOpacity style={styles.dropdownBtn} onPress={() => setOpen(true)} activeOpacity={0.8}>
+                <Text style={styles.dropdownValue}>{value}</Text>
+                <Ionicons name="chevron-down" size={18} color="#9BBAB8" />
+            </TouchableOpacity>
+
+            <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Button Text</Text>
+                            <TouchableOpacity onPress={() => setOpen(false)}>
+                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ maxHeight: hp('55%') }}>
+                            {ROAD_BLOCK_BUTTON_TEXT_OPTIONS.map(opt => {
+                                const selected = opt === value;
+                                return (
+                                    <TouchableOpacity
+                                        key={opt}
+                                        style={styles.optionRow}
+                                        onPress={() => { onChange(opt); setOpen(false); }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.optionText, selected && styles.optionTextChecked]}>{opt}</Text>
+                                        {selected && <Ionicons name="checkmark" size={18} color="#295C59" />}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+        </>
+    );
+}
+
+function LinkPicker({ onSelect }: { onSelect: (path: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
+
+    const filtered = LINK_SUGGESTIONS.filter(s => {
+        const q = query.trim().toLowerCase();
+        if (!q) return true;
+        return s.label.toLowerCase().includes(q) || s.path.toLowerCase().includes(q);
+    });
+
+    const close = () => { setOpen(false); setQuery(''); };
+
+    return (
+        <>
+            <TouchableOpacity style={styles.linkSuggestBtn} onPress={() => setOpen(true)} activeOpacity={0.8}>
+                <Ionicons name="compass-outline" size={15} color="#295C59" />
+                <Text style={styles.linkSuggestBtnText}>Browse app pages…</Text>
+            </TouchableOpacity>
+
+            <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={close}>
+                    <View style={styles.modalSheet}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Link to an App Page</Text>
+                            <TouchableOpacity onPress={close}>
+                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.searchRow}>
+                            <Ionicons name="search-outline" size={16} color="#9BBAB8" />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search pages or services…"
+                                placeholderTextColor="#B0BEC5"
+                                value={query}
+                                onChangeText={setQuery}
+                                autoFocus
+                            />
+                        </View>
+                        <FlatList
+                            data={filtered}
+                            keyExtractor={item => item.path}
+                            style={{ maxHeight: hp('50%') }}
+                            keyboardShouldPersistTaps="handled"
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.optionRow}
+                                    onPress={() => { onSelect(item.path); close(); }}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.optionText}>{item.label}</Text>
+                                        <Text style={styles.optionSubtext}>{item.path}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                            ListEmptyComponent={<Text style={styles.emptySearchText}>No matching pages.</Text>}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+        </>
+    );
+}
+
 export default function AdminRoadBlock() {
     const [hasAccess, setHasAccess] = useState(false);
     const [tab, setTab] = useState<Tab>('compose');
@@ -55,8 +189,8 @@ export default function AdminRoadBlock() {
     const [buttonText, setButtonText] = useState<RoadBlockButtonText>('View More');
     const [buttonTextCustom, setButtonTextCustom] = useState('');
     const [buttonLink, setButtonLink] = useState('');
-    const [countdownEnabled, setCountdownEnabled] = useState(false);
-    const [countdownMinutes, setCountdownMinutes] = useState('10');
+    const [countdownEnabled, setCountdownEnabled] = useState(true);
+    const [countdownSecondsInput, setCountdownSecondsInput] = useState('10');
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     const [showStartPicker, setShowStartPicker] = useState(false);
@@ -101,8 +235,8 @@ export default function AdminRoadBlock() {
         setButtonText('View More');
         setButtonTextCustom('');
         setButtonLink('');
-        setCountdownEnabled(false);
-        setCountdownMinutes('10');
+        setCountdownEnabled(true);
+        setCountdownSecondsInput('10');
         setStartDate(new Date());
         setEndDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     };
@@ -118,7 +252,7 @@ export default function AdminRoadBlock() {
         setButtonTextCustom(rb.button_text_custom || '');
         setButtonLink(rb.button_link);
         setCountdownEnabled(!!rb.countdown_seconds);
-        setCountdownMinutes(String(Math.max(1, Math.round((rb.countdown_seconds || 600) / 60))));
+        setCountdownSecondsInput(String(rb.countdown_seconds || 10));
         setStartDate(new Date(rb.start_at));
         setEndDate(new Date(rb.end_at));
         setTab('compose');
@@ -153,8 +287,8 @@ export default function AdminRoadBlock() {
         if (!buttonLink.trim()) return Alert.alert('Missing Field', 'Please enter where the button should link to.');
         if (buttonText === 'Other' && !buttonTextCustom.trim()) return Alert.alert('Missing Field', 'Please enter the custom button text.');
         if (endDate <= startDate) return Alert.alert('Invalid Dates', 'End date must be after the start date.');
-        if (countdownEnabled && (!countdownMinutes || Number(countdownMinutes) <= 0)) {
-            return Alert.alert('Invalid Countdown', 'Please enter a countdown length in minutes.');
+        if (countdownEnabled && (!countdownSecondsInput || Number(countdownSecondsInput) <= 0)) {
+            return Alert.alert('Invalid Countdown', 'Please enter how many seconds the close button should count down.');
         }
 
         setSaving(true);
@@ -167,7 +301,7 @@ export default function AdminRoadBlock() {
                 buttonText,
                 buttonTextCustom: buttonTextCustom.trim(),
                 buttonLink: buttonLink.trim(),
-                countdownSeconds: countdownEnabled ? Math.round(Number(countdownMinutes) * 60) : null,
+                countdownSeconds: countdownEnabled ? Math.round(Number(countdownSecondsInput)) : null,
                 startAt: startOfDay(startDate).toISOString(),
                 endAt: endOfDay(endDate).toISOString(),
                 createdByPhone: adminPhone,
@@ -233,14 +367,14 @@ export default function AdminRoadBlock() {
                             onChangeText={setBannerName}
                         />
 
-                        <Text style={styles.label}>BANNER IMAGE</Text>
+                        <Text style={styles.label}>BANNER IMAGE (SQUARE, 1080×1080)</Text>
                         <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.8}>
                             {imageUri || imageUrl ? (
                                 <RNImage source={{ uri: imageUri || imageUrl! }} style={styles.imagePreview} resizeMode="cover" />
                             ) : (
                                 <View style={styles.imagePlaceholder}>
                                     <Ionicons name="image-outline" size={26} color="#9BBAB8" />
-                                    <Text style={styles.imagePlaceholderText}>Tap to upload image</Text>
+                                    <Text style={styles.imagePlaceholderText}>Tap to upload a 1080×1080 image</Text>
                                 </View>
                             )}
                             {uploadingImage && (
@@ -271,17 +405,7 @@ export default function AdminRoadBlock() {
                         />
 
                         <Text style={styles.label}>BUTTON TEXT</Text>
-                        <View style={styles.chipRow}>
-                            {ROAD_BLOCK_BUTTON_TEXT_OPTIONS.map(opt => (
-                                <TouchableOpacity
-                                    key={opt}
-                                    style={[styles.chip, buttonText === opt && styles.chipActive]}
-                                    onPress={() => setButtonText(opt)}
-                                >
-                                    <Text style={[styles.chipText, buttonText === opt && styles.chipTextActive]}>{opt}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <ButtonTextDropdown value={buttonText} onChange={setButtonText} />
                         {buttonText === 'Other' && (
                             <TextInput
                                 style={[styles.input, { marginTop: 10 }]}
@@ -301,8 +425,9 @@ export default function AdminRoadBlock() {
                             onChangeText={setButtonLink}
                             autoCapitalize="none"
                         />
+                        <LinkPicker onSelect={setButtonLink} />
 
-                        <Text style={styles.label}>COUNTDOWN TIMER</Text>
+                        <Text style={styles.label}>CLOSE BUTTON COUNTDOWN</Text>
                         <View style={styles.countdownRow}>
                             <TouchableOpacity
                                 style={[styles.toggle, countdownEnabled && styles.toggleOn]}
@@ -311,7 +436,9 @@ export default function AdminRoadBlock() {
                                 <View style={[styles.toggleKnob, countdownEnabled && styles.toggleKnobOn]} />
                             </TouchableOpacity>
                             <Text style={styles.countdownLabel}>
-                                {countdownEnabled ? 'Starts the moment each user opens the popup' : 'No countdown shown'}
+                                {countdownEnabled
+                                    ? 'The × shows a countdown and can’t be tapped until it hits 0 — like a skippable ad'
+                                    : 'The × is tappable right away, no delay'}
                             </Text>
                         </View>
                         {countdownEnabled && (
@@ -319,10 +446,10 @@ export default function AdminRoadBlock() {
                                 <TextInput
                                     style={styles.minutesInput}
                                     keyboardType="number-pad"
-                                    value={countdownMinutes}
-                                    onChangeText={setCountdownMinutes}
+                                    value={countdownSecondsInput}
+                                    onChangeText={setCountdownSecondsInput}
                                 />
-                                <Text style={styles.minutesSuffix}>minutes</Text>
+                                <Text style={styles.minutesSuffix}>seconds</Text>
                             </View>
                         )}
 
@@ -366,9 +493,7 @@ export default function AdminRoadBlock() {
                                             imageUrl: (imageUri || imageUrl)!,
                                             message: message.trim(),
                                             buttonLabel: resolvedButtonLabel,
-                                            countdownSeconds: countdownEnabled ? Number(countdownMinutes || 0) * 60 : null,
-                                            startAt: startDate.toISOString(),
-                                            endAt: endDate.toISOString(),
+                                            countdownSeconds: countdownEnabled ? Number(countdownSecondsInput || 0) : null,
                                         }}
                                         runCountdown={false}
                                     />
@@ -471,16 +596,49 @@ const styles = StyleSheet.create({
     textarea: { minHeight: hp('12%'), paddingTop: hp('1.5%') },
 
     imagePicker: { borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderColor: '#D6E8E7' },
-    imagePreview: { width: '100%', height: hp('18%'), backgroundColor: '#E8F4F3' },
-    imagePlaceholder: { width: '100%', height: hp('18%'), alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#F5F9F8' },
+    imagePreview: { width: '100%', aspectRatio: 1, backgroundColor: '#E8F4F3' },
+    imagePlaceholder: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#F5F9F8' },
     imagePlaceholderText: { fontSize: 12.5, color: '#9BBAB8', fontWeight: '600' },
     imageUploadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
 
-    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    chip: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7' },
-    chipActive: { backgroundColor: '#295C59', borderColor: '#295C59' },
-    chipText: { fontSize: 12.5, fontWeight: '700', color: '#5A7270' },
-    chipTextActive: { color: '#fff' },
+    dropdownBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: '#fff', borderRadius: 14,
+        borderWidth: 1.5, borderColor: '#D6E8E7',
+        paddingHorizontal: wp('4%'), paddingVertical: hp('1.8%'),
+    },
+    dropdownValue: { fontSize: 14, color: '#1C2B2A', fontWeight: '600' },
+
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    modalSheet: {
+        backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        paddingTop: 8, paddingBottom: hp('2%'), maxHeight: hp('75%'),
+    },
+    modalHeader: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: wp('5%'), paddingVertical: hp('1.8%'),
+        borderBottomWidth: 1, borderBottomColor: '#F0F4F3',
+    },
+    modalTitle: { fontSize: 16, fontWeight: '800', color: '#1C2B2A' },
+    optionRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingVertical: hp('1.6%'), paddingHorizontal: wp('5%'),
+        borderBottomWidth: 1, borderBottomColor: '#F5F9F8',
+    },
+    optionText: { fontSize: 14, color: '#4B5563' },
+    optionTextChecked: { color: '#1C2B2A', fontWeight: '700' },
+    optionSubtext: { fontSize: 11.5, color: '#9BBAB8', fontWeight: '500', marginTop: 2 },
+
+    linkSuggestBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8 },
+    linkSuggestBtnText: { fontSize: 12.5, fontWeight: '700', color: '#295C59', textDecorationLine: 'underline' },
+    searchRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        marginHorizontal: wp('5%'), marginBottom: 8,
+        backgroundColor: '#F5F9F8', borderRadius: 12,
+        paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.2%'),
+    },
+    searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
+    emptySearchText: { textAlign: 'center', fontSize: 13, color: '#9BBAB8', fontWeight: '500', paddingVertical: hp('3%') },
 
     countdownRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     toggle: { width: 44, height: 26, borderRadius: 13, backgroundColor: '#D6E8E7', padding: 3, justifyContent: 'center' },

@@ -1,16 +1,17 @@
 -- RoadBlock pop-up banner (flash-offer interstitial shown on app launch).
--- The countdown is per-user: `countdown_seconds` is a duration, not a shared
--- deadline — the client starts its own timer the moment a given device first
--- sees the banner. Only one banner is expected to be live at a time; the
--- client just queries for the most recent active + in-window row.
+-- The countdown is per-user and lives on the close button, not a shared
+-- deadline: `countdown_seconds` is how long the × shows a "skip in Ns" style
+-- countdown before it becomes tappable, starting the moment a given device
+-- first sees the banner. Only one banner is expected to be live at a time;
+-- the client just queries for the most recent active + in-window row.
 -- Run this once in the Supabase SQL editor.
 
 create table if not exists road_blocks (
   id                  bigint generated always as identity primary key,
   banner_name         text not null,
 
-  title               text not null,                    -- bold headline shown in the popup, above the countdown
-  image_url           text not null,
+  title               text not null,                    -- bold headline shown above the message
+  image_url           text not null,                     -- square creative, 1080x1080
   message              text not null,
   button_text         text not null default 'View More'
     check (button_text in (
@@ -21,7 +22,7 @@ create table if not exists road_blocks (
   button_text_custom  text,
   button_link         text not null,
 
-  countdown_seconds   integer,                          -- per-user timer length; null = no countdown shown
+  countdown_seconds   integer,                          -- seconds the close (×) button stays disabled/counting down; null = closable immediately
 
   start_at            timestamptz not null,
   end_at              timestamptz not null,
