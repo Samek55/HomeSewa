@@ -13,12 +13,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import RoadBlockCard from '@/components/RoadBlockCard';
+import MultiSelectDropdown from '@/components/MultiSelectDropdown';
 import { uploadToStorage } from '../../../api/uploadToStorage';
 import { servicesData2 } from '../../../src/data/ServiceData';
+import { city as CITIES, services as PROFESSIONS } from '../../../src/data/Data';
 import {
-    ROAD_BLOCK_BUTTON_TEXT_OPTIONS, RoadBlockButtonText, RoadBlock,
+    ROAD_BLOCK_BUTTON_TEXT_OPTIONS, RoadBlockButtonText, RoadBlockRole, RoadBlock,
     listRoadBlocks, createRoadBlock, updateRoadBlock, setRoadBlockActive,
 } from '../../../api/roadBlocks';
+
+// UI label <-> stored role value for audience targeting (Section II of the HR wireframe).
+const USER_TYPE_OPTIONS: { label: string; value: RoadBlockRole }[] = [
+    { label: 'Public', value: 'public' },
+    { label: 'Customer', value: 'customer' },
+    { label: 'Workforce', value: 'workforce' },
+    { label: 'Admin', value: 'admin' },
+];
+const roleLabelsToValues = (labels: string[]): RoadBlockRole[] =>
+    USER_TYPE_OPTIONS.filter(o => labels.includes(o.label)).map(o => o.value);
+const roleValuesToLabels = (values: string[] | null): string[] =>
+    USER_TYPE_OPTIONS.filter(o => (values || []).includes(o.value)).map(o => o.label);
 
 type Tab = 'compose' | 'history';
 
@@ -197,6 +211,12 @@ export default function AdminRoadBlock() {
     const [showEndPicker, setShowEndPicker] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    // Audience targeting — empty selection means "all" for that dimension.
+    const [targetCities, setTargetCities] = useState<string[]>([]);
+    const [targetUserTypes, setTargetUserTypes] = useState<string[]>([]);
+    const [targetProfessions, setTargetProfessions] = useState<string[]>([]);
+    const targetsWorkforce = targetUserTypes.includes('Workforce');
+
     // History
     const [history, setHistory] = useState<RoadBlock[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -239,6 +259,9 @@ export default function AdminRoadBlock() {
         setCountdownSecondsInput('10');
         setStartDate(new Date());
         setEndDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+        setTargetCities([]);
+        setTargetUserTypes([]);
+        setTargetProfessions([]);
     };
 
     const startEdit = (rb: RoadBlock) => {
@@ -255,6 +278,9 @@ export default function AdminRoadBlock() {
         setCountdownSecondsInput(String(rb.countdown_seconds || 10));
         setStartDate(new Date(rb.start_at));
         setEndDate(new Date(rb.end_at));
+        setTargetCities(rb.target_cities || []);
+        setTargetUserTypes(roleValuesToLabels(rb.target_roles));
+        setTargetProfessions(rb.target_professions || []);
         setTab('compose');
     };
 
@@ -305,6 +331,9 @@ export default function AdminRoadBlock() {
                 startAt: startOfDay(startDate).toISOString(),
                 endAt: endOfDay(endDate).toISOString(),
                 createdByPhone: adminPhone,
+                targetCities,
+                targetRoles: roleLabelsToValues(targetUserTypes),
+                targetProfessions: targetsWorkforce ? targetProfessions : [],
             };
 
             if (editingId) {
@@ -480,6 +509,31 @@ export default function AdminRoadBlock() {
                                 display="default"
                                 minimumDate={startDate}
                                 onChange={(_, d) => { setShowEndPicker(false); if (d) setEndDate(d); }}
+                            />
+                        )}
+
+                        <Text style={styles.label}>AUDIENCE TARGETING</Text>
+                        <MultiSelectDropdown
+                            label="CITY"
+                            options={CITIES}
+                            selected={targetCities}
+                            onChange={setTargetCities}
+                            placeholder="All cities"
+                        />
+                        <MultiSelectDropdown
+                            label="USER TYPE"
+                            options={USER_TYPE_OPTIONS.map(o => o.label)}
+                            selected={targetUserTypes}
+                            onChange={setTargetUserTypes}
+                            placeholder="Everyone (Public, Customer, Workforce, Admin)"
+                        />
+                        {targetsWorkforce && (
+                            <MultiSelectDropdown
+                                label="PROFESSION"
+                                options={PROFESSIONS}
+                                selected={targetProfessions}
+                                onChange={setTargetProfessions}
+                                placeholder="All professions"
                             />
                         )}
 

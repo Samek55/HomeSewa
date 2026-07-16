@@ -723,58 +723,22 @@ export default function UserManagement() {
                                         )}
                                     </View>
                                     <Text style={styles.sub}>+977 {item.phone}</Text>
-                                    {tab === 'professionals' && (
-                                        <Text style={styles.sub} numberOfLines={2}>
-                                            {(item.positions || []).join(', ')} · {item.preferred_city}
-                                        </Text>
-                                    )}
                                 </View>
                             </View>
                             <View style={styles.cardRight}>
-                                {tab === 'professionals' && (
+                                {tab === 'professionals' ? (
                                     <View style={[styles.statusPill, item.status === 'Active' ? styles.pillActive : isPendingStatus(item.status) ? styles.pillPending : styles.pillInactive]}>
                                         <Text style={[styles.statusText, { color: item.status === 'Active' ? '#16a34a' : isPendingStatus(item.status) ? '#d97706' : '#ef4444' }]}>
                                             {item.status}
                                         </Text>
                                     </View>
-                                )}
-                                <View style={styles.actionRow}>
-                                    <TouchableOpacity
-                                        style={[styles.toggleBtn,
-                                            tab === 'professionals'
-                                                ? item.status === 'Active' ? styles.btnDisable : styles.btnEnable
-                                                : item.blocked ? styles.btnEnable : styles.btnDisable
-                                        ]}
-                                        onPress={(e) => {
-                                            e.stopPropagation();
-                                            if (tab === 'professionals') {
-                                                Alert.alert(
-                                                    item.status === 'Active' ? 'Disable Account' : 'Enable Account',
-                                                    `${item.status === 'Active' ? 'Disable' : 'Enable'} ${item.full_name}?`,
-                                                    [
-                                                        { text: 'Cancel', style: 'cancel' },
-                                                        { text: 'Confirm', onPress: () => toggleProfessional(item.id, item.phone, item.status) },
-                                                    ]
-                                                );
-                                            } else {
-                                                Alert.alert(
-                                                    item.blocked ? 'Unblock Customer' : 'Block Customer',
-                                                    `${item.blocked ? 'Unblock' : 'Block'} ${item.full_name}?`,
-                                                    [
-                                                        { text: 'Cancel', style: 'cancel' },
-                                                        { text: 'Confirm', onPress: () => toggleCustomer(item.phone, item.blocked) },
-                                                    ]
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        <Text style={styles.toggleBtnText}>
-                                            {tab === 'professionals'
-                                                ? item.status === 'Active' ? 'Disable' : 'Enable'
-                                                : item.blocked ? 'Unblock' : 'Block'}
+                                ) : (
+                                    <View style={[styles.statusPill, item.blocked ? styles.pillInactive : styles.pillActive]}>
+                                        <Text style={[styles.statusText, { color: item.blocked ? '#ef4444' : '#16a34a' }]}>
+                                            {item.blocked ? 'Blocked' : 'Active'}
                                         </Text>
-                                    </TouchableOpacity>
-                                </View>
+                                    </View>
+                                )}
                             </View>
                         </TouchableOpacity>
                     )}

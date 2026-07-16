@@ -38,7 +38,7 @@ export const services = [
   'Tree Cutting & Pruning',
   'Septic Tank Cleaning',
   'Pet Grooming',
-  'Lift/ Elevator Repair',
+  'Lift / Elevator Repair',
 ];
 
 export const positionAppliedFor = [

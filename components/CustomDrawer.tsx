@@ -142,12 +142,6 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                     {adminTable !== 'admins' && <View style={styles.divider} />}
 
                     {adminTable !== 'admins' && (
-                        <MenuItem icon="information-circle-outline" label="About Us" active={isActive('/About')} onPress={() => navigate('/About')} compact={!isLoggedIn} />
-                    )}
-                    {adminTable !== 'admins' && (
-                        <MenuItem icon="call-outline" label="Contact" active={isActive('/Contact')} onPress={() => navigate('/Contact')} compact={!isLoggedIn} />
-                    )}
-                    {adminTable !== 'admins' && (
                         <MenuItem icon="help-circle-outline" label="FAQs" active={isActive('/FAQs')} onPress={() => navigate('/FAQs')} compact={!isLoggedIn} />
                     )}
                     {adminTable !== 'admins' && (
@@ -188,7 +182,7 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                             color="#fff"
                         />
                         <Text style={styles.adminBtnText}>
-                            {isLoggedIn ? 'Update Profile' : 'Admin Login'}
+                            {isLoggedIn ? 'Update Profile' : 'Login'}
                         </Text>
                     </TouchableOpacity>
                 </View>

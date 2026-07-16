@@ -13,7 +13,6 @@ import {
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import leftArrowIcon from '../../../assets/icons/admin/leftarrow.png';
-import SearchIcon from '../../../assets/images/TabIcon/searchbar.png';
 import BookingCard from '../../../components/admin/BookingCard';
 import Header4 from '@/components/Header4Admin';
 import { router, useFocusEffect } from 'expo-router';
@@ -55,6 +54,8 @@ export default function BookingHistory() {
     const [openId, setOpenId] = useState<string | null>(null);
     const [filter, setFilter] = useState('New / Open');
     const [searchQuery, setSearchQuery] = useState('');
+    const [showSearch, setShowSearch] = useState(false);
+    const [showFilterMenu, setShowFilterMenu] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [calendarMonth, setCalendarMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -218,31 +219,64 @@ export default function BookingHistory() {
             >
                 {/* HEADER */}
                 <View style={styles.headerRow}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/Home')}>
-                        <Image source={leftArrowIcon} style={styles.backBtn} />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Booking History</Text>
-                    {isSuperAdmin && (
-                        <TouchableOpacity
-                            style={styles.superAdminBtn}
-                            onPress={() => router.push('/admin/SuperAdminHistory')}
-                        >
-                            <Ionicons name="shield-outline" size={20} color="#295C59" />
-                        </TouchableOpacity>
+                    {showSearch ? (
+                        <>
+                            <TouchableOpacity
+                                style={styles.backButton}
+                                onPress={() => { setShowSearch(false); setSearchQuery(''); }}
+                            >
+                                <Ionicons name="arrow-back" size={22} color="#295C59" />
+                            </TouchableOpacity>
+                            <View style={styles.inlineSearchBox}>
+                                <Ionicons name="search-outline" size={17} color="#9BBAB8" />
+                                <TextInput
+                                    autoFocus
+                                    placeholder="Search"
+                                    placeholderTextColor="rgba(67,67,67,0.6)"
+                                    style={styles.inlineSearchInput}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                    autoCapitalize="none"
+                                />
+                                {searchQuery.length > 0 && (
+                                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                        <Ionicons name="close-circle" size={17} color="#B0BEC5" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </>
+                    ) : (
+                        <>
+                            <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/Home')}>
+                                <Image source={leftArrowIcon} style={styles.backBtn} />
+                            </TouchableOpacity>
+                            <Text style={styles.title}>Booking History</Text>
+                            <TouchableOpacity style={styles.searchIconBtn} onPress={() => setShowSearch(true)}>
+                                <Ionicons name="search-outline" size={20} color="#295C59" />
+                            </TouchableOpacity>
+                            {isSuperAdmin && (
+                                <TouchableOpacity
+                                    style={styles.superAdminBtn}
+                                    onPress={() => router.push('/admin/SuperAdminHistory')}
+                                >
+                                    <Ionicons name="shield-outline" size={20} color="#295C59" />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                                style={styles.calendarIconBtn}
+                                onPress={() => {
+                                    setShowCalendar(prev => !prev);
+                                    setSelectedDate(null);
+                                }}
+                            >
+                                <Ionicons
+                                    name={showCalendar ? 'list-outline' : 'calendar-outline'}
+                                    size={22}
+                                    color="#295C59"
+                                />
+                            </TouchableOpacity>
+                        </>
                     )}
-                    <TouchableOpacity
-                        style={styles.calendarIconBtn}
-                        onPress={() => {
-                            setShowCalendar(prev => !prev);
-                            setSelectedDate(null);
-                        }}
-                    >
-                        <Ionicons
-                            name={showCalendar ? 'list-outline' : 'calendar-outline'}
-                            size={22}
-                            color="#295C59"
-                        />
-                    </TouchableOpacity>
                 </View>
 
                 {showCalendar ? (
@@ -344,31 +378,34 @@ export default function BookingHistory() {
                     </ScrollView>
                 ) : (
                     <>
-                        {/* SEARCH */}
-                        <View style={styles.inputContainer}>
-                            <Image source={SearchIcon} style={{ height: 20, width: 20 }} />
-                            <TextInput
-                                placeholder="Search"
-                                placeholderTextColor={'rgba(67,67,67,0.8)'}
-                                style={styles.textInput}
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                                clearButtonMode="while-editing"
-                                autoCapitalize="none"
-                            />
-                        </View>
-
                         {/* FILTERS */}
-                        <View style={styles.mainBtns}>
-                            {FILTERS.map(f => (
-                                <TouchableOpacity
-                                    key={f.value}
-                                    style={[styles.btn, filter === f.value && styles.activeBtn]}
-                                    onPress={() => setFilter(f.value)}
-                                >
-                                    <Text style={[styles.btnText, filter === f.value && { color: '#fff' }]}>{f.label}</Text>
-                                </TouchableOpacity>
-                            ))}
+                        <View style={styles.filterDropdownWrap}>
+                            <TouchableOpacity
+                                style={styles.filterDropBtn}
+                                onPress={() => setShowFilterMenu(v => !v)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.filterDropBtnText}>
+                                    {FILTERS.find(f => f.value === filter)?.label || 'All'}
+                                </Text>
+                                <Ionicons name={showFilterMenu ? 'chevron-up' : 'chevron-down'} size={18} color="#295C59" />
+                            </TouchableOpacity>
+                            {showFilterMenu && (
+                                <View style={styles.filterDropMenu}>
+                                    {FILTERS.map(f => (
+                                        <TouchableOpacity
+                                            key={f.value}
+                                            style={[styles.filterDropItem, filter === f.value && styles.filterDropItemActive]}
+                                            onPress={() => { setFilter(f.value); setShowFilterMenu(false); }}
+                                        >
+                                            <Text style={[styles.filterDropItemText, filter === f.value && styles.filterDropItemTextActive]}>
+                                                {f.label}
+                                            </Text>
+                                            {filter === f.value && <Ionicons name="checkmark" size={16} color="#295C59" />}
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
                         </View>
 
                         {/* LIST */}
@@ -413,49 +450,76 @@ const styles = StyleSheet.create({
     backBtn: { width: hp('3.5%'), height: hp('3.5%'), tintColor: '#295C59' },
     calendarIconBtn: { padding: 4 },
     superAdminBtn: { padding: 4, marginRight: wp('2%') },
+    searchIconBtn: { padding: 4, marginRight: wp('2%') },
 
-    /* Search */
-    inputContainer: {
+    /* Inline expanding search (replaces header title/icons while active) */
+    inlineSearchBox: {
+        flex: 1,
         flexDirection: 'row',
-        paddingHorizontal: hp('2%'),
-        borderWidth: 1.5,
-        width: '90%',
-        marginBottom: '5%',
-        borderRadius: 200,
-        borderColor: 'rgba(0,0,0,0.3)',
-        height: hp('5%'),
-        marginTop: hp('2%'),
         alignItems: 'center',
-        alignSelf: 'center',
+        gap: 8,
+        backgroundColor: '#F5F9F8',
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        borderRadius: 200,
+        height: hp('5%'),
+        paddingHorizontal: wp('3.5%'),
+        marginLeft: wp('2%'),
     },
-    textInput: {
+    inlineSearchInput: {
         flex: 1,
         fontSize: hp(1.8),
         fontWeight: '500',
         color: '#000',
-        paddingLeft: 8,
         letterSpacing: 0.3,
     },
 
-    /* Filter pills */
-    mainBtns: {
+    /* Filter dropdown */
+    filterDropdownWrap: {
+        alignSelf: 'flex-start',
+        minWidth: wp('45%'),
+        marginHorizontal: wp('4%'),
+        marginTop: hp('1.5%'),
+        marginBottom: hp('2%'),
+        zIndex: 20,
+    },
+    filterDropBtn: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-start',
-        paddingHorizontal: wp('4%'),
-        paddingBottom: hp('3%'),
-    },
-    btn: {
-        backgroundColor: '#E8F4F3',
-        paddingHorizontal: wp('4%'),
-        paddingVertical: hp('0.8%'),
-        borderRadius: 20,
         alignItems: 'center',
-        marginRight: wp('2%'),
-        marginBottom: hp('1.5%'),
+        justifyContent: 'space-between',
+        backgroundColor: '#E8F4F3',
+        borderRadius: 14,
+        paddingHorizontal: wp('4%'),
+        paddingVertical: hp('1.2%'),
+        gap: 8,
     },
-    activeBtn: { backgroundColor: '#295C59' },
-    btnText: { fontSize: wp('3.4%'), fontWeight: '600', color: '#295C59' },
+    filterDropBtnText: { fontSize: wp('3.6%'), fontWeight: '700', color: '#295C59' },
+    filterDropMenu: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: '#D6E8E7',
+        marginTop: 4,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+    },
+    filterDropItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: wp('4%'),
+        paddingVertical: hp('1.3%'),
+    },
+    filterDropItemActive: { backgroundColor: '#E8F4F3' },
+    filterDropItemText: { fontSize: 14, fontWeight: '500', color: '#1C2B2A' },
+    filterDropItemTextActive: { color: '#295C59', fontWeight: '700' },
 
     /* Calendar */
     calendarCard: {

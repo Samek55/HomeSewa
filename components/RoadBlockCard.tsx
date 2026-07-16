@@ -58,7 +58,7 @@ function CloseButton({ seconds, onClose, running }: { seconds: number; onClose?:
     >
       {counting
         ? <Text style={styles.closeBtnCountText}>{secondsLeft}</Text>
-        : <Ionicons name="close" size={16} color="#fff" />}
+        : <Ionicons name="close" size={24} color="#fff" />}
     </TouchableOpacity>
   );
 }
@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     position: 'absolute', top: 10, right: 10,
-    width: 26, height: 26, borderRadius: 13,
+    width: 39, height: 39, borderRadius: 19.5,
     backgroundColor: 'rgba(30,69,66,0.6)',
     alignItems: 'center', justifyContent: 'center',
   },
-  closeBtnCountText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  closeBtnCountText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 
   seam: {
     height: 0,
