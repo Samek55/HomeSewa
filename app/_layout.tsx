@@ -215,7 +215,12 @@ export default function RootLayout() {
     <KeyboardProvider>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: false }} />
-        {!inAdminArea && <RoadBlockPopup />}
+        {/* Always mounted (not conditionally, unlike before) — inAdminArea toggling on
+            every navigation was unmounting/remounting this and re-triggering its
+            fetch-and-show effect, which is why the banner kept reappearing when moving
+            between pages. It now stays mounted for the whole app session and just
+            suppresses its own visibility while in the admin area. */}
+        <RoadBlockPopup suppressed={inAdminArea} />
       </SafeAreaProvider>
     </KeyboardProvider>
   );

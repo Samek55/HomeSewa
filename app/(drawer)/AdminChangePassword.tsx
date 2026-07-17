@@ -18,38 +18,15 @@ import {
 } from 'react-native-responsive-screen';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../../lib/supabase';
+import { invokeEdgeFunction } from '../../api/functionsClient';
 import Header4 from '@/components/Header4Admin';
 import OtpInput from '@/components/bookings/OtpInput';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
-
-const sendPinChangeSms = async (phone: string, firstName: string) => {
-    const to = '977' + phone.replace(/\D/g, '').slice(-10);
-    const text = `Dear ${firstName}, Your HomeSewa PIN has been changed successfully.\n\nIf you did not request this change, please contact us immediately.\n(9852024365)\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
-    await fetch('https://api.sparrowsms.com/v2/sms/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
-    });
-};
-
-const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
-
-const sendResetOtpSms = async (phone: string, otp: string, firstName: string) => {
-    const to = '977' + phone.replace(/\D/g, '').slice(-10);
-    const text = `Dear ${firstName}, Your HomeSewa PIN reset code is ${otp}.\n\nIf you did not request this, please ignore this message.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
-    const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(`Sparrow error ${response.status}: ${JSON.stringify(data)}`);
-};
+interface SendOtpResponse { success: boolean; message?: string }
+interface SetPinResponse { success: boolean; message?: string; fullName?: string }
 
 export default function AdminChangePassword() {
     const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -67,8 +44,6 @@ export default function AdminChangePassword() {
     // since someone who forgot their PIN by definition can't provide it.
     const [sendingOtp, setSendingOtp] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
-    const [sentOtp, setSentOtp] = useState('');
-    const [resetRecord, setResetRecord] = useState<{ table: 'admin' | 'professional'; full_name: string } | null>(null);
     const [otpBoxes, setOtpBoxes] = useState(['', '', '', '']);
 
     // 4-box PIN state — used by both modes
@@ -93,30 +68,16 @@ export default function AdminChangePassword() {
 
         setSendingOtp(true);
         try {
-            const { data: adminRecord } = await supabase
-                .from('admin')
-                .select('full_name')
-                .eq('phone', cleaned)
-                .maybeSingle();
-
-            const table: 'admin' | 'professional' = adminRecord ? 'admin' : 'professional';
-            const record = adminRecord || (await supabase
-                .from('professional')
-                .select('full_name')
-                .eq('phone', cleaned)
-                .maybeSingle()).data;
-
-            if (!record) {
-                Alert.alert('Error', 'This phone number is not registered.');
+            const result = await invokeEdgeFunction<SendOtpResponse>(
+                'send-otp',
+                { phone: cleaned, purpose: 'pin-reset' },
+                'Could not send verification code. Please try again.'
+            );
+            if (!result.success) {
+                Alert.alert('Error', result.message || 'Could not send verification code.');
                 return;
             }
 
-            const code = generateOtp();
-            const firstName = (record.full_name || '').split(' ')[0] || 'User';
-            await sendResetOtpSms(cleaned, code, firstName);
-
-            setSentOtp(code);
-            setResetRecord({ table, full_name: record.full_name || 'User' });
             setOtpBoxes(['', '', '', '']);
             setOtpSent(true);
         } catch (err: any) {
@@ -145,39 +106,18 @@ export default function AdminChangePassword() {
 
         setLoading(true);
         try {
-            let table: 'admin' | 'professional';
-            let fullName: string;
+            const body: Record<string, unknown> = { phone: cleaned, newPin: resolvedNew };
 
             if (isChangePinMode) {
-                // Super admins/admins live in `admin`; professionals live in `professional`.
-                // `workforce` has no pin column at all, so it never gates PIN changes.
                 const resolvedOld = oldBoxes.join('');
                 if (!resolvedOld || resolvedOld.length !== 4) {
                     Alert.alert('Validation Error', 'Please enter your current 4-digit PIN');
                     return;
                 }
-
-                const { data: adminRecord } = await supabase
-                    .from('admin')
-                    .select('pin, full_name')
-                    .eq('phone', cleaned)
-                    .maybeSingle();
-
-                const resolvedTable = adminRecord ? 'admin' : 'professional';
-                const record = adminRecord || (await supabase
-                    .from('professional')
-                    .select('pin, full_name')
-                    .eq('phone', cleaned)
-                    .maybeSingle()).data;
-
-                if (!record || record.pin !== resolvedOld) {
-                    Alert.alert('Error', 'Current PIN is incorrect');
-                    return;
-                }
-                table = resolvedTable;
-                fullName = record.full_name || 'User';
+                body.mode = 'change';
+                body.oldPin = resolvedOld;
             } else {
-                if (!otpSent || !resetRecord) {
+                if (!otpSent) {
                     Alert.alert('Error', 'Please verify your phone number first.');
                     return;
                 }
@@ -186,19 +126,32 @@ export default function AdminChangePassword() {
                     Alert.alert('Validation Error', 'Please enter the 4-digit code sent to your phone');
                     return;
                 }
-                if (enteredOtp !== sentOtp) {
-                    Alert.alert('Invalid Code', 'The code you entered is incorrect.');
-                    return;
-                }
-                table = resetRecord.table;
-                fullName = resetRecord.full_name;
+                body.mode = 'reset';
+                body.otpCode = enteredOtp;
             }
 
-            const { error } = await supabase.from(table).update({ pin: resolvedNew }).eq('phone', cleaned);
-            if (error) throw error;
+            // set-pin verifies the current PIN (or OTP) and hashes the new one entirely
+            // server-side — the client never sees or compares a plaintext PIN.
+            const result = await invokeEdgeFunction<SetPinResponse>(
+                'set-pin',
+                body,
+                'Could not update PIN. Please try again.'
+            );
 
-            const firstName = (fullName || '').split(' ')[0] || 'User';
-            sendPinChangeSms(cleaned, firstName).catch(() => {});
+            if (!result.success) {
+                Alert.alert('Error', result.message || 'Could not update PIN.');
+                return;
+            }
+
+            // Clear the whole form now — this screen instance can be revisited (e.g.
+            // backing into Reset PIN again from the Admin gate) and previously it kept
+            // showing the phone number, OTP code, and PIN boxes from the last attempt.
+            setPhoneNumber('');
+            setOtpSent(false);
+            setOtpBoxes(['', '', '', '']);
+            setOldBoxes(['', '', '', '']);
+            setNewBoxes(['', '', '', '']);
+            setConfirmBoxes(['', '', '', '']);
 
             Alert.alert('Success', 'PIN updated successfully', [
                 { text: 'OK', onPress: () => isChangePinMode ? router.back() : router.push('/Admin') },

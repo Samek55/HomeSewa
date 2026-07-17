@@ -1,8 +1,17 @@
-import { compare, hash } from 'https://esm.sh/bcryptjs@2.4.3';
+// bcryptjs (both the esm.sh and npm: specifier forms) fails to boot on this
+// project's Edge Runtime with a bare BOOT_ERROR — bcrypt-ts is a pure-TS
+// implementation that boots fine and produces the same $2a$/$2b$ hash format,
+// so it verifies correctly against pin_hash values written by Postgres'
+// crypt(pin, gen_salt('bf')) in migration 0001_security_hardening.sql.
+import { compare, hash } from 'npm:bcrypt-ts@5';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { supabaseAdmin, cleanPhone } from '../_shared/supabaseAdmin.ts';
 
-const SPARROW_TOKEN = Deno.env.get('SPARROW_TOKEN')!;
+// This project's account/access-token can't set Edge Function secrets (dashboard/
+// Management API both reject it), so the Sparrow token is stored in Supabase Vault
+// instead and read here via a service-role-only RPC — see public.get_vault_secret
+// in the database (migration 0012_vault_secret_helper.sql), granted to service_role only.
+const { data: SPARROW_TOKEN } = await supabaseAdmin.rpc('get_vault_secret', { secret_name: 'sparrow_token' });
 
 const sendPinChangeSms = async (phone: string, firstName: string) => {
   const to = '977' + phone;
@@ -77,10 +86,16 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from('otp_codes').delete().eq('id', otpRow.id);
     }
 
+    // AdminLogin.tsx still authenticates against the plaintext `pin` column (not
+    // pin_hash — the admin-login Edge Function that does hash-based login was built
+    // but never wired in), so `pin` must be updated here too or the "new" PIN would
+    // never actually work at the real login screen. The sync_pin_hash trigger
+    // (migration 0014) would recompute pin_hash from `pin` on its own, but it's set
+    // explicitly here anyway since bcrypt-ts already computed it.
     const newHash = await hash(String(newPin), 10);
     const { error } = await supabaseAdmin
       .from(table)
-      .update({ pin_hash: newHash, failed_attempts: 0, locked_until: null })
+      .update({ pin: String(newPin), pin_hash: newHash, failed_attempts: 0, locked_until: null })
       .eq('id', account.id);
     if (error) throw new Error(error.message);
 

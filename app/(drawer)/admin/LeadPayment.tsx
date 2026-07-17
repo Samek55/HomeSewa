@@ -7,12 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header4 from '@/components/Header4Admin';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { initiateKhaltiPayment, lookupKhaltiPayment } from '@/api/khalti';
-import { isLeadUnlocked, recordLeadUnlock } from '@/api/leadUnlocks';
-import { LEAD_FEE_NPR, LEAD_FEE_REGULAR_NPR, LEAD_FEE_PAISA } from '@/src/constants/leadFee';
+import { initiateLeadPayment, confirmLeadUnlock } from '@/api/khalti';
+import { LEAD_FEE_NPR, LEAD_FEE_REGULAR_NPR } from '@/src/constants/leadFee';
 
 // 'recordFailed' is distinct from 'error': it means Khalti already confirmed the payment and
-// only the follow-up unlock write failed, so its retry must NOT re-run the payment (no double charge).
+// only the follow-up unlock confirmation failed, so its retry must NOT re-run the payment
+// (confirmLeadUnlock is idempotent — safe to call again with the same pidx).
 type Stage = 'offer' | 'initiating' | 'waiting' | 'recording' | 'success' | 'error' | 'recordFailed';
 
 export default function LeadPayment() {
@@ -26,16 +26,19 @@ export default function LeadPayment() {
 
     useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
-    // Runs once Khalti confirms the payment. Safe to call again on retry: it checks for an
-    // existing unlock first, so a professional who already paid is never charged twice.
+    // Asks the khalti-confirm-lead-unlock Edge Function to look up the payment with Khalti
+    // and record the unlock server-side. Safe to call again on retry — it's idempotent.
     const finalizeUnlock = async () => {
         setStage('recording');
         try {
-            if (!(await isLeadUnlocked(bookingId!, phoneRef.current))) {
-                await recordLeadUnlock(bookingId!, phoneRef.current, pidxRef.current, LEAD_FEE_PAISA);
+            const result = await confirmLeadUnlock(bookingId!, phoneRef.current, pidxRef.current);
+            if (result.success) {
+                setStage('success');
+            } else {
+                setErrorMsg('Payment succeeded, but we could not confirm the unlock. Tap Retry — you will not be charged again.');
+                setStage('recordFailed');
             }
-            setStage('success');
-        } catch (e: any) {
+        } catch {
             setErrorMsg('Payment succeeded, but we could not confirm the unlock. Tap Retry — you will not be charged again.');
             setStage('recordFailed');
         }
@@ -47,13 +50,7 @@ export default function LeadPayment() {
         try {
             const phone = (await AsyncStorage.getItem('adminPhone')) || '';
             phoneRef.current = phone;
-            const res = await initiateKhaltiPayment({
-                amountPaisa: LEAD_FEE_PAISA,
-                orderId: `LEAD-${bookingId}-${Date.now()}`,
-                orderName: 'HomeSewa Lead Opening Fee',
-                customerName: 'HomeSewa Professional',
-                customerPhone: phone.replace(/\D/g, '').slice(-10),
-            });
+            const res = await initiateLeadPayment(bookingId, phone.replace(/\D/g, '').slice(-10));
             pidxRef.current = res.pidx;
 
             Linking.openURL(res.payment_url);
@@ -61,17 +58,19 @@ export default function LeadPayment() {
 
             pollRef.current = setInterval(async () => {
                 try {
-                    const lookup = await lookupKhaltiPayment(res.pidx);
-                    if (lookup.status === 'Completed') {
+                    const result = await confirmLeadUnlock(bookingId, phoneRef.current, res.pidx);
+                    if (result.success) {
                         clearInterval(pollRef.current!);
-                        await finalizeUnlock();
-                    } else if (lookup.status === 'Expired' || lookup.status === 'User canceled') {
+                        setStage('success');
+                    } else if (result.status === 'Expired' || result.status === 'User canceled') {
                         clearInterval(pollRef.current!);
                         setErrorMsg('Payment was not completed. Please try again.');
                         setStage('error');
                     }
+                    // Any other status (Pending/Initiated, or a transient lookup error) just
+                    // keeps polling.
                 } catch {
-                    // transient lookup error — keep polling
+                    // transient error — keep polling
                 }
             }, 4000);
         } catch (e: any) {

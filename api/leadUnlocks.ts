@@ -16,13 +16,3 @@ export async function isLeadUnlocked(bookingId: string, professionalPhone: strin
 
   return !!data;
 }
-
-// Records a completed lead-opening-fee payment so the contact stays unlocked for this professional.
-export async function recordLeadUnlock(bookingId: string, professionalPhone: string, pidx: string, amountPaisa: number) {
-  const phone = cleanPhone(professionalPhone);
-  const { error } = await supabase
-    .from('lead_unlocks')
-    .insert([{ booking_id: bookingId, professional_phone: phone, pidx, amount: amountPaisa }]);
-
-  if (error) throw new Error(error.message);
-}

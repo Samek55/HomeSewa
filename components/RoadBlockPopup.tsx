@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal, View, StyleSheet, Linking } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,26 +30,36 @@ async function resolveViewer(): Promise<RoadBlockViewer> {
     return { role: 'public' };
 }
 
-// Shows the active banner on every app open — no per-device dismissal memory,
-// so closing it once doesn't hide it from that device on the next launch.
-export default function RoadBlockPopup() {
+// Shows the active banner once per app open — no per-device dismissal memory, so
+// closing it once doesn't hide it from that device on the next launch, but it
+// won't re-show again this session just from navigating between pages (this
+// component now stays mounted for the app's whole lifetime; see app/_layout.tsx).
+export default function RoadBlockPopup({ suppressed }: { suppressed: boolean }) {
     const [roadBlock, setRoadBlock] = useState<RoadBlock | null>(null);
     const [visible, setVisible] = useState(false);
+    const alreadyShownRef = useRef(false);
 
     useEffect(() => {
         (async () => {
             try {
                 const viewer = await resolveViewer();
                 const active = await fetchActiveRoadBlock(viewer);
-                if (!active) return;
-
-                setRoadBlock(active);
-                setVisible(true);
+                if (active) setRoadBlock(active);
             } catch (e) {
                 console.warn('RoadBlockPopup: could not load active banner', e);
             }
         })();
     }, []);
+
+    // Shows the banner the first time we're eligible (loaded and not in the admin
+    // area) and never again after that for the rest of this app session, even if
+    // the user dismisses it or moves in and out of the admin area repeatedly.
+    useEffect(() => {
+        if (roadBlock && !suppressed && !alreadyShownRef.current) {
+            alreadyShownRef.current = true;
+            setVisible(true);
+        }
+    }, [roadBlock, suppressed]);
 
     const dismiss = () => setVisible(false);
 

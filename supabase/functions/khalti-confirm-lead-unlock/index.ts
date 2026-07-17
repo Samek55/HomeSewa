@@ -1,9 +1,20 @@
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { supabaseAdmin, cleanPhone } from '../_shared/supabaseAdmin.ts';
 
-const KHALTI_SECRET_KEY = Deno.env.get('KHALTI_SECRET_KEY')!;
-const KHALTI_BASE = Deno.env.get('KHALTI_BASE_URL') ?? 'https://a.khalti.com/api/v2';
-const LEAD_FEE_PAISA = 4900;
+// This Supabase account's access token doesn't have permission to set Edge Function
+// secrets (dashboard/Management API both reject it), so the Khalti key is stored in
+// Supabase Vault instead and read here via a service-role-only RPC — see
+// public.get_vault_secret in the database, granted to service_role only.
+const { data: KHALTI_SECRET_KEY } = await supabaseAdmin.rpc('get_vault_secret', { secret_name: 'khalti_secret_key' });
+const KHALTI_BASE = 'https://khalti.com/api/v2';
+// Authoritative charged/validated amount — this is the one place that actually
+// gates whether a Khalti payment counts as a valid unlock. Shares the
+// LEAD_FEE_PAISA env var with khalti-initiate-lead-payment, so change it via
+// either function's env var (Supabase dashboard -> Edge Functions -> Secrets),
+// no redeploy needed. LEAD_FEE_NPR in src/constants/leadFee.ts is only the client's
+// *display* price and is not read by this function (a Deno edge function can't
+// import from the Expo app) — update it by hand to match whenever this changes.
+const LEAD_FEE_PAISA = Number(Deno.env.get('LEAD_FEE_PAISA')) || 9900;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });

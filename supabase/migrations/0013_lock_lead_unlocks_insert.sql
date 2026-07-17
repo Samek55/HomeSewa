@@ -1,0 +1,13 @@
+-- 0001_security_hardening.sql's comments claimed anon INSERT on lead_unlocks was
+-- already blocked ("writes now only ever happen via khalti-confirm-lead-unlock's
+-- service role"), but that was never actually true on the live database — a
+-- policy named lead_unlocks_insert (INSERT, role public, with_check: true) existed
+-- outside of any tracked migration, letting anyone with the public anon key insert
+-- a fake unlock row (any booking_id/phone/pidx/amount) with zero payment
+-- verification. Found by querying pg_policies directly instead of trusting the
+-- migration file's stated intent.
+--
+-- Now that LeadPayment.tsx / api/leadUnlocks.ts no longer insert into this table at
+-- all (khalti-confirm-lead-unlock's service role does the only legitimate write,
+-- which bypasses RLS regardless), this policy was pure risk with no remaining use.
+drop policy if exists lead_unlocks_insert on lead_unlocks;
