@@ -11,16 +11,7 @@ import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSignedDocumentUrl } from '@/api/uploadToStorage';
-
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
-const sendSparrowSms = async (phone: string, text: string) => {
-    const to = '977' + phone.replace(/\D/g, '').slice(-10);
-    await fetch('https://api.sparrowsms.com/v2/sms/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
-    });
-};
+import { invokeEdgeFunction } from '@/api/functionsClient';
 
 type Professional = {
     uin: number;
@@ -167,31 +158,25 @@ export default function ProfessionalVerification() {
         Alert.alert('Approve', `Approve ${name} as a professional?`, [
             { text: 'Cancel', style: 'cancel' },
             {
+                // Activation, the PIN reveal, and the approval SMS all happen
+                // server-side now — `pin` is no longer readable by the anon key
+                // (see 0016_lock_pin_columns.sql), so the client can't select it
+                // back out itself anymore.
                 text: 'Approve', onPress: async () => {
-                    const { error: wfError } = await supabase.from('workforce').update({ profile_status: 'Active' }).eq('uin', uin);
-                    // The professional row (with login PIN) was created at signup with status 'Pending' — activate it now.
-                    const { data: proRow, error: proError } = await supabase
-                        .from('professional')
-                        .update({ status: 'Active' })
-                        .eq('phone', phone)
-                        .select('pin')
-                        .single();
+                    const result = await invokeEdgeFunction<{ success: boolean; message?: string }>(
+                        'approve-professional',
+                        { uin, phone, name },
+                        'Could not activate this account',
+                        { requireSession: true }
+                    ).catch((e: any) => ({ success: false, message: e?.message }));
 
-                    if (wfError || proError || !proRow) {
-                        console.error('Approval failed:', wfError || proError);
-                        Alert.alert('Approval Failed', `Could not activate ${name}'s account. Please try again.`);
+                    if (!result.success) {
+                        Alert.alert('Approval Failed', result.message || `Could not activate ${name}'s account. Please try again.`);
                         return;
                     }
 
                     setPending(prev => prev.filter(p => p.uin !== uin));
                     setSelected(null);
-
-                    // Send login details SMS now that they're approved
-                    const firstName = name.split(' ')[0] || 'Professional';
-                    const approvalText =
-                        `Dear ${firstName}, congratulations! Your HomeSewa Professional application has been approved.\n\nYour Login Details:\nPhone: ${phone}\nPIN: ${proRow.pin}\n\nDownload the HomeSewa app and login using the details above.\n\nYou can change your PIN after logging in.\n\nWelcome to HomeSewa!\n( www.homesewa.app )`;
-                    sendSparrowSms(phone, approvalText).catch(() => {});
-
                     Alert.alert('Approved', `${name} has been approved. Login details sent via SMS.`);
                 }
             },
@@ -202,16 +187,24 @@ export default function ProfessionalVerification() {
         Alert.alert('Reject', `Reject ${name}'s application?`, [
             { text: 'Cancel', style: 'cancel' },
             {
+                // Both status writes + the rejection SMS happen server-side now —
+                // workforce.profile_status and professional.status are no longer
+                // anon-writable (see 0017_lock_workforce_verification_status.sql).
                 text: 'Reject', style: 'destructive', onPress: async () => {
-                    await supabase.from('workforce').update({ profile_status: 'Rejected' }).eq('uin', uin);
-                    await supabase.from('professional').update({ status: 'Rejected' }).eq('phone', phone);
+                    const result = await invokeEdgeFunction<{ success: boolean; message?: string }>(
+                        'reject-professional',
+                        { uin, phone, name },
+                        'Could not reject this application',
+                        { requireSession: true }
+                    ).catch((e: any) => ({ success: false, message: e?.message }));
+
+                    if (!result.success) {
+                        Alert.alert('Rejection Failed', result.message || `Could not reject ${name}'s application. Please try again.`);
+                        return;
+                    }
+
                     setPending(prev => prev.filter(p => p.uin !== uin));
                     setSelected(null);
-
-                    const firstName = name.split(' ')[0] || 'Applicant';
-                    const rejectionText =
-                        `Dear ${firstName}, your request for joining HomeSewa App as a professional has been rejected. Please contact our call center on 9852024365.`;
-                    sendSparrowSms(phone, rejectionText).catch(() => {});
                 }
             },
         ]);

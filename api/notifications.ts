@@ -1,11 +1,8 @@
-import axios from 'axios';
 import { supabase } from '../lib/supabase';
 import { maskCustomerName } from '../src/utils/maskName';
-
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
+import { invokeEdgeFunction } from './functionsClient';
 
 const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID;
-const ONESIGNAL_REST_API_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY;
 
 const NOTIFICATION_DEFAULTS = {
   // Must match the actual generated drawable names (see onesignal-expo-plugin config in
@@ -16,27 +13,19 @@ const NOTIFICATION_DEFAULTS = {
   android_accent_color: 'FF295C59',      // green tint for small icon (no # prefix for OneSignal)
 };
 
-const sendNotification = async (payload: object) => {
-  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-    console.log('Notification skipped: missing OneSignal config');
-    return;
-  }
-  await axios.post(
-    'https://api.onesignal.com/notifications',
-    { app_id: ONESIGNAL_APP_ID, ...NOTIFICATION_DEFAULTS, ...payload },
-    {
-      headers: {
-        Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-};
-
-// Persists a copy of every notification sent so the in-app "My Notifications" screen can show
-// history — never blocks or fails the actual push send if this write has a problem.
+// The actual OneSignal call (and its REST API key) live server-side in the
+// send-notification Edge Function now — anyone holding that key could push
+// arbitrary notifications to every HomeSewa user, so it can never ship in the
+// client bundle. This just builds the same payload as before and hands it off.
+//
+// `log`, when given, is forwarded as `_log` — send-notification uses it to
+// write the audit-log row into public.notifications server-side (the anon
+// key can no longer insert into that table directly, see
+// 0020_lock_notifications_insert.sql), so the in-app "My Notifications"
+// history is written by the same call that sends the push, not a separate
+// client-side insert.
 type NotificationAudience = 'professional_open' | 'customer_specific' | 'customer_all' | 'admin_all' | 'super_admin' | 'public_all' | 'all';
-const logNotification = async (row: {
+interface NotificationLog {
   title: string;
   body: string;
   screen?: string;
@@ -45,21 +34,17 @@ const logNotification = async (row: {
   service?: string;
   city?: string;
   phone?: string;
-}) => {
-  try {
-    await supabase.from('notifications').insert([{
-      title: row.title,
-      body: row.body,
-      screen: row.screen || null,
-      link_id: row.linkId || null,
-      audience: row.audience,
-      audience_service: row.service || null,
-      audience_city: row.city || null,
-      audience_phone: row.phone || null,
-    }]);
-  } catch (e) {
-    console.log('logNotification failed:', e);
+}
+const sendNotification = async (payload: object, log?: NotificationLog) => {
+  if (!ONESIGNAL_APP_ID) {
+    console.log('Notification skipped: missing OneSignal config');
+    return;
   }
+  await invokeEdgeFunction<{ success: boolean; message?: string }>(
+    'send-notification',
+    { app_id: ONESIGNAL_APP_ID, ...NOTIFICATION_DEFAULTS, ...payload, _log: log },
+    'Could not send notification'
+  );
 };
 
 // Service booking for notifying careers → service providers who serve that specific area and service
@@ -160,8 +145,7 @@ export async function notifyUsers(
       headings: { en: title },
       contents: { en: body },
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body, screen: '/Home', audience: 'customer_specific', phone: cleanCustomerPhone }).catch(() => {});
+    }, { title, body, screen: '/Home', audience: 'customer_specific', phone: cleanCustomerPhone });
 
     console.log(`Notification safely sent to customer tag phone: ${cleanCustomerPhone}`);
   } catch (error: any) {
@@ -199,8 +183,7 @@ export async function notifyAdminNewProfessional(applicantName: string, position
       headings: { en: title },
       contents: { en: body },
       data: { screen: '/admin/ProfessionalVerification' },
-    });
-    logNotification({ title, body, screen: '/admin/ProfessionalVerification', audience: 'super_admin' }).catch(() => {});
+    }, { title, body, screen: '/admin/ProfessionalVerification', audience: 'super_admin' });
   } catch (error: any) {
     console.log('New professional notification error:', error?.response?.data || error.message);
   }
@@ -219,8 +202,7 @@ export async function notifyAdmins(applicantName: string) {
       contents: { en: body },
       // No dedicated partnership-review screen exists yet — lands on Home for now.
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body, screen: '/Home', audience: 'admin_all' }).catch(() => {});
+    }, { title, body, screen: '/Home', audience: 'admin_all' });
     console.log('Admin notification sent for partnership:', applicantName);
   } catch (error: any) {
     console.log('Admin notification error:', error?.response?.data || error.message);
@@ -237,8 +219,7 @@ export async function notifyAdminsBroadcast(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body: message, screen: '/Home', audience: 'admin_all' }).catch(() => {});
+    }, { title, body: message, screen: '/Home', audience: 'admin_all' });
     console.log('Admin broadcast notification sent:', title);
   } catch (error: any) {
     console.log('notifyAdminsBroadcast error:', error?.response?.data || error.message);
@@ -280,8 +261,7 @@ export async function notifyProfessionalsInCity(service: string | string[], city
       headings: { en: title },
       contents: { en: body },
       data: { screen: '/admin/BookingHistory' },
-    });
-    logNotification({ title, body, screen: '/admin/BookingHistory', audience: 'professional_open', service: serviceLabel, city: cityLabel }).catch(() => {});
+    }, { title, body, screen: '/admin/BookingHistory', audience: 'professional_open', service: serviceLabel, city: cityLabel });
 
     console.log(`City push sent to ${phones.length} professionals for "${serviceLabel}" in "${cityLabel}"`);
   } catch (error: any) {
@@ -327,8 +307,7 @@ export async function pushAreaProfessionals(service: string, area: string, custo
       headings: { en: title },
       contents: { en: body },
       data: bookingId ? { screen, id: bookingId } : { screen },
-    });
-    logNotification({ title, body, screen, linkId: bookingId, audience: 'professional_open', service: cleanService, city: cleanCity }).catch(() => {});
+    }, { title, body, screen, linkId: bookingId, audience: 'professional_open', service: cleanService, city: cleanCity });
 
     console.log(`Push sent to ${phones.length} "${cleanService}" professionals in "${cleanCity}"`);
   } catch (error: any) {
@@ -369,8 +348,7 @@ export async function notifyProfessionalsAccepted(service: string, city: string,
       headings: { en: title },
       contents: { en: body },
       data: { screen: '/admin/BookingHistory' },
-    });
-    logNotification({ title, body, screen: '/admin/BookingHistory', audience: 'professional_open', service, city }).catch(() => {});
+    }, { title, body, screen: '/admin/BookingHistory', audience: 'professional_open', service, city });
 
     console.log(`Accepted push sent to ${phones.length} professionals for "${service}" in "${city}"`);
   } catch (error: any) {
@@ -417,8 +395,7 @@ export async function notifyProfessionalsRejected(service: string, city: string,
       headings: { en: title },
       contents: { en: body },
       data: bookingId ? { screen, id: bookingId } : { screen },
-    });
-    logNotification({ title, body, screen, linkId: bookingId, audience: 'professional_open', service: cleanService, city: cleanCity }).catch(() => {});
+    }, { title, body, screen, linkId: bookingId, audience: 'professional_open', service: cleanService, city: cleanCity });
 
     console.log(`Rejected-job push sent to ${phones.length} professionals for "${cleanService}" in "${cleanCity}"`);
   } catch (error: any) {
@@ -455,8 +432,7 @@ export async function notifyCustomersByService(service: string | string[], title
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body: message, screen: '/Home', audience: 'customer_specific', service: serviceLabel }).catch(() => {});
+    }, { title, body: message, screen: '/Home', audience: 'customer_specific', service: serviceLabel });
 
     console.log(`Service push sent to ${phones.length} customers for "${serviceLabel}"`);
   } catch (error: any) {
@@ -473,8 +449,7 @@ export async function notifyCustomers(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body: message, screen: '/Home', audience: 'customer_all' }).catch(() => {});
+    }, { title, body: message, screen: '/Home', audience: 'customer_all' });
     console.log('Customer notification sent:', title);
   } catch (error: any) {
     console.log('Customer notification error:', error?.response?.data || error.message);
@@ -491,8 +466,7 @@ export async function notifyPublic(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body: message, screen: '/Home', audience: 'public_all' }).catch(() => {});
+    }, { title, body: message, screen: '/Home', audience: 'public_all' });
     console.log('Public notification sent:', title);
   } catch (error: any) {
     console.log('notifyPublic error:', error?.response?.data || error.message);
@@ -508,8 +482,7 @@ export async function notifyAll(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    });
-    logNotification({ title, body: message, screen: '/Home', audience: 'all' }).catch(() => {});
+    }, { title, body: message, screen: '/Home', audience: 'all' });
     console.log('Broadcast notification sent:', title);
   } catch (error: any) {
     console.log('Broadcast notification error:', error?.response?.data || error.message);

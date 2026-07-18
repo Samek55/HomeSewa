@@ -18,6 +18,8 @@ import { router } from 'expo-router';
 import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../../lib/supabase';
+import { FunctionsHttpError } from '@supabase/supabase-js';
+import { invokeEdgeFunction } from '../../../api/functionsClient';
 import { DeviceEventEmitter } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -44,58 +46,54 @@ export default function AdminLogin() {
             }
             const cleaned = phoneNumber.replace(/\s/g, '');
 
-            // Super admins/admins live in `admin`; professionals live in their own
-            // `professional` table (no `role` column there — the table is the role).
-            // `workforce` only holds richer profile data (services/areas) — it has
-            // no pin/status columns compatible with login, so it must not gate auth.
-            const { data: adminRow } = await supabase
-                .from('admin')
-                .select('id, full_name, status, pin, role')
-                .eq('phone', cleaned)
-                .maybeSingle();
+            // PIN check happens server-side in the admin-login Edge Function, which
+            // compares against the bcrypt pin_hash (never the plaintext pin column)
+            // and rate-limits/locks out after repeated failures. The client must
+            // never read admin/professional PIN data directly — those tables are
+            // open to the anon key for other columns, so a client-side comparison
+            // would let anyone with the app installed pull every account's PIN.
+            const { data, error } = await supabase.functions.invoke('admin-login', {
+                body: { phone: cleaned, pin: password },
+            });
 
-            let account: any = adminRow;
-            const isProfessional = !adminRow;
-
-            if (isProfessional) {
-                const { data: proRow } = await supabase
-                    .from('professional')
-                    .select('id, full_name, status, pin')
-                    .eq('phone', cleaned)
-                    .maybeSingle();
-                account = proRow;
-            }
-
-            if (!account || account.pin !== password) {
-                Alert.alert('Login Failed', 'Invalid phone or PIN');
-                return;
+            let result: any = data;
+            if (error) {
+                if (error instanceof FunctionsHttpError) {
+                    try { result = await error.context.json(); } catch { result = null; }
+                }
+                if (!result) {
+                    Alert.alert('Login Failed', 'Invalid phone or PIN');
+                    return;
+                }
             }
 
-            if (account.status === 'Pending') {
-                Alert.alert(
-                    'Approval Pending',
-                    'Your application is currently under review by the admin. You will receive an SMS with your login details once your profile is approved.\n\nThank you for your patience.'
-                );
+            if (!result.success) {
+                if (result.status === 'Pending') {
+                    Alert.alert(
+                        'Approval Pending',
+                        'Your application is currently under review by the admin. You will receive an SMS with your login details once your profile is approved.\n\nThank you for your patience.'
+                    );
+                    return;
+                }
+                if (result.status === 'Rejected') {
+                    Alert.alert(
+                        'Application Rejected',
+                        'Your professional application was not approved. Please contact HomeSewa support for more information.'
+                    );
+                    return;
+                }
+                if (result.status === 'Inactive') {
+                    Alert.alert(
+                        'Account Disabled',
+                        'Your account has been disabled by the admin. Please contact HomeSewa support.'
+                    );
+                    return;
+                }
+                Alert.alert('Login Failed', result.message || 'Invalid phone or PIN');
                 return;
             }
-            if (account.status === 'Rejected') {
-                Alert.alert(
-                    'Application Rejected',
-                    'Your professional application was not approved. Please contact HomeSewa support for more information.'
-                );
-                return;
-            }
-            if (account.status === 'Inactive') {
-                Alert.alert(
-                    'Account Disabled',
-                    'Your account has been disabled by the admin. Please contact HomeSewa support.'
-                );
-                return;
-            }
-            if (account.status !== 'Active') {
-                Alert.alert('Login Failed', 'Invalid phone or PIN');
-                return;
-            }
+
+            const isProfessional = result.role === 'professional';
 
             // Best-effort profile enrichment (city/services) for OneSignal tags.
             let worker: any = null;
@@ -108,12 +106,19 @@ export default function AdminLogin() {
                 worker = wf;
             }
 
-            const displayName = account.full_name || 'Admin';
+            const displayName = result.displayName || 'Admin';
             const adminTable = isProfessional ? 'workforce' : 'admins';
             await AsyncStorage.setItem('adminPhone', cleaned);
             await AsyncStorage.setItem('adminTable', adminTable);
-            await AsyncStorage.setItem('adminRole', isProfessional ? 'professional' : (account.role || ''));
+            await AsyncStorage.setItem('adminRole', result.role || '');
             await AsyncStorage.setItem('userProfileSetupCompleted', 'true');
+            // Server-verifiable session (0021_admin_sessions.sql) — required by
+            // admin-create/approve-professional/reject-professional/
+            // toggle-professional-status so those can no longer be called by
+            // anyone holding just the anon key.
+            if (result.sessionToken) {
+                await AsyncStorage.setItem('adminSessionToken', result.sessionToken);
+            }
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.login(cleaned);
@@ -138,7 +143,11 @@ export default function AdminLogin() {
 
     const handleLogout = async () => {
         try {
-            await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole']);
+            // Revokes the session server-side — deleting the row is what makes
+            // this a real logout, not just clearing local state (the token
+            // would otherwise quietly keep working until its 30-day expiry).
+            invokeEdgeFunction('logout', {}, '', { requireSession: true }).catch(() => {});
+            await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole', 'adminSessionToken']);
             try {
                 const { OneSignal } = require('react-native-onesignal');
                 OneSignal.logout();

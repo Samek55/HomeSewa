@@ -17,6 +17,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Header2 from '@/components/Header2';
 import { OneSignal } from 'react-native-onesignal';
 import { supabase } from '../../../../lib/supabase';
+import { invokeEdgeFunction } from '../../../../api/functionsClient';
 import OtpInput from '@/components/bookings/OtpInput';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -24,31 +25,11 @@ const { width, height } = Dimensions.get('window');
 
 const scaleFont = (size: number) => (size * width) / 375;
 
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
-
-const sendSparrowOtp = async (phone: string, otp: string, firstName: string) => {
-  const to = '977' + phone;
-  const text = `Dear ${firstName}, Your Service Booking OTP code is ${otp}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
-  const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      token: SPARROW_TOKEN,
-      from: 'TheAlert',
-      to,
-      text,
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  console.log('[Sparrow] response status:', response.status, 'body:', JSON.stringify(data));
-  if (!response.ok) throw new Error(`Sparrow error ${response.status}: ${JSON.stringify(data)}`);
-};
-
-const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
+interface SendOtpResponse { success: boolean; message?: string }
+interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function BookingOtp() {
   const [otp, setOtp] = useState(['', '', '', '']);
-  const [sentOtp, setSentOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -67,11 +48,15 @@ export default function BookingOtp() {
   } = useLocalSearchParams();
 
   const sendOtp = async () => {
-    const code = generateOtp();
-    setSentOtp(code);
-    const firstName = String(name || '').split(' ')[0] || 'Customer';
     try {
-      await sendSparrowOtp(String(number), code, firstName);
+      const result = await invokeEdgeFunction<SendOtpResponse>(
+        'send-otp',
+        { phone: String(number), purpose: 'booking', name: String(name || '') },
+        'Could not send verification code. Please try again.'
+      );
+      if (!result.success) {
+        Alert.alert('SMS Error', result.message || 'Could not send verification code. Please try again.');
+      }
     } catch (err: any) {
       Alert.alert('SMS Error', err?.message || 'Could not send verification code. Please try again.');
     }
@@ -98,14 +83,20 @@ export default function BookingOtp() {
       return;
     }
 
-    if (enteredOtp !== sentOtp) {
-      Alert.alert('Invalid Code', 'The code you entered is incorrect. Please try again.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
+      const verifyResult = await invokeEdgeFunction<VerifyOtpResponse>(
+        'verify-otp',
+        { phone: String(number), purpose: 'booking', code: enteredOtp },
+        'Could not verify the code. Please try again.'
+      );
+      if (!verifyResult.verified) {
+        Alert.alert('Invalid Code', verifyResult.message || 'The code you entered is incorrect. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
       if (number) {
         try {
           OneSignal.login(String(number));

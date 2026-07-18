@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
+import { invokeEdgeFunction } from '../../../api/functionsClient';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -349,11 +350,19 @@ export default function UserManagement() {
 
     const toggleProfessional = async (id: number, phone: string, currentStatus: string) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-        const now = new Date().toISOString();
-        const { error } = await supabase.from('professional').update({ status: newStatus, modified_at: now }).eq('id', id);
-        if (error) return Alert.alert('Error', error.message);
-        await supabase.from('workforce').update({ profile_status: newStatus, updated_at: now })
-            .or(`phone.eq.${phone},phone.eq.977${phone}`);
+        // Both status writes happen server-side now — professional.status and
+        // workforce.profile_status are no longer anon-writable (see
+        // 0017_lock_workforce_verification_status.sql).
+        const result = await invokeEdgeFunction<{ success: boolean; message?: string; modifiedAt?: string }>(
+            'toggle-professional-status',
+            { id, phone, status: newStatus },
+            'Could not update status',
+            { requireSession: true }
+        ).catch((e: any) => ({ success: false, message: e?.message, modifiedAt: undefined }));
+
+        if (!result.success) return Alert.alert('Error', result.message || 'Could not update status');
+
+        const now = result.modifiedAt || new Date().toISOString();
         setProfessionals(prev => prev.map(p => p.id === id ? { ...p, status: newStatus, modified_at: now } : p));
     };
 
@@ -437,50 +446,41 @@ export default function UserManagement() {
 
         setAddingAdmin(true);
         try {
-            // Professionals live in their own table now, so promoting one to Admin
-            // means moving the row across tables, not just flipping a role field.
-            const [{ data: existingAdmin }, { data: existingPro }] = await Promise.all([
-                supabase.from('admin').select('id').eq('phone', cleanPhone).maybeSingle(),
-                supabase.from('professional').select('id, full_name, pin').eq('phone', cleanPhone).maybeSingle(),
-            ]);
+            // This lookup only decides which form fields to require below — the
+            // actual promotion/creation (including any pin read/write) happens
+            // server-side in admin-create, since the anon key can no longer read
+            // or write the pin column directly (0016_lock_pin_columns.sql).
+            const { data: existingPro } = await supabase
+                .from('professional').select('id, full_name').eq('phone', cleanPhone).maybeSingle();
 
-            if (existingAdmin) {
-                Alert.alert('Already an Admin', 'This phone number already has Admin access.');
-                return;
+            if (!existingPro) {
+                if (!newAdminName.trim()) { Alert.alert('Validation', 'Enter a full name.'); return; }
+                if (newAdminPin.length !== 4) { Alert.alert('Validation', 'Enter a 4-digit PIN.'); return; }
             }
 
             const citiesToSave = newAdminCities.length > 0 ? newAdminCities : null;
 
-            if (existingPro) {
-                const { error: insertErr } = await supabase.from('admin').insert([{
-                    full_name: existingPro.full_name,
+            const result = await invokeEdgeFunction<{ success: boolean; message?: string; mode?: 'promoted' | 'created' }>(
+                'admin-create',
+                {
                     phone: cleanPhone,
-                    pin: existingPro.pin,
-                    role: 'admin',
-                    status: 'Active',
-                    allowed_cities: citiesToSave,
-                }]);
-                if (insertErr) throw insertErr;
-                const { error: deleteErr } = await supabase.from('professional').delete().eq('id', existingPro.id);
-                if (deleteErr) throw deleteErr;
-                // Their workforce profile stays behind and would otherwise keep matching
-                // "profile_status = Active" lead-notification queries even though they're an Admin now.
-                await supabase.from('workforce').update({ profile_status: 'Inactive' }).eq('phone', cleanPhone);
-                Alert.alert('Promoted', 'Existing Professional account upgraded to Admin.');
-            } else {
-                if (!newAdminName.trim()) { Alert.alert('Validation', 'Enter a full name.'); return; }
-                if (newAdminPin.length !== 4) { Alert.alert('Validation', 'Enter a 4-digit PIN.'); return; }
-                const { error } = await supabase.from('admin').insert([{
-                    full_name: newAdminName.trim(),
-                    phone: cleanPhone,
+                    fullName: newAdminName.trim(),
                     pin: newAdminPin,
-                    role: 'admin',
-                    status: 'Active',
-                    allowed_cities: citiesToSave,
-                }]);
-                if (error) throw error;
-                Alert.alert('Added', 'New Admin account created.');
+                    allowedCities: citiesToSave,
+                },
+                'Could not save.',
+                { requireSession: true }
+            );
+
+            if (!result.success) {
+                Alert.alert(result.message?.includes('already has Admin access') ? 'Already an Admin' : 'Error', result.message || 'Could not save.');
+                return;
             }
+
+            Alert.alert(
+                result.mode === 'promoted' ? 'Promoted' : 'Added',
+                result.mode === 'promoted' ? 'Existing Professional account upgraded to Admin.' : 'New Admin account created.'
+            );
 
             setShowAddAdmin(false);
             setNewAdminName('');

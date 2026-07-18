@@ -4,6 +4,7 @@ import { supabaseAdmin, cleanPhone } from '../_shared/supabaseAdmin.ts';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
+const SESSION_DAYS = 30;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -63,11 +64,29 @@ Deno.serve(async (req) => {
       return json({ success: false, status: account.status, message: `Account status: ${account.status}` });
     }
 
+    // Issues a real, server-verifiable session — this is what
+    // admin-create/approve-professional/reject-professional/
+    // toggle-professional-status now check before acting, closing the gap
+    // where anyone holding the anon key could call them directly with no
+    // login at all. `admin_table` intentionally uses the same
+    // 'admins'/'workforce' values AsyncStorage's adminTable already does —
+    // not this function's own internal `table` ('admin'/'professional').
+    const sessionToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60_000).toISOString();
+    await supabaseAdmin.from('admin_sessions').insert([{
+      token: sessionToken,
+      phone: cleaned,
+      admin_table: isProfessional ? 'workforce' : 'admins',
+      role: isProfessional ? 'professional' : (account.role || ''),
+      expires_at: expiresAt,
+    }]);
+
     return json({
       success: true,
       status: account.status,
       role: isProfessional ? 'professional' : (account.role || ''),
       displayName: account.full_name || 'Admin',
+      sessionToken,
     });
   } catch (e) {
     console.error('admin-login error:', e);

@@ -1,7 +1,11 @@
 import { corsHeaders, json } from '../_shared/cors.ts';
-import { cleanPhone } from '../_shared/supabaseAdmin.ts';
+import { supabaseAdmin, cleanPhone } from '../_shared/supabaseAdmin.ts';
 
-const SPARROW_TOKEN = Deno.env.get('SPARROW_TOKEN')!;
+// This project's account/access-token can't set Edge Function secrets (dashboard/
+// Management API both reject it), so the Sparrow token is stored in Supabase Vault
+// instead and read here via a service-role-only RPC — see public.get_vault_secret
+// in the database (migration 0012_vault_secret_helper.sql), granted to service_role only.
+const { data: SPARROW_TOKEN } = await supabaseAdmin.rpc('get_vault_secret', { secret_name: 'sparrow_token' });
 
 // Generic SMS relay — the message text is composed client-side (not sensitive), but the
 // Sparrow account token must never ship in the app bundle, so every send goes through here.

@@ -18,45 +18,31 @@ import { router } from 'expo-router';
 import Header2 from '@/components/Header3drawer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OtpInput from '@/components/bookings/OtpInput';
+import { invokeEdgeFunction } from '../../../../api/functionsClient';
 
 const LAST_HELP_REQUEST_KEY = 'lastHelpRequestAt';
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
 
 const scaleFont = (size: number) => (size * width) / 375;
 
-const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
-
-const sendSparrowOtp = async (phone: string, otp: string) => {
-    const to = '977' + phone.replace(/\D/g, '').slice(-10);
-    console.log('[Sparrow] token:', SPARROW_TOKEN);
-    console.log('[Sparrow] to:', to);
-    const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            token: SPARROW_TOKEN,
-            from: 'TheAlert',
-            to,
-            text: `Hi, Thank you for submitting help request. Your OTP code is ${otp}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`,
-        }),
-    });
-    const data = await response.json().catch(() => ({}));
-    console.log('[Sparrow] response status:', response.status, 'body:', JSON.stringify(data));
-    if (!response.ok) throw new Error(`Sparrow error ${response.status}: ${JSON.stringify(data)}`);
-};
+interface SendOtpResponse { success: boolean; message?: string }
+interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function HelpboxOTP() {
     const [otp, setOtp] = useState(['', '', '', '']);
-    const [sentOtp, setSentOtp] = useState('');
     const route = useRoute<any>();
     const phone = route.params?.phone;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const sendOtp = async () => {
-        const code = generateOtp();
-        setSentOtp(code);
         try {
-            await sendSparrowOtp(String(phone), code);
+            const result = await invokeEdgeFunction<SendOtpResponse>(
+                'send-otp',
+                { phone: String(phone), purpose: 'helpbox' },
+                'Could not send verification code. Please try again.'
+            );
+            if (!result.success) {
+                Alert.alert('SMS Error', result.message || 'Could not send verification code. Please try again.');
+            }
         } catch (err: any) {
             Alert.alert('SMS Error', err?.message || 'Could not send verification code. Please try again.');
         }
@@ -80,15 +66,21 @@ export default function HelpboxOTP() {
             return;
         }
 
-        if (enteredOtp !== sentOtp) {
-            Alert.alert('Invalid Code', 'The code you entered is incorrect. Please try again.');
-            return;
-        }
-
         if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
+            const verifyResult = await invokeEdgeFunction<VerifyOtpResponse>(
+                'verify-otp',
+                { phone: String(phone), purpose: 'helpbox', code: enteredOtp },
+                'Could not verify the code. Please try again.'
+            );
+            if (!verifyResult.verified) {
+                Alert.alert('Invalid Code', verifyResult.message || 'The code you entered is incorrect. Please try again.');
+                setIsSubmitting(false);
+                return;
+            }
+
             const booking = { "Phone": phone };
             await createHelpbox(booking);
             await AsyncStorage.setItem(LAST_HELP_REQUEST_KEY, String(Date.now()));

@@ -13,41 +13,31 @@ import SubmitOverlay from '@/components/bookings/SubmitOverlay';
 import OtpInput from '@/components/bookings/OtpInput';
 import Header3 from '@/components/Header3drawer';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { invokeEdgeFunction } from '@/api/functionsClient';
 
 const { width, height } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
-
-const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
-
-const sendSparrowOtp = async (phone: string, otp: string, firstName: string) => {
-  const to = '977' + phone.replace(/\D/g, '').slice(-10);
-  const text = `Dear ${firstName}, Your Partnership OTP code is ${otp}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
-  const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
-  });
-  const data = await response.json().catch(() => ({}));
-  console.log('[Sparrow PartnershipOTP] status:', response.status, 'body:', JSON.stringify(data));
-  if (!response.ok) throw new Error(`Sparrow error ${response.status}: ${JSON.stringify(data)}`);
-};
+interface SendOtpResponse { success: boolean; message?: string }
+interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function PartnershipOTP() {
   const { phone, name } = useLocalSearchParams<{ phone: string; name?: string }>();
   const [otp, setOtp] = useState(['', '', '', '']);
-  const [sentOtp, setSentOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [overlayStatus, setOverlayStatus] = useState<'loading' | 'success'>('loading');
 
   const sendOtp = async () => {
-    const code = generateOtp();
-    setSentOtp(code);
-    const firstName = String(name || '').trim() || 'Partner';
     try {
-      await sendSparrowOtp(String(phone), code, firstName);
+      const result = await invokeEdgeFunction<SendOtpResponse>(
+        'send-otp',
+        { phone: String(phone), purpose: 'partnership', name: String(name || '') },
+        'Could not send verification code. Please try again.'
+      );
+      if (!result.success) {
+        Alert.alert('SMS Error', result.message || 'Could not send verification code. Please try again.');
+      }
     } catch (err: any) {
       Alert.alert('SMS Error', err?.message || 'Could not send verification code. Please try again.');
     }
@@ -63,16 +53,24 @@ export default function PartnershipOTP() {
       Alert.alert('Validation Error', 'Please enter the complete 4-digit code.');
       return;
     }
-    if (entered !== sentOtp) {
-      Alert.alert('Invalid Code', 'The code you entered is incorrect. Please try again.');
-      return;
-    }
     if (isSubmitting) return;
     setIsSubmitting(true);
     setOverlayStatus('loading');
     setOverlayVisible(true);
 
     try {
+      const verifyResult = await invokeEdgeFunction<VerifyOtpResponse>(
+        'verify-otp',
+        { phone: String(phone), purpose: 'partnership', code: entered },
+        'Could not verify the code. Please try again.'
+      );
+      if (!verifyResult.verified) {
+        setOverlayVisible(false);
+        Alert.alert('Invalid Code', verifyResult.message || 'The code you entered is incorrect. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const stored = await AsyncStorage.getItem('pendingPartnershipData');
       if (!stored) throw new Error('Form data not found. Please go back and try again.');
       const partnershipData = JSON.parse(stored);

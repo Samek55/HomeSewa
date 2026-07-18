@@ -29,7 +29,7 @@ interface SendOtpResponse { success: boolean; message?: string }
 interface SetPinResponse { success: boolean; message?: string; fullName?: string }
 
 export default function AdminChangePassword() {
-    const { mode } = useLocalSearchParams<{ mode?: string }>();
+    const { mode, phone: prefillPhone } = useLocalSearchParams<{ mode?: string; phone?: string }>();
     // 'change' = logged-in user updating PIN (no phone needed)
     // 'reset'  = forgot PIN, phone number required
     const isChangePinMode = mode === 'change';
@@ -56,6 +56,18 @@ export default function AdminChangePassword() {
             AsyncStorage.getItem('adminPhone').then(p => setLoggedInPhone(p));
         }
     }, [isChangePinMode]);
+
+    // Arriving here from the "Forgot your PIN?" link on Change PIN — carry the
+    // already-known logged-in phone over so they don't have to retype it.
+    useEffect(() => {
+        if (!isChangePinMode && prefillPhone) {
+            const cleaned = String(prefillPhone).replace(/[^0-9]/g, '').slice(0, 10);
+            let formatted = cleaned;
+            if (cleaned.length > 5 && cleaned.length <= 7) formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5);
+            else if (cleaned.length > 7) formatted = cleaned.slice(0, 5) + ' ' + cleaned.slice(5, 7) + ' ' + cleaned.slice(7);
+            setPhoneNumber(formatted);
+        }
+    }, [isChangePinMode, prefillPhone]);
 
     // Reset mode only: look up the account by phone and text it a one-time code.
     // This is the identity check for someone who forgot their PIN.
@@ -166,7 +178,7 @@ export default function AdminChangePassword() {
     return (
         <KeyboardAwareScrollView
             style={styles.screen}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: hp('4%') }}
+            contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             bottomOffset={20}
         >
@@ -245,6 +257,17 @@ export default function AdminChangePassword() {
                             containerStyle={styles.pinBoxRow}
                             boxStyle={styles.pinBox}
                         />
+                        <TouchableOpacity
+                            onPress={() => router.replace({
+                                pathname: '/AdminChangePassword',
+                                params: { mode: 'reset', phone: loggedInPhone || '' },
+                            })}
+                        >
+                            <Text style={styles.resendText}>
+                                {"Forgot your PIN? "}
+                                <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Reset via OTP</Text>
+                            </Text>
+                        </TouchableOpacity>
                     </>
                 )}
 

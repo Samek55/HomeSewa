@@ -33,20 +33,12 @@ import { isLeadUnlocked } from '@/api/leadUnlocks';
 import { recordLeadRejection } from '@/api/leadRejections';
 import { maskCustomerName } from '@/src/utils/maskName';
 import { LEAD_FEE_NPR } from '@/src/constants/leadFee';
-
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
+import { invokeEdgeFunction } from '@/api/functionsClient';
 
 const sendAcceptanceSms = async (customerPhone: string, customerName: string, professionalName: string, professionalPhone: string) => {
-    const to = '977' + customerPhone.replace(/\D/g, '').slice(-10);
     const text =
         `Dear ${customerName}, your booking request has been accepted by ${professionalName} ${professionalPhone}.\n\nThank You for using HomeSewa\n( www.homesewa.app )`;
-    const response = await fetch('https://api.sparrowsms.com/v2/sms/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
-    });
-    const data = await response.json().catch(() => ({}));
-    console.log('[Sparrow Accept SMS] status:', response.status, 'body:', JSON.stringify(data));
+    await invokeEdgeFunction('send-sms', { phone: customerPhone, text }, 'Could not send SMS');
 };
 
 const fetchProfessionalInfo = async (phone: string): Promise<{ name: string; gender: string | null }> => {

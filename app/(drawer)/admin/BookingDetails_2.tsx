@@ -14,21 +14,9 @@ import { claimBooking } from '../../../api/helper/updateBookingStatus';
 import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import { pushAreaProfessionals } from '../../../api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { invokeEdgeFunction } from '../../../api/functionsClient';
 
-const SPARROW_TOKEN = process.env.EXPO_PUBLIC_SPARROW_TOKEN!;
-
-const generateOtp = () => String(Math.floor(1000 + Math.random() * 9000));
-
-const sendCompletionOtp = async (phone: string, customerName: string, otp: string) => {
-    const to = '977' + phone.replace(/\D/g, '').slice(-10);
-    const firstName = customerName.split(' ')[0] || 'Customer';
-    const text = `Dear ${firstName}, your HomeSewa service is being marked as completed.\n\nYour completion OTP is: ${otp}\n\nShare this code with the professional to confirm.\n\nHomeSewa ( www.homesewa.app )`;
-    await fetch('https://api.sparrowsms.com/v2/sms/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: SPARROW_TOKEN, from: 'TheAlert', to, text }),
-    });
-};
+interface SendOtpResponse { success: boolean; message?: string }
 
 type StatusType = 'Completed' | 'Pending' | 'Cancelled' | 'Dispute';
 
@@ -80,12 +68,19 @@ export default function BookingDetails() {
         try {
             if (!booking?.id) return;
             if (workStatus === 'Completed') {
-                const otp = generateOtp();
                 const customerPhone = booking?.phone || '';
                 const customerName = booking?.fullName || 'Customer';
-                try { await sendCompletionOtp(customerPhone, customerName, otp); } catch {}
-                await AsyncStorage.setItem('completionOtp', JSON.stringify({ otp, bookingId: booking.id }));
-                router.push({ pathname: '/admin/WorkCompletionOTP', params: { customerName, customerPhone, budget: booking.budget || '' } });
+                try {
+                    await invokeEdgeFunction<SendOtpResponse>(
+                        'send-otp',
+                        { phone: String(customerPhone), purpose: 'work-completion', name: customerName },
+                        'Could not send completion OTP.'
+                    );
+                } catch {}
+                router.push({
+                    pathname: '/admin/WorkCompletionOTP',
+                    params: { customerName, customerPhone, budget: booking.budget || '', bookingId: String(booking.id) },
+                });
                 return;
             }
             const claimed = await claimBooking(String(booking.id), booking.status, workStatus);

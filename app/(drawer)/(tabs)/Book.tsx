@@ -166,9 +166,11 @@ export default function ServiceBookingScreen() {
   const checkDailyBookingLimit = async (phoneNumber: string): Promise<boolean> => {
     try {
       const today = new Date().toISOString().split('T')[0];
+      // head:true never returns row data anyway (just the count), so there's
+      // no reason to ask for every column — narrows what this query touches.
       const { count } = await supabase
         .from('booking')
-        .select('*', { count: 'exact', head: true })
+        .select('booking_id', { count: 'exact', head: true })
         .eq('phone', phoneNumber)
         .gte('service_booking_datetime', `${today}T00:00:00`)
         .lte('service_booking_datetime', `${today}T23:59:59`);

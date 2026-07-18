@@ -86,12 +86,15 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from('otp_codes').delete().eq('id', otpRow.id);
     }
 
-    // AdminLogin.tsx still authenticates against the plaintext `pin` column (not
-    // pin_hash — the admin-login Edge Function that does hash-based login was built
-    // but never wired in), so `pin` must be updated here too or the "new" PIN would
-    // never actually work at the real login screen. The sync_pin_hash trigger
-    // (migration 0014) would recompute pin_hash from `pin` on its own, but it's set
-    // explicitly here anyway since bcrypt-ts already computed it.
+    // AdminLogin.tsx now authenticates via the admin-login Edge Function
+    // (bcrypt against pin_hash), not plaintext pin — but `pin` is still kept
+    // in sync here rather than dropped, because admin-create's "promote an
+    // existing professional" path carries `professional.pin` over into the
+    // new admin row and relies on the sync_pin_hash trigger to derive the
+    // matching pin_hash from it. If this stopped writing `pin`, a
+    // professional who later changed their PIN would go stale here, and
+    // promoting them to admin afterward would silently carry over their old
+    // PIN's hash instead of their current one.
     const newHash = await hash(String(newPin), 10);
     const { error } = await supabaseAdmin
       .from(table)
@@ -99,8 +102,14 @@ Deno.serve(async (req) => {
       .eq('id', account.id);
     if (error) throw new Error(error.message);
 
+    // Standard practice: changing/resetting a PIN invalidates every other
+    // session for this account, the same way changing a password would.
+    await supabaseAdmin.from('admin_sessions').delete().eq('phone', cleaned);
+
+    // Awaited deliberately — an un-awaited call here risks the edge runtime
+    // tearing down before it completes, silently dropping the confirmation SMS.
     const firstName = (account.full_name || '').split(' ')[0] || 'User';
-    sendPinChangeSms(cleaned, firstName).catch(() => {});
+    await sendPinChangeSms(cleaned, firstName).catch((e) => console.error('set-pin confirmation SMS failed:', e));
 
     return json({ success: true, fullName: account.full_name || 'User' });
   } catch (e) {

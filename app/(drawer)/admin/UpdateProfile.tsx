@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../../lib/supabase';
 import { uploadToStorage } from '../../../api/uploadToStorage';
+import { invokeEdgeFunction } from '../../../api/functionsClient';
 import Header4 from '@/components/Header4Admin';
 import HeadshotCropModal from '../../../components/bookings/HeadshotCropModal';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -178,7 +179,11 @@ export default function UpdateProfile() {
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Logout', style: 'destructive', onPress: async () => {
-                    await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole']);
+                    // Revokes the session server-side — see AdminLogin.tsx's
+                    // handleLogout for why this matters (real revocation, not
+                    // just clearing local state).
+                    invokeEdgeFunction('logout', {}, '', { requireSession: true }).catch(() => {});
+                    await AsyncStorage.multiRemove(['adminPhone', 'adminTable', 'adminRole', 'adminSessionToken']);
                     try { const { OneSignal } = require('react-native-onesignal'); OneSignal.logout(); } catch {}
                     DeviceEventEmitter.emit('authChanged');
                     router.replace('/Home');

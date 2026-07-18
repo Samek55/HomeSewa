@@ -1,12 +1,11 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-const generatePin = () => String(Math.floor(1000 + Math.random() * 9000));
 
 // `workforce`'s real columns are first_name/middle_name/last_name, profile_status,
 // services, working_areas, headshot_url, government_issued_id_url, created_date,
 // years_experience, emergency_contact, referred_by, issues — not the full_name/
 // positions/status/pin names this used to write. There's also no pin column on
-// workforce at all; login credentials live only on `admin`.
+// workforce at all; login credentials live only on `professional`.
 const splitFullName = (fullName: string) => {
   const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
   return {
@@ -26,8 +25,6 @@ export const createCareer = async (data: any) => {
   const headshotRaw = data['Headshot']?.[0];
   const headshotUrl = typeof headshotRaw === 'string' ? headshotRaw : headshotRaw?.url || null;
 
-  const pin = generatePin();
-
   const workforceFields = {
     ...splitFullName(data['Full Name']),
     phone: data['Phone'],
@@ -42,7 +39,10 @@ export const createCareer = async (data: any) => {
     headshot_url: headshotUrl,
     services: data['Your Expertise'] || [],
     working_areas: workingAreas,
-    profile_status: 'Waiting for Verification',
+    // profile_status is intentionally omitted — the anon key can no longer
+    // write it directly (0017_lock_workforce_verification_status.sql), so
+    // every new application relies on the column's own default
+    // ('Waiting for Verification') rather than setting it here.
     created_date: new Date().toISOString(),
   };
 
@@ -54,23 +54,28 @@ export const createCareer = async (data: any) => {
 
   if (error) throw new Error(error.message);
 
-  // Also register in the professional table so they can log in (PIN lives here, not on workforce).
-  // If this fails, the workforce row above would be an orphan an admin could approve with no way
-  // for the applicant to ever log in — so roll it back and surface the failure instead.
-  const { error: professionalError } = await supabase.from('professional').insert([{
-    full_name: data['Full Name'],
-    phone: data['Phone'],
-    pin,
-    status: 'Pending',
-  }]);
+  // Registers the login row in `professional` (PIN lives here, not on workforce) via
+  // the create-professional-login Edge Function — `professional` holds PINs and is
+  // locked to the anon key by RLS, so the client can't insert into it directly
+  // anymore. If this fails, the workforce row above would be an orphan an admin
+  // could approve with no way for the applicant to ever log in — so roll it back
+  // and surface the failure instead.
+  const { data: result, error: fnError } = await supabase.functions.invoke('create-professional-login', {
+    body: { fullName: data['Full Name'], phone: data['Phone'] },
+  });
 
-  if (professionalError) {
-    await supabase.from('workforce').delete().eq('uin', workforce.uin);
-    if (professionalError.code === '23505') {
-      throw new Error('This phone number is already registered. Please go to the login page to reset your PIN or log in from there.');
+  let outcome: any = result;
+  if (fnError) {
+    if (fnError instanceof FunctionsHttpError) {
+      try { outcome = await fnError.context.json(); } catch { outcome = null; }
     }
-    throw new Error(professionalError.message);
+    if (!outcome) outcome = { success: false, message: fnError.message };
   }
 
-  return { ...workforce, pin };
+  if (!outcome.success) {
+    await supabase.from('workforce').delete().eq('uin', workforce.uin);
+    throw new Error(outcome.message || 'Could not register login for this application');
+  }
+
+  return workforce;
 };

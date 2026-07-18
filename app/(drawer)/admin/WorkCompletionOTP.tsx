@@ -5,18 +5,20 @@ import {
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { router, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateBookingStatus } from '../../../api/helper/updateBookingStatus';
 import Header4 from '@/components/Header4Admin';
 import OtpInput from '@/components/bookings/OtpInput';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import checkIcon from '../../../assets/icons/admin/check-mark.png';
+import { invokeEdgeFunction } from '../../../api/functionsClient';
 
 const { width, height } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
+interface VerifyOtpResponse { verified: boolean; message?: string }
+
 export default function WorkCompletionOTP() {
-    const { customerName, customerPhone, budget } = useLocalSearchParams<{ customerName: string; customerPhone: string; budget: string }>();
+    const { customerName, customerPhone, budget, bookingId } = useLocalSearchParams<{ customerName: string; customerPhone: string; budget: string; bookingId: string }>();
     const [otp, setOtp] = useState(['', '', '', '']);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -31,18 +33,18 @@ export default function WorkCompletionOTP() {
         setIsSubmitting(true);
 
         try {
-            const stored = await AsyncStorage.getItem('completionOtp');
-            if (!stored) throw new Error('OTP session expired. Please go back and try again.');
-            const { otp: sentOtp, bookingId } = JSON.parse(stored);
-
-            if (entered !== sentOtp) {
-                Alert.alert('Invalid OTP', 'The code is incorrect. Please ask the customer for the correct OTP.');
+            const verifyResult = await invokeEdgeFunction<VerifyOtpResponse>(
+                'verify-otp',
+                { phone: String(customerPhone), purpose: 'work-completion', code: entered },
+                'Could not verify the code. Please try again.'
+            );
+            if (!verifyResult.verified) {
+                Alert.alert('Invalid OTP', verifyResult.message || 'The code is incorrect. Please ask the customer for the correct OTP.');
                 setIsSubmitting(false);
                 return;
             }
 
             await updateBookingStatus(bookingId, 'Completed');
-            await AsyncStorage.removeItem('completionOtp');
             setSuccess(true);
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Could not complete booking. Please try again.');

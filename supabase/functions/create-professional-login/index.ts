@@ -25,7 +25,15 @@ Deno.serve(async (req) => {
       pin_hash: pinHash,
       status: 'Pending',
     }]);
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === '23505') {
+        return json({
+          success: false,
+          message: 'This phone number is already registered. Please go to the login page to reset your PIN or log in from there.',
+        }, 409);
+      }
+      throw new Error(error.message);
+    }
 
     return json({ success: true });
   } catch (e) {
