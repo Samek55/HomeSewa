@@ -28,6 +28,16 @@ export function buildBookingPdfHtml(booking: any): string {
          </tr>`
       : '';
 
+  const completionPhotos: string[] = Array.isArray(booking.completionPhotos) ? booking.completionPhotos : [];
+  const completionPhotosSection = completionPhotos.length
+    ? `<div class="photos-section">
+         <div class="photos-title">Completion Photos</div>
+         <div class="photos-grid">
+           ${completionPhotos.map((url) => `<img class="photo-thumb" src="${escapeHtml(url)}" />`).join('')}
+         </div>
+       </div>`
+    : '';
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -170,6 +180,32 @@ export function buildBookingPdfHtml(booking: any): string {
     line-height: 1.4;
   }
 
+  /* Completion photos */
+  .photos-section {
+    padding: 18px 28px 22px;
+    border-top: 1px solid #F0F7F6;
+  }
+  .photos-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9BBAB8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .photos-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .photo-thumb {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #F0F7F6;
+  }
+
   /* ── FOOTER ── */
   .footer {
     background: ${PRIMARY};
@@ -228,6 +264,7 @@ export function buildBookingPdfHtml(booking: any): string {
       ${row('Approx Days',           approxDays)}
       ${row('Special Request',       booking.specialRequests)}
     </table>
+    ${completionPhotosSection}
   </div>
 
   <!-- FOOTER -->

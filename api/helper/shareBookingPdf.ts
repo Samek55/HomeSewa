@@ -55,6 +55,9 @@ export async function shareBookingPdf(booking: any) {
                 booking.completionDate ? `Ending Date: ${booking.completionDate}` : null,
                 booking.approxDays != null ? `Approx Days: ${booking.approxDays} Day${booking.approxDays !== 1 ? 's' : ''}` : null,
                 booking.specialRequests ? `Special Request: ${booking.specialRequests}` : null,
+                Array.isArray(booking.completionPhotos) && booking.completionPhotos.length
+                    ? `Completion Photos: ${booking.completionPhotos.length} attached (see PDF)`
+                    : null,
                 ``,
                 `Helpline: +977 98520 24 365`,
                 `www.homesewa.app`,

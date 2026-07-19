@@ -1,4 +1,7 @@
 import React, { useMemo, useRef, useEffect } from 'react';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { ThemeColors } from '@/theme/colors';
 import {
   View,
   Text,
@@ -21,6 +24,21 @@ const { width, height } = Dimensions.get('window');
 
 const scaleFont = (size: number) => (size * width) / 375;
 
+const staticStyles = StyleSheet.create({
+  button1: {
+    width: width * 0.6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 39,
+  },
+  text: {
+    fontSize: 18,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+});
+
 const Button = ({ children, onPress }: any) => {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
@@ -28,15 +46,18 @@ const Button = ({ children, onPress }: any) => {
         colors={['#064e3b', '#065f46', '#047857']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={styles.button1}
+        style={staticStyles.button1}
       >
-        <Text style={styles.text}>{children}</Text>
+        <Text style={staticStyles.text}>{children}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
 };
 
 export default function SingleScreen() {
+  const { colors } = useTheme();
+  const { t } = useLanguage();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const scrollRef = useRef<ScrollViewType>(null);
 
@@ -93,13 +114,13 @@ export default function SingleScreen() {
   if (!service) {
     return (
       <View style={styles.center}>
-        <Text>Service not found</Text>
+        <Text style={{ color: colors.textPrimary }}>{t('serviceDetail.notFound')}</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header2/>
       <ScrollView
         ref={scrollRef}
@@ -117,7 +138,7 @@ export default function SingleScreen() {
           </View>
 
           <Text style={[styles.subtitle, { fontSize: scaleFont(17) }]}>
-            {service.name} Services in Nepal
+            {t('serviceDetail.servicesInNepal', { name: service.name })}
           </Text>
 
           <Text style={[styles.description, { fontSize: scaleFont(14) }]}>
@@ -134,12 +155,12 @@ export default function SingleScreen() {
 
           <View style={styles.buttonPadding}>
             <Button onPress={() => router.push({ pathname: '/Book', params: { preSelectedService: service?.name } })}>
-              Book this Service
+              {t('serviceDetail.bookThisService')}
             </Button>
           </View>
 
           <Text style={[styles.otherServicesTitle, { fontSize: scaleFont(18) }]}>
-            Related Services
+            {t('serviceDetail.relatedServices')}
           </Text>
 
           <View style={styles.servicesContainer}>
@@ -170,10 +191,10 @@ export default function SingleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor:'#fff'
+    backgroundColor: colors.background,
   },
 
   container: {
@@ -196,7 +217,7 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    color: '#064E3B',
+    color: colors.brand,
     fontWeight: '700',
     marginBottom: '4%',
   },
@@ -204,21 +225,24 @@ const styles = StyleSheet.create({
   description: {
     fontWeight: '500',
     textAlign: 'justify',
+    color: colors.textPrimary,
   },
 
   question: {
     fontWeight: '800',
     marginTop: '3%',
     marginBottom: '2%',
+    color: colors.textPrimary,
   },
 
   answer: {
     fontWeight: '500',
     textAlign: 'justify',
+    color: colors.textPrimary,
   },
 
   otherServicesTitle: {
-    color: '#064E3B',
+    color: colors.brand,
     fontWeight: '900',
     marginBottom: '3%',
   },
@@ -235,23 +259,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  button1: {
-    width: width * 0.6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 39,
-  },
-
-  text: {
-    fontSize: 18,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
 });

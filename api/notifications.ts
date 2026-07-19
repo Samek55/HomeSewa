@@ -107,6 +107,8 @@ export async function notifyProfessionals(service: string, bookingArea: string) 
  *   `auth.currentUser` to read this from — it must be passed in explicitly)
  * @param providerName The accepting professional's full name
  * @param providerGender Used to pick "He"/"She" in the message; falls back to "They" if unknown
+ * @param bookingId When given, deep-links the notification into that booking's chat
+ *   (see Chat.tsx) instead of just landing on Home.
  */
 export async function notifyUsers(
   service: string,
@@ -115,6 +117,7 @@ export async function notifyUsers(
   providerPhone?: string,
   providerName?: string,
   providerGender?: string | null,
+  bookingId?: string,
 ) {
   try {
     const cleanCustomerPhone = customerPhone?.trim();
@@ -132,6 +135,7 @@ export async function notifyUsers(
 
     const title = 'Booking Accepted';
     const body = `Dear ${customerFirstName}, your HomeSewa provider ${providerFirstName}, (${cleanProviderPhone}) has accepted your request for "${cleanService}". ${pronoun} will contact you shortly or you too can call for further information. Thank You`;
+    const screen = bookingId ? '/Chat' : '/Home';
 
     await sendNotification({
       // Explicitly targeting the App Push channel along with your custom tags
@@ -144,12 +148,46 @@ export async function notifyUsers(
       is_wp_wns: false,
       headings: { en: title },
       contents: { en: body },
-      data: { screen: '/Home' },
-    }, { title, body, screen: '/Home', audience: 'customer_specific', phone: cleanCustomerPhone });
+      data: bookingId ? { screen, id: bookingId } : { screen },
+    }, { title, body, screen, linkId: bookingId, audience: 'customer_specific', phone: cleanCustomerPhone });
 
     console.log(`Notification safely sent to customer tag phone: ${cleanCustomerPhone}`);
   } catch (error: any) {
     console.log('Booking notification error:', error?.response?.data || error.message);
+  }
+}
+
+/**
+ * Notifies the customer that their job has been marked completed, with a deep
+ * link into the "Rate your professional" screen (see RateProfessional.tsx).
+ */
+export async function notifyJobCompleted(customerPhone: string, bookingId: string) {
+  try {
+    const cleanCustomerPhone = customerPhone?.trim();
+    if (!cleanCustomerPhone) {
+      console.log('Notification skipped: No customer phone target provided.');
+      return;
+    }
+
+    const title = 'Job Completed';
+    const body = 'Your HomeSewa booking has been marked as completed. Tap to rate your professional.';
+    const screen = '/RateProfessional';
+
+    await sendNotification({
+      filters: [
+        { field: 'tag', key: 'role', relation: '=', value: 'user' },
+        { operator: 'AND' },
+        { field: 'tag', key: 'phone', relation: '=', value: cleanCustomerPhone }
+      ],
+      is_wp_wns: false,
+      headings: { en: title },
+      contents: { en: body },
+      data: { screen, id: bookingId },
+    }, { title, body, screen, linkId: bookingId, audience: 'customer_specific', phone: cleanCustomerPhone });
+
+    console.log(`Job-completed notification sent to customer phone: ${cleanCustomerPhone}`);
+  } catch (error: any) {
+    console.log('notifyJobCompleted error:', error?.response?.data || error.message);
   }
 }
 

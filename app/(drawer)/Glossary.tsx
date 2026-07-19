@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import Header3 from '@/components/Header3drawer';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const alphabet: AlphabetKey[] = [
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
@@ -22,6 +24,8 @@ const alphabet: AlphabetKey[] = [
 ];
 
 export default function GlossaryScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [selectedLetter, setSelectedLetter] = useState<AlphabetKey>('A');
 
   const filteredData = GlossaryData2[selectedLetter] || [];
@@ -29,7 +33,7 @@ export default function GlossaryScreen() {
 
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header3 goHome />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -91,10 +95,10 @@ export default function GlossaryScreen() {
 };
 
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
 
 
@@ -109,14 +113,15 @@ const styles = StyleSheet.create({
     marginBottom: hp('4%'),
     textAlign: 'center',
     lineHeight: hp('2.5%'),
+    color: colors.textSecondary,
   },
 
   alphabetBox: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     padding: 10,
     paddingVertical: 20,
     borderRadius: 15,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderWidth: 2,
     elevation: 2,
   },
@@ -134,18 +139,18 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     marginHorizontal: 5,
     borderRadius: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   activeLetter: {
-    backgroundColor: '#0F766E',
+    backgroundColor: colors.brand,
   },
 
   letterText: {
     fontWeight: '700',
-    color: '#111',
+    color: colors.textPrimary,
   },
 
   activeLetterText: {
@@ -159,7 +164,7 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: wp('7%'),
     fontWeight: '900',
-    color: '#0F766E',
+    color: colors.brand,
     textAlign: 'center',
   },
 
@@ -170,27 +175,28 @@ const styles = StyleSheet.create({
   card: {
     padding: 15,
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
 
   cardTitle: {
     fontSize: wp('4.3%'),
     fontWeight: '800',
+    color: colors.textPrimary,
   },
 
   cardText: {
     marginTop: hp('1%'),
     fontSize: wp('3.5%'),
-    color: '#374151',
+    color: colors.textSecondary,
     lineHeight: hp('2.2%'),
   },
 
   noData: {
     marginTop: 20,
-    color: '#6B7280',
+    color: colors.textMuted,
     textAlign: 'center',
   },
 });

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +14,8 @@ type Props = {
 };
 
 export default function TermsCheckbox({ checked, onChange }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.row}>
       <TouchableOpacity
@@ -23,7 +27,7 @@ export default function TermsCheckbox({ checked, onChange }: Props) {
         <Ionicons
           name={checked ? 'checkbox' : 'square-outline'}
           size={22}
-          color="#295C59"
+          color={colors.brand}
         />
       </TouchableOpacity>
       <Text style={styles.label}>
@@ -36,7 +40,7 @@ export default function TermsCheckbox({ checked, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -49,10 +53,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: width * 0.035,
     fontWeight: '500',
-    color: '#4A4A4A',
+    color: colors.textSecondary,
   },
   link: {
-    color: '#295C59',
+    color: colors.brand,
     fontWeight: '700',
     textDecorationLine: 'underline',
   },

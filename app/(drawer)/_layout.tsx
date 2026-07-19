@@ -87,6 +87,21 @@ export default function DrawerLayout() {
         name="Notifications"
         options={{ drawerItemStyle: { display: 'none' } }}
       />
+
+      <Drawer.Screen
+        name="Favorites"
+        options={{ drawerItemStyle: { display: 'none' } }}
+      />
+
+      <Drawer.Screen
+        name="RateProfessional"
+        options={{ drawerItemStyle: { display: 'none' } }}
+      />
+
+      <Drawer.Screen
+        name="Chat"
+        options={{ drawerItemStyle: { display: 'none' } }}
+      />
     </Drawer>
   );
 }

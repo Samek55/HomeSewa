@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Image, TouchableOpacity, StyleSheet, TextInput, Text, Alert } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 const LAST_HELP_REQUEST_KEY = 'lastHelpRequestAt';
 const HELP_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const NumberBar = ({ onFocus = () => {} }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [phone, setPhone] = useState('');
   const [isFocused, setIsFocused] = useState(false);
 
@@ -70,7 +74,7 @@ const NumberBar = ({ onFocus = () => {} }) => {
             setPhone(formatted);
           }}
           placeholder={isFocused ? '' : '98520 24 365'}
-          placeholderTextColor="#A0BAB8"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           keyboardType="numeric"
         />
@@ -84,14 +88,14 @@ const NumberBar = ({ onFocus = () => {} }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#295C59',
+    borderColor: colors.brand,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     overflow: 'hidden',
     height: hp('6%'),
   },
@@ -116,23 +120,23 @@ const styles = StyleSheet.create({
   code: {
     fontSize: wp('3.5%'),
     fontWeight: '700',
-    color: '#295C59',
+    color: colors.brand,
   },
   dividerLine: {
     width: 1,
     height: 18,
-    backgroundColor: '#C5DCDA',
+    backgroundColor: colors.divider,
     marginHorizontal: 2,
   },
   input: {
     flex: 1,
     fontSize: wp('3.8%'),
     fontWeight: '600',
-    color: '#1C2B2A',
+    color: colors.textPrimary,
     includeFontPadding: false,
   },
   button: {
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
     paddingHorizontal: wp('4.5%'),
     height: '100%',
     alignItems: 'center',

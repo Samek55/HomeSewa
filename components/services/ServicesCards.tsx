@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +10,8 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
   name: string;
@@ -35,6 +38,8 @@ const ServicesCards = ({
   image,
   onPress,
 }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
       <View style={styles.imageContainer}>
@@ -55,7 +60,7 @@ const ServicesCards = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   cardContainer: {
     flexDirection: 'row',
     width: wp(90),
@@ -86,13 +91,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: wp(4.1),
     fontWeight: '600',
-    color: '#000',
+    color: colors.textPrimary,
     paddingBottom: 3,
   },
   description: {
     fontSize: wp(3.7),
     fontWeight: '400',
-    color: 'hsl(0, 0%, 25%)',
+    color: colors.textSecondary,
     letterSpacing: -0.3,
     lineHeight: 17,
   },

@@ -1,10 +1,15 @@
 import { View, Text } from 'react-native';
+import { useMemo } from 'react';
 import OnboardingComponent from '../../components/onBoarding/onboardingComponent';
 import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 export default function OnBoarding1() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.container}>
@@ -27,10 +32,10 @@ export default function OnBoarding1() {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   title: {
     paddingTop: 95,
@@ -38,13 +43,13 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: '800',
     paddingBottom: 12,
-    color: 'gray',
+    color: colors.textSecondary,
   },
   subtitle: {
     paddingHorizontal: 21,
     fontSize: 16,
     lineHeight: 22,
-    color: 'gray',
+    color: colors.textSecondary,
   },
 });
 

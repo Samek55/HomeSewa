@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,14 @@ import {
 } from 'react-native-responsive-screen';
 
 import Header2 from '@/components/Header2';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 export default function AboutScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header2 />
 
       <ScrollView
@@ -90,10 +94,10 @@ export default function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
 
   banner: {
@@ -103,7 +107,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 25,
     overflow: 'hidden',
-    backgroundColor: '#eee',
+    backgroundColor: colors.surfaceMuted,
   },
 
   bannerImage: {
@@ -118,14 +122,14 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: wp('5.2%'),
-    color: '#295C59',
+    color: colors.brand,
     fontWeight: '900',
     marginBottom: 4,
   },
 
   subtitle: {
     fontSize: wp('3.7%'),
-    color: 'hsl(0, 0%, 15%)',
+    color: colors.textPrimary,
     fontWeight: '400',
     lineHeight: 19,
     marginTop: 10,
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
 
   lineheighpara: {
     fontSize: wp('3.7%'),
-    color: 'hsl(0, 0%, 15%)',
+    color: colors.textPrimary,
     fontWeight: '400',
     paddingTop: 8,
     lineHeight: 19,

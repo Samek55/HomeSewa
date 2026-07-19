@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -34,6 +34,8 @@ import { recordLeadRejection } from '@/api/leadRejections';
 import { maskCustomerName } from '@/src/utils/maskName';
 import { LEAD_FEE_NPR } from '@/src/constants/leadFee';
 import { invokeEdgeFunction } from '@/api/functionsClient';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const sendAcceptanceSms = async (customerPhone: string, customerName: string, professionalName: string, professionalPhone: string) => {
     const text =
@@ -58,6 +60,8 @@ const fetchProfessionalInfo = async (phone: string): Promise<{ name: string; gen
 
 export default function BookingDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
     const [booking, setBooking] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -104,6 +108,10 @@ export default function BookingDetails() {
     );
 
     const photoUrls: string[] = booking?.photos || [];
+    const completionPhotoUrls: string[] = booking?.completionPhotos || [];
+
+    const [completionVisible, setCompletionVisible] = useState(false);
+    const [completionSelectedIndex, setCompletionSelectedIndex] = useState(0);
 
     const openImage = (index: number) => {
         setSelectedIndex(index);
@@ -113,14 +121,26 @@ export default function BookingDetails() {
     const goPrev = () => setSelectedIndex(i => (i - 1 + photoUrls.length) % photoUrls.length);
     const goNext = () => setSelectedIndex(i => (i + 1) % photoUrls.length);
 
+    const openCompletionImage = (index: number) => {
+        setCompletionSelectedIndex(index);
+        setCompletionVisible(true);
+    };
+
+    const goCompletionPrev = () => setCompletionSelectedIndex(i => (i - 1 + completionPhotoUrls.length) % completionPhotoUrls.length);
+    const goCompletionNext = () => setCompletionSelectedIndex(i => (i + 1) % completionPhotoUrls.length);
+
     // Handle Offer Acceptance
     const handleAcceptOffer = async () => {
         if (!booking || !hasFullAccess) return;
 
         try {
+            const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
+
             // Atomically claim the booking first — without this, two professionals who both
             // open this "New / Open" booking before either changes its status can both accept it.
-            const claimed = await claimBooking(String(booking.id), 'New / Open', 'Pending');
+            // `accepted_by_phone` is recorded here so customer-facing features keyed by phone
+            // (Favorites, ratings) can later look up who actually did the work.
+            const claimed = await claimBooking(String(booking.id), 'New / Open', 'Pending', { accepted_by_phone: adminPhone });
             if (!claimed) {
                 Alert.alert('Already Accepted', 'This booking was just accepted by another professional.');
                 router.replace('/admin/BookingHistory');
@@ -129,13 +149,12 @@ export default function BookingDetails() {
 
             const customerPhone = booking?.phone || "";
             const customerName = booking?.fullName || "Customer";
-            const adminPhone = await AsyncStorage.getItem('adminPhone') || '';
 
             console.log("Passing customer phone directly to notification:", customerPhone);
 
             const { name: professionalName, gender: professionalGender } = await fetchProfessionalInfo(adminPhone);
 
-            await notifyUsers(booking?.service, customerPhone, customerName, adminPhone, professionalName, professionalGender);
+            await notifyUsers(booking?.service, customerPhone, customerName, adminPhone, professionalName, professionalGender, String(booking.id));
 
             const bookingService = String(booking?.service || '').split(',')[0].trim();
             notifyProfessionalsAccepted(bookingService, booking?.city || '', booking?.area || '', adminPhone, professionalName).catch(() => {});
@@ -191,7 +210,7 @@ export default function BookingDetails() {
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <Header4 />
 
             <KeyboardAvoidingView
@@ -210,7 +229,7 @@ export default function BookingDetails() {
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleSharePDF} disabled={!booking} style={{ padding: 4 }}>
-                            <Ionicons name="share-outline" size={22} color="#295C59" />
+                            <Ionicons name="share-outline" size={22} color={colors.brand} />
                         </TouchableOpacity>
                     </View>
 
@@ -339,6 +358,66 @@ export default function BookingDetails() {
                             </View>
                             )}
 
+                            {completionPhotoUrls.length > 0 && (
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Completion Photos</Text>
+                                <View style={styles.photos}>
+                                    {completionPhotoUrls.map((url, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            onPress={() => openCompletionImage(index)}
+                                        >
+                                            <Image source={{ uri: url }} style={styles.photoItem} />
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                {/* Fullscreen Popup with navigation */}
+                                <Modal
+                                    visible={completionVisible}
+                                    transparent
+                                    animationType="fade"
+                                    onRequestClose={() => setCompletionVisible(false)}
+                                >
+                                    <View style={styles.modalContainer}>
+                                        {/* Close on background tap */}
+                                        <TouchableOpacity
+                                            style={StyleSheet.absoluteFill}
+                                            activeOpacity={1}
+                                            onPress={() => setCompletionVisible(false)}
+                                        />
+
+                                        {/* Close button */}
+                                        <TouchableOpacity
+                                            style={styles.closeButton}
+                                            onPress={() => setCompletionVisible(false)}
+                                        >
+                                            <Text style={styles.closeButtonText}>✕</Text>
+                                        </TouchableOpacity>
+
+                                        <Image
+                                            source={{ uri: completionPhotoUrls[completionSelectedIndex] }}
+                                            style={styles.fullImage}
+                                            resizeMode="contain"
+                                        />
+
+                                        {/* Counter */}
+                                        <Text style={styles.photoCounter}>
+                                            {completionSelectedIndex + 1} / {completionPhotoUrls.length}
+                                        </Text>
+
+                                        {/* Prev / Next arrows */}
+                                        <TouchableOpacity style={styles.arrowLeft} onPress={goCompletionPrev}>
+                                            <Text style={styles.arrowText}>‹</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.arrowRight} onPress={goCompletionNext}>
+                                            <Text style={styles.arrowText}>›</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </Modal>
+                            </View>
+                            )}
+
                             {/* ButtonContainer */}
                             <View style={styles.ButtonContainer}>
                                 {hasFullAccess ? (
@@ -378,10 +457,10 @@ export default function BookingDetails() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f6f7fb',
+        backgroundColor: colors.background,
     },
     scrollContent: {
         flexGrow: 1,
@@ -416,17 +495,17 @@ const styles = StyleSheet.create({
     backIcon: {
         width: hp('3.5%'),
         height: hp('3.5%'),
-        tintColor: '#295C59',
+        tintColor: colors.brand,
         marginRight: wp('2%'),
     },
     title: {
         fontSize: hp('2.3%'),
         fontWeight: '600',
-        color: '#295C59',
+        color: colors.brand,
     },
     card: {
         width: wp('90%'),
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 18,
         paddingVertical: hp('2%'),
         paddingHorizontal: wp('5%'),
@@ -439,19 +518,19 @@ const styles = StyleSheet.create({
     heading: {
         fontSize: hp('2.8%'),
         fontWeight: '700',
-        color: '#222',
+        color: colors.textPrimary,
         marginBottom: hp('0.6%'),
     },
     phoneLink: {
         fontSize: hp('1.8%'),
         fontWeight: '600',
-        color: '#295C59',
+        color: colors.brand,
         marginBottom: hp('1%'),
     },
     bookingId: {
         fontSize: hp('1.2%'),
         marginBottom: hp('1%'),
-        color: '#666',
+        color: colors.textSecondary,
     },
     row: {
         marginBottom: hp('1%'),
@@ -474,24 +553,24 @@ const styles = StyleSheet.create({
     label: {
         fontSize: hp('1.8%'),
         fontWeight: '700',
-        color: '#111',
+        color: colors.textPrimary,
         marginBottom: hp('1%'),
     },
     labelFlex: {
         fontSize: hp('1.8%'),
         fontWeight: '700',
-        color: '#111',
+        color: colors.textPrimary,
     },
     value: {
         fontSize: hp('1.8%'),
         fontWeight: '500',
-        color: '#555',
+        color: colors.textSecondary,
         lineHeight: hp('2.3%'),
     },
     valueFlex: {
         fontSize: hp('1.8%'),
         fontWeight: '500',
-        color: '#555',
+        color: colors.textSecondary,
         lineHeight: hp('2.3%'),
         textAlignVertical: 'center',
         flex: 1,
@@ -511,7 +590,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
         elevation: 3,
@@ -528,7 +607,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'red',
+        backgroundColor: colors.danger,
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0,0.1)',
         flex: 1,
@@ -546,7 +625,7 @@ const styles = StyleSheet.create({
         width: 50,
         marginVertical: hp('1%'),
         borderWidth: 1,
-        borderColor: '#d3d3d3',
+        borderColor: colors.border,
         borderRadius: 10,
     },
     modalContainer: {
@@ -617,7 +696,7 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         fontSize: hp('2%'),
-        color: '#555',
+        color: colors.textSecondary,
         marginTop: hp('10%'),
         textAlign: 'center',
     },

@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { markSplashReady } from '../src/utils/splashGate';
 import { logScreenView } from '../lib/analytics';
 import RoadBlockPopup from '../components/RoadBlockPopup';
+import { ThemeProvider } from '../context/ThemeContext';
+import { LanguageProvider } from '../context/LanguageContext';
 
 // Prevent splash screen from hiding automatically
 SplashScreen.preventAutoHideAsync().catch(() => { });
@@ -33,6 +35,16 @@ export function syncPushUser(userId: string, role: 'admin' | 'career' | 'user') 
 }
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <RootLayoutContent />
+      </LanguageProvider>
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutContent() {
   const [initializing, setInitializing] = useState(true);
   const [adminPhone, setAdminPhone] = useState<string | null>(null);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -29,8 +29,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import TermsCheckbox from '../../components/bookings/TermsCheckbox';
 import { logEvent } from '@/lib/analytics';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width, height } = Dimensions.get('window');
+
+const staticStyles = StyleSheet.create({
+  text: {
+    color: '#fff',
+    fontSize: width * 0.04,
+    fontWeight: '600',
+  },
+});
 
 const Button = ({ children, style, textStyle, onPress }: any) => {
   return (
@@ -39,7 +49,7 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
       activeOpacity={0.85}
       style={style}
     >
-      <Text style={[styles.text, textStyle]}>
+      <Text style={[staticStyles.text, textStyle]}>
         {children}
       </Text>
     </TouchableOpacity>
@@ -47,6 +57,8 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 };
 
 export default function PartnershipScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
@@ -224,7 +236,7 @@ export default function PartnershipScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header3 goHome />
       <SubmitOverlay
         visible={overlayVisible}
@@ -246,7 +258,7 @@ export default function PartnershipScreen() {
           <View style={styles.spacerGap} />
 
           {/* Full Name */}
-          <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Full Name <Text style={{ color: colors.danger }}>*</Text></Text>
           <TextInput
             placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
             value={name}
@@ -257,11 +269,11 @@ export default function PartnershipScreen() {
               styles.input,
               activeInput === 'name' && styles.inputActive
             ]}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
           />
 
           {/* Name of Organization */}
-          <Text style={styles.label}>Name of Organization <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Name of Organization <Text style={{ color: colors.danger }}>*</Text></Text>
           <TextInput
             placeholder={activeInput === 'organization' ? '' : 'Enter the name of your Organization'}
             value={organizationName}
@@ -272,11 +284,11 @@ export default function PartnershipScreen() {
               styles.input,
               activeInput === 'organization' && styles.inputActive
             ]}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
           />
 
           {/* Phone Number */}
-          <Text style={styles.label}>Phone Number <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Phone Number <Text style={{ color: colors.danger }}>*</Text></Text>
           <View style={styles.phoneContainer}>
             <Image
               source={countryLogo}
@@ -305,7 +317,7 @@ export default function PartnershipScreen() {
                 styles.phoneInput,
                 activeInput === 'phone' && styles.inputActive
               ]}
-              placeholderTextColor={'#4B4B4B'}
+              placeholderTextColor={colors.textMuted}
             />
           </View>
 
@@ -321,22 +333,22 @@ export default function PartnershipScreen() {
               styles.input,
               activeInput === 'email' && styles.inputActive
             ]}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
           />
 
           {/* Company Photos */}
-          <Text style={styles.label}>Company Photos <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Company Photos <Text style={{ color: colors.danger }}>*</Text></Text>
           <FileUploadBox
             value={selectCompanyPhotos}
             onChange={setSelectCompanyPhotos}
           />
 
           {/* Area Dropdown */}
-          <Text style={styles.label}>Area <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Area <Text style={{ color: colors.danger }}>*</Text></Text>
           <Dropdown
             options={city}
             placeholder="Select your Area"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             onSelectOption={setSelectedArea}
             value={selectedArea}
             onOpen={() => setActiveInput('area')}
@@ -344,10 +356,10 @@ export default function PartnershipScreen() {
           />
 
           {/* Number of Employees */}
-          <Text style={styles.label}>Number of Employees <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Number of Employees <Text style={{ color: colors.danger }}>*</Text></Text>
           <TextInput
             placeholder={activeInput === 'employees' ? '' : 'Enter the number of Employees'}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
             keyboardType="numeric"
             value={employees}
             onFocus={() => setActiveInput('employees')}
@@ -363,11 +375,11 @@ export default function PartnershipScreen() {
           />
 
           {/* Business Type Dropdown */}
-          <Text style={styles.label}>Business Type <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Business Type <Text style={{ color: colors.danger }}>*</Text></Text>
           <Dropdown
             options={businessType}
             placeholder="Select your Business Type"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             onSelectOption={setSelectedBusinessType}
             value={selectedBusinessType}
             onOpen={() => setActiveInput('businessType')}
@@ -375,11 +387,11 @@ export default function PartnershipScreen() {
           />
 
           {/* Services Offered Dropdown Add (MultiSelect) */}
-          <Text style={styles.label}>Services Offered <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Services Offered <Text style={{ color: colors.danger }}>*</Text></Text>
           <DropdownAdd
             options={services}
             placeholder="Select the Services you offer"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             onSelectOption={setSelectedServicesOffered}
             value={selectedServicesOffered}
             onOpen={() => setActiveInput('servicesOffered')}
@@ -387,11 +399,11 @@ export default function PartnershipScreen() {
           />
 
           {/* Partnership Interest Dropdown */}
-          <Text style={styles.label}>Partnership Interest <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Partnership Interest <Text style={{ color: colors.danger }}>*</Text></Text>
           <Dropdown
             options={partnershipInterest}
             placeholder="Select Partnership Interest"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             onSelectOption={setSelectedPartnership}
             value={selectedPartnership}
             onOpen={() => setActiveInput('partnership')}
@@ -399,18 +411,18 @@ export default function PartnershipScreen() {
           />
 
           {/* Company Registration Certificates */}
-          <Text style={styles.label}>Company Registration Certificates <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Company Registration Certificates <Text style={{ color: colors.danger }}>*</Text></Text>
           <FileUploadBox
             value={selectCRCphotos}
             onChange={setSelectCRCphotos}
           />
 
           {/* How did you hear about us Dropdown */}
-          <Text style={styles.label}>How did you hear about us? <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>How did you hear about us? <Text style={{ color: colors.danger }}>*</Text></Text>
           <Dropdown
             options={howduhear}
             placeholder="How did you hear about us?"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             onSelectOption={setSelectedHowHeard}
             value={selectedHowHeard}
             onOpen={() => setActiveInput('howHeard')}
@@ -423,7 +435,7 @@ export default function PartnershipScreen() {
             value={message}
             onChangeText={setMessage}
             placeholder=""
-            placeholderTextColor="#4B4B4B"
+            placeholderTextColor={colors.textMuted}
             maxHeight={160}
             onFocus={() => setActiveInput('message')}
             onBlur={() => setActiveInput(null)}
@@ -453,27 +465,27 @@ export default function PartnershipScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     flexGrow: 1,
     paddingBottom: hp('4%'),
   },
   formContainer: {
     paddingHorizontal: width * 0.06, // Optimized padding grid alignment
     paddingTop: height * 0.02,
-    backgroundColor: 'white',
+    backgroundColor: colors.background,
   },
   title: {
     fontSize: width * 0.065,
     fontWeight: '700',
-    color: '#295C59',
+    color: colors.brand,
     paddingLeft: 3,
   },
   subTitle: {
     fontSize: width * 0.034,
     fontWeight: '400',
-    color: '#666',
+    color: colors.textSecondary,
     paddingLeft: 3,
     marginTop: 4,
   },
@@ -488,13 +500,13 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.02,
     fontSize: width * 0.035,
     fontWeight: '500',
-    borderColor: '#E2E8F0', // Replaced raw dark black outline with elegant slate gray
-    color: '#1A1A1A',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
   },
   inputActive: {
-    borderColor: '#295C59',
-    backgroundColor: '#EFF8F7',
+    borderColor: colors.brand,
+    backgroundColor: colors.surfaceMuted,
   },
   phoneContainer: {
     position: 'relative',
@@ -513,26 +525,26 @@ const styles = StyleSheet.create({
     height: hp('2.5%'),
     resizeMode: 'contain',
     marginRight: 4,
-    tintColor: '#295C59',
+    tintColor: colors.brand,
   },
   phoneInput: {
     borderWidth: 1.5,
     borderRadius: 12,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     height: height * 0.055,
     paddingLeft: wp('12%'),
     paddingRight: 10,
     fontSize: width * 0.035,
     fontWeight: '500',
-    color: '#1A1A1A',
-    backgroundColor: '#fff',
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
   },
   label: {
     marginBottom: 6,
     paddingLeft: 4,
     fontSize: wp('3.6%'),
     fontWeight: '600',
-    color: '#4A4A4A',
+    color: colors.textSecondary,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -547,10 +559,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     marginBottom: 40,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
   },
   buttonClear: {
-    color: '#295C59',
+    color: colors.brand,
     fontSize: width * 0.038,
     fontWeight: '500',
   },

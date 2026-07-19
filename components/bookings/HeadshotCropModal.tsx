@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Modal,
@@ -14,6 +14,8 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width: SW } = Dimensions.get('window');
 const CIRCLE = SW * 0.72;
@@ -29,6 +31,8 @@ type Props = {
 };
 
 export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scale      = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const tx         = useSharedValue(0);
@@ -197,7 +201,7 @@ export default function HeadshotCropModal({ visible, imageUri, onSave, onCancel 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.60)',
@@ -206,7 +210,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: SW * 0.88,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 22,
     paddingVertical: 24,
     paddingHorizontal: 20,
@@ -220,13 +224,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: wp('5%'),
     fontWeight: '700',
-    color: '#1C2B2A',
+    color: colors.textPrimary,
     marginBottom: 6,
     letterSpacing: 0.2,
   },
   hint: {
     fontSize: wp('3%'),
-    color: '#9BBAB8',
+    color: colors.textMuted,
     marginBottom: 18,
     fontWeight: '500',
   },
@@ -274,7 +278,7 @@ const styles = StyleSheet.create({
   },
   zoomIcon: {
     fontSize: 20,
-    color: '#295C59',
+    color: colors.brand,
     fontWeight: '700',
     width: 18,
     textAlign: 'center',
@@ -282,7 +286,7 @@ const styles = StyleSheet.create({
   zoomTrack: {
     flex: 1,
     height: 4,
-    backgroundColor: '#E8F4F3',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 2,
     position: 'relative',
   },
@@ -292,7 +296,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
   },
   btnRow: {
     flexDirection: 'row',
@@ -301,21 +305,21 @@ const styles = StyleSheet.create({
   },
   btnCancel: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
+    borderColor: colors.border,
   },
   btnCancelText: {
     fontSize: wp('4%'),
     fontWeight: '700',
-    color: '#1C2B2A',
+    color: colors.textPrimary,
   },
   btnSave: {
     flex: 1,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: 'center',

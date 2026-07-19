@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
     title: string;
@@ -11,6 +14,8 @@ type Props = {
     style?: any};
 
 const OurTeamCard = ({title,suBTitle, image, style}: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       <Image source={image} style={[styles.image, style]} />
@@ -20,7 +25,7 @@ const OurTeamCard = ({title,suBTitle, image, style}: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     marginVertical: hp('1%'),
@@ -37,7 +42,7 @@ const styles = StyleSheet.create({
     marginTop: hp('1%'),
     fontWeight: '600',
     fontSize: wp('3.5%'), // Responsive font size
-    color: '#000',
+    color: colors.textPrimary,
     textAlign: 'center',
         width:'80%',
 
@@ -46,7 +51,7 @@ const styles = StyleSheet.create({
     marginTop: hp('0.1%'),
     fontWeight: '400',
     fontSize: wp('2.8%'), // Responsive font size
-    color: 'hsl(0, 0%, 25%)',
+    color: colors.textSecondary,
     textAlign: 'center',
     width:'80%',
   },

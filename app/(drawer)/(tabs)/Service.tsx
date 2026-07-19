@@ -27,6 +27,9 @@ import {
 
 import Header1 from '@/components/Header1';
 import { router } from 'expo-router';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type ServiceItem = typeof servicesData2[0];
 type RowItem =
@@ -58,6 +61,9 @@ function buildRows(services: ServiceItem[]): RowItem[] {
 }
 
 export default function ServiceScreen() {
+  const { colors } = useTheme();
+  const { t } = useLanguage();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const rows = useMemo(() => {
     const trending = servicesData2.filter(item => item.id !== 1 && item.id !== 4);
     return buildRows(trending);
@@ -126,13 +132,13 @@ export default function ServiceScreen() {
           colors={['rgba(0,0,0,0.08)', 'rgba(18,46,44,0.97)']}
           style={styles.headerGradient}
         >
-          <Text style={styles.headerTitle}>SuperFast Services</Text>
-          <Text style={styles.headerSubtitle}>Express Home Service</Text>
+          <Text style={styles.headerTitle}>{t('service.headerTitle')}</Text>
+          <Text style={styles.headerSubtitle}>{t('service.headerSubtitle')}</Text>
         </LinearGradient>
       </ImageBackground>
 
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle1}>Top Services</Text>
+        <Text style={styles.sectionTitle1}>{t('common.topServices')}</Text>
 
         {topServices.map((item) => (
           <ServicesCards
@@ -151,13 +157,13 @@ export default function ServiceScreen() {
           />
         ))}
 
-        <Text style={styles.sectionTitle2}>Trending Services</Text>
+        <Text style={styles.sectionTitle2}>{t('service.trendingServices')}</Text>
       </View>
     </View>
-  ), []);
+  ), [t, styles]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.screen}>
       <Header1 />
       <FlatList
         data={rows}
@@ -176,9 +182,14 @@ export default function ServiceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   headerContainer: {
     flex: 1,
+    backgroundColor: colors.background,
   },
 
   headerBackground: {
@@ -221,7 +232,7 @@ const styles = StyleSheet.create({
   sectionTitle1: {
     fontSize: wp('4.5%'),
     fontWeight: '800',
-    color: '#064E3B',
+    color: colors.brand,
     marginBottom: hp('3.2%'),
     marginTop: hp(-1),
   },
@@ -229,7 +240,7 @@ const styles = StyleSheet.create({
   sectionTitle2: {
     fontSize: wp('4.5%'),
     fontWeight: '800',
-    color: '#064E3B',
+    color: colors.brand,
     marginBottom: hp('2%'),
     marginTop: hp('2%'),
   },

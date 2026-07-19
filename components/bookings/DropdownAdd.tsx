@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
   options: string[];
@@ -33,6 +35,8 @@ const DropdownAdd = ({
   maxSelections,
   helperText,
 }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>(value);
   const [isFocus, setIsFocus] = useState(false);
@@ -63,13 +67,13 @@ const DropdownAdd = ({
     // Hide already-selected items from the list (multi-select only)
     if (maxSelections !== 1 && isSelected) return null;
 
-    const backgroundColor = item.index % 2 === 0 ? '#fff' : '#f9f9f9';
+    const backgroundColor = item.index % 2 === 0 ? colors.surface : colors.surfaceMuted;
     return (
       <View style={[styles.itemContainer, { backgroundColor }]}>
         <Text style={styles.itemText}>{item.label}</Text>
       </View>
     );
-  }, [selectedOptions, maxSelections]);
+  }, [selectedOptions, maxSelections, colors]);
 
   const activeBorderColor = isFocus ? 'hsl(142, 71%, 45%)' : borderColor;
 
@@ -157,7 +161,7 @@ const DropdownAdd = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     marginBottom: hp('2.5%'),
     position: 'relative',
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: wp('3.5%'),
     minHeight: hp('5.5%'),
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     paddingVertical: hp('0.5%'),
   },
   dropdownNoBottomRadius: {
@@ -188,11 +192,11 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 12,
     paddingHorizontal: wp('3.5%'),
     paddingVertical: hp('0.7%'),
-    backgroundColor: '#F8FAFA',
+    backgroundColor: colors.surfaceMuted,
   },
   helperStripText: {
     fontSize: wp('3%'),
-    color: '#888',
+    color: colors.textMuted,
     fontWeight: '400',
   },
   placeholder: {
@@ -202,7 +206,7 @@ const styles = StyleSheet.create({
   menuContainer: {
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     marginTop: 4,
     elevation: 8,
     shadowColor: 'hsl(142, 71%, 45%)',
@@ -217,7 +221,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: hp('1.7%'),
-    color: '#4A4A4A',
+    color: colors.textSecondary,
   },
   selectedOption: {
     backgroundColor: '#EBF1FF',
@@ -249,17 +253,17 @@ const styles = StyleSheet.create({
     marginRight: wp('1.5%'),
   },
   tagText: {
-    color: '#333',
+    color: colors.textPrimary,
     fontSize: wp('3.2%'),
     marginRight: 6,
   },
   removeText: {
-    color: '#FF3B30',
+    color: colors.danger,
     fontSize: wp('3.5%'),
     fontWeight: 'bold',
   },
   requiredAbsolute: {
-    color: '#FF3B30',
+    color: colors.danger,
     position: 'absolute',
     right: wp('12%'),
     top: hp('1.5%'),
@@ -267,9 +271,9 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderRadius: 8,
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
     fontSize: wp('3.6%'),
-    color: '#1A1A1A',
+    color: colors.textPrimary,
     height: hp('4.5%'),
   },
 });

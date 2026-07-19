@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type Partnership = {
     partner_id: number;
@@ -39,6 +41,8 @@ const parseUrls = (raw: string | null): string[] => {
 
 export default function PartnershipApplications() {
     const insets = useSafeAreaInsets();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [partners, setPartners] = useState<Partnership[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -105,23 +109,23 @@ export default function PartnershipApplications() {
             </View>
 
             <View style={styles.searchBox}>
-                <Ionicons name="search-outline" size={16} color="#9BBAB8" />
+                <Ionicons name="search-outline" size={16} color={colors.textMuted} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search by name, phone, or organisation"
-                    placeholderTextColor="#B0BEC5"
+                    placeholderTextColor={colors.textMuted}
                     value={search}
                     onChangeText={setSearch}
                 />
                 {search.length > 0 && (
                     <TouchableOpacity onPress={() => setSearch('')}>
-                        <Ionicons name="close-circle" size={16} color="#B0BEC5" />
+                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                     </TouchableOpacity>
                 )}
             </View>
 
             {loading ? (
-                <ActivityIndicator size="large" color="#295C59" style={{ marginTop: hp('5%') }} />
+                <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: hp('5%') }} />
             ) : (
                 <FlatList
                     data={paginated}
@@ -134,7 +138,7 @@ export default function PartnershipApplications() {
                                 onPress={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
                             >
-                                <Ionicons name="chevron-back" size={18} color={page === 1 ? '#B9CFCD' : '#295C59'} />
+                                <Ionicons name="chevron-back" size={18} color={page === 1 ? colors.textMuted : colors.brand} />
                             </TouchableOpacity>
                             <Text style={styles.pageIndicator}>Page {page} of {totalPages}</Text>
                             <TouchableOpacity
@@ -142,13 +146,13 @@ export default function PartnershipApplications() {
                                 onPress={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
                             >
-                                <Ionicons name="chevron-forward" size={18} color={page === totalPages ? '#B9CFCD' : '#295C59'} />
+                                <Ionicons name="chevron-forward" size={18} color={page === totalPages ? colors.textMuted : colors.brand} />
                             </TouchableOpacity>
                         </View>
                     ) : null}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Ionicons name="people-outline" size={44} color="#D6E8E7" />
+                            <Ionicons name="people-outline" size={44} color={colors.border} />
                             <Text style={styles.emptyText}>No partnership applications found</Text>
                         </View>
                     }
@@ -180,7 +184,7 @@ export default function PartnershipApplications() {
                     <View style={styles.modalSheet}>
                         <View style={styles.handleBar} />
                         <TouchableOpacity style={styles.modalClose} onPress={() => setSelected(null)}>
-                            <Ionicons name="close" size={22} color="#295C59" />
+                            <Ionicons name="close" size={22} color={colors.brand} />
                         </TouchableOpacity>
 
                         {selected && (
@@ -297,11 +301,11 @@ export default function PartnershipApplications() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
@@ -309,14 +313,14 @@ const styles = StyleSheet.create({
 
     searchBox: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#fff', margin: wp('4%'), marginBottom: wp('2%'),
-        borderRadius: 14, borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, margin: wp('4%'), marginBottom: wp('2%'),
+        borderRadius: 14, borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), height: hp('5.5%'),
     },
-    searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
+    searchInput: { flex: 1, fontSize: 14, color: colors.textPrimary },
 
     card: {
-        backgroundColor: '#fff', borderRadius: 16,
+        backgroundColor: colors.surface, borderRadius: 16,
         padding: wp('3.5%'), marginBottom: hp('1.2%'),
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         elevation: 2, shadowColor: '#000',
@@ -325,18 +329,18 @@ const styles = StyleSheet.create({
     cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: wp('3%') },
     avatarCircle: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { fontSize: 18, fontWeight: '800', color: '#295C59' },
+    avatarText: { fontSize: 18, fontWeight: '800', color: colors.brand },
     cardInfo: { flex: 1 },
-    name: { fontSize: 14, fontWeight: '700', color: '#1C2B2A', marginBottom: 2 },
-    sub: { fontSize: 11, color: '#9BBAB8', marginTop: 1 },
-    idPill: { backgroundColor: '#E8F4F3', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-    idPillLarge: { backgroundColor: '#E8F4F3', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginTop: 6 },
-    idPillText: { fontSize: 12, fontWeight: '800', color: '#295C59' },
+    name: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+    sub: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+    idPill: { backgroundColor: colors.surfaceMuted, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+    idPillLarge: { backgroundColor: colors.surfaceMuted, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginTop: 6 },
+    idPillText: { fontSize: 12, fontWeight: '800', color: colors.brand },
 
     empty: { alignItems: 'center', paddingVertical: hp('8%'), gap: 12 },
-    emptyText: { fontSize: 15, color: '#9BBAB8', fontWeight: '500' },
+    emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: '500' },
 
     paginationRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -345,35 +349,35 @@ const styles = StyleSheet.create({
     pageBtn: {
         width: 36, height: 36, borderRadius: 10,
         alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border,
     },
-    pageBtnDisabled: { backgroundColor: '#F5F9F8', borderColor: '#EAF2F1' },
-    pageIndicator: { fontSize: 13, fontWeight: '700', color: '#295C59', minWidth: wp('28%'), textAlign: 'center' },
+    pageBtnDisabled: { backgroundColor: colors.background, borderColor: colors.divider },
+    pageIndicator: { fontSize: 13, fontWeight: '700', color: colors.brand, minWidth: wp('28%'), textAlign: 'center' },
 
     // Detail Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
     modalSheet: {
-        backgroundColor: '#F5F9F8', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        backgroundColor: colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingHorizontal: wp('5%'), paddingTop: hp('1.5%'), maxHeight: hp('88%'),
     },
-    handleBar: { width: 40, height: 4, borderRadius: 2, backgroundColor: '#D6E8E7', alignSelf: 'center', marginBottom: hp('1%') },
-    modalClose: { alignSelf: 'flex-end', padding: 6, backgroundColor: '#E8F4F3', borderRadius: 20, marginBottom: hp('1%') },
+    handleBar: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: hp('1%') },
+    modalClose: { alignSelf: 'flex-end', padding: 6, backgroundColor: colors.surfaceMuted, borderRadius: 20, marginBottom: hp('1%') },
     modalAvatarRow: { alignItems: 'center', gap: 8, marginBottom: hp('2%') },
-    modalAvatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center' },
-    modalAvatarText: { fontSize: 30, fontWeight: '800', color: '#295C59' },
-    modalName: { fontSize: 20, fontWeight: '800', color: '#1C2B2A', textAlign: 'center' },
+    modalAvatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+    modalAvatarText: { fontSize: 30, fontWeight: '800', color: colors.brand },
+    modalName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
 
     detailCard: {
-        backgroundColor: '#fff', borderRadius: 16,
+        backgroundColor: colors.surface, borderRadius: 16,
         padding: wp('4%'), marginBottom: hp('1.2%'),
         elevation: 2, shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
     },
-    detailLabel: { fontSize: 11, fontWeight: '800', color: '#295C59', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
-    detailValue: { fontSize: 15, fontWeight: '600', color: '#1C2B2A' },
-    phoneLink: { textDecorationLine: 'underline', color: '#295C59' },
+    detailLabel: { fontSize: 11, fontWeight: '800', color: colors.brand, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+    detailValue: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+    phoneLink: { textDecorationLine: 'underline', color: colors.brand },
 
     tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-    tag: { backgroundColor: '#E8F4F3', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-    tagText: { fontSize: 12, fontWeight: '600', color: '#295C59' },
+    tag: { backgroundColor: colors.surfaceMuted, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    tagText: { fontSize: 12, fontWeight: '600', color: colors.brand },
 });

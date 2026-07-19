@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     Alert, TextInput, ScrollView, ActivityIndicator,
@@ -14,6 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notifyAll, notifyProfessionalsInCity, notifyCustomers, notifyCustomersByService, notifyAdminsBroadcast, notifyPublic } from '../../../api/notifications';
 import { supabase } from '../../../lib/supabase';
 import MultiSelectDropdown from '@/components/MultiSelectDropdown';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const SERVICES = [
     'Deep Cleaning', 'Garden Care', 'Masonry Repair', 'Plumbing Repair',
@@ -91,7 +93,7 @@ const formatDate = (iso: string) => {
     }
 };
 
-function TabDropdown({ value, onChange }: { value: Tab; onChange: (tab: Tab) => void }) {
+function TabDropdown({ value, onChange, styles, colors }: { value: Tab; onChange: (tab: Tab) => void; styles: ReturnType<typeof createStyles>; colors: ThemeColors }) {
     const [open, setOpen] = useState(false);
     const insets = useSafeAreaInsets();
     const active = TAB_CONFIG.find(t => t.key === value)!;
@@ -99,9 +101,9 @@ function TabDropdown({ value, onChange }: { value: Tab; onChange: (tab: Tab) => 
     return (
         <>
             <TouchableOpacity style={styles.tabDropdownBtn} onPress={() => setOpen(true)} activeOpacity={0.8}>
-                <Ionicons name={active.icon as any} size={18} color="#295C59" />
+                <Ionicons name={active.icon as any} size={18} color={colors.brand} />
                 <Text style={styles.tabDropdownValue}>{active.label}</Text>
-                <Ionicons name="chevron-down" size={18} color="#9BBAB8" />
+                <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
             </TouchableOpacity>
 
             <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
@@ -110,7 +112,7 @@ function TabDropdown({ value, onChange }: { value: Tab; onChange: (tab: Tab) => 
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Send To</Text>
                             <TouchableOpacity onPress={() => setOpen(false)}>
-                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                                <Ionicons name="close" size={22} color={colors.textPrimary} />
                             </TouchableOpacity>
                         </View>
 
@@ -123,9 +125,9 @@ function TabDropdown({ value, onChange }: { value: Tab; onChange: (tab: Tab) => 
                                     onPress={() => { onChange(t.key); setOpen(false); }}
                                     activeOpacity={0.7}
                                 >
-                                    <Ionicons name={t.icon as any} size={18} color={selected ? '#295C59' : '#9BBAB8'} />
+                                    <Ionicons name={t.icon as any} size={18} color={selected ? colors.brand : colors.textMuted} />
                                     <Text style={[styles.optionText, selected && styles.optionTextChecked]}>{t.label}</Text>
-                                    {selected && <Ionicons name="checkmark" size={18} color="#295C59" />}
+                                    {selected && <Ionicons name="checkmark" size={18} color={colors.brand} />}
                                 </TouchableOpacity>
                             );
                         })}
@@ -138,6 +140,8 @@ function TabDropdown({ value, onChange }: { value: Tab; onChange: (tab: Tab) => 
 }
 
 export default function AdminNotifications() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [tab, setTab] = useState<Tab>('all');
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
@@ -249,17 +253,17 @@ export default function AdminNotifications() {
             </View>
 
             <View style={styles.tabDropdownWrap}>
-                <TabDropdown value={tab} onChange={(t) => { setTab(t); resetFields(); }} />
+                <TabDropdown value={tab} onChange={(t) => { setTab(t); resetFields(); }} styles={styles} colors={colors} />
             </View>
 
             {tab === 'history' ? (
                 historyLoading ? (
                     <View style={styles.historyCenter}>
-                        <ActivityIndicator size="large" color="#295C59" />
+                        <ActivityIndicator size="large" color={colors.brand} />
                     </View>
                 ) : history.length === 0 ? (
                     <View style={styles.historyCenter}>
-                        <Ionicons name="notifications-off-outline" size={40} color="#9BBAB8" />
+                        <Ionicons name="notifications-off-outline" size={40} color={colors.textMuted} />
                         <Text style={styles.emptyText}>No notifications sent yet.</Text>
                     </View>
                 ) : (
@@ -278,11 +282,11 @@ export default function AdminNotifications() {
                     />
                 )
             ) : (
-            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
                 <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
                     <View style={styles.infoBanner}>
-                        <Ionicons name={activeTab.icon as any} size={18} color="#295C59" />
+                        <Ionicons name={activeTab.icon as any} size={18} color={colors.brand} />
                         <Text style={styles.infoText}>{activeTab.description}</Text>
                     </View>
 
@@ -306,7 +310,7 @@ export default function AdminNotifications() {
                             <TextInput
                                 style={[styles.input, styles.textarea]}
                                 placeholder="Type your message to professionals..."
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 value={message}
                                 onChangeText={setMessage}
                                 multiline
@@ -328,7 +332,7 @@ export default function AdminNotifications() {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Notification title"
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 value={title}
                                 onChangeText={setTitle}
                             />
@@ -344,7 +348,7 @@ export default function AdminNotifications() {
                                         ? 'Type your message to public installs...'
                                         : 'Type your announcement or notice...'
                                 }
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 value={message}
                                 onChangeText={setMessage}
                                 multiline
@@ -374,58 +378,58 @@ export default function AdminNotifications() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
     tabDropdownWrap: {
-        backgroundColor: '#fff', paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
-        borderBottomWidth: 1, borderBottomColor: '#E8F4F3',
+        backgroundColor: colors.surface, paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
     tabDropdownBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 14,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.6%'),
     },
-    tabDropdownValue: { fontSize: 14, color: '#1C2B2A', fontWeight: '700', flex: 1 },
+    tabDropdownValue: { fontSize: 14, color: colors.textPrimary, fontWeight: '700', flex: 1 },
     content: { padding: wp('4%'), paddingBottom: hp('20%') },
     infoBanner: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-        backgroundColor: '#E8F4F3', borderRadius: 14,
+        backgroundColor: colors.surfaceMuted, borderRadius: 14,
         padding: wp('4%'), marginBottom: hp('2.5%'),
     },
-    infoText: { flex: 1, fontSize: 13, color: '#295C59', fontWeight: '500', lineHeight: 20 },
+    infoText: { flex: 1, fontSize: 13, color: colors.brand, fontWeight: '500', lineHeight: 20 },
     label: {
-        fontSize: 11, fontWeight: '800', color: '#295C59',
+        fontSize: 11, fontWeight: '800', color: colors.brand,
         textTransform: 'uppercase', letterSpacing: 0.6,
         marginBottom: 8, marginTop: hp('2%'),
     },
     input: {
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 14,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
-        fontSize: 14, color: '#1C2B2A',
+        fontSize: 14, color: colors.textPrimary,
     },
     textarea: { minHeight: hp('16%'), paddingTop: hp('1.5%') },
 
     // History (All Notifications)
     historyCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-    emptyText: { fontSize: 14, color: '#9BBAB8', fontWeight: '500' },
+    emptyText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
     historyList: { padding: wp('4%'), paddingBottom: hp('5%') },
     historyCard: {
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1, borderColor: '#E8F4F3',
+        backgroundColor: colors.surface, borderRadius: 14,
+        borderWidth: 1, borderColor: colors.border,
         padding: wp('4%'), marginBottom: hp('1.5%'),
     },
-    historyCardTitle: { fontSize: 15, fontWeight: '700', color: '#1C2B2A', marginBottom: 4 },
-    historyCardBody: { fontSize: 13.5, fontWeight: '500', color: '#5A7270', lineHeight: 19, marginBottom: 6 },
-    historyCardDate: { fontSize: 11, fontWeight: '600', color: '#9BBAB8' },
+    historyCardTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
+    historyCardBody: { fontSize: 13.5, fontWeight: '500', color: colors.textSecondary, lineHeight: 19, marginBottom: 6 },
+    historyCardDate: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
 
     // Modal
     modalOverlay: {
@@ -433,26 +437,26 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalSheet: {
-        backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
         paddingTop: 8, maxHeight: hp('75%'),
     },
     modalHeader: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: wp('5%'), paddingVertical: hp('1.8%'),
-        borderBottomWidth: 1, borderBottomColor: '#F0F4F3',
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
-    modalTitle: { fontSize: 16, fontWeight: '800', color: '#1C2B2A' },
+    modalTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
     optionRow: {
         flexDirection: 'row', alignItems: 'center', gap: 14,
         paddingVertical: hp('1.5%'), paddingHorizontal: wp('5%'),
-        borderBottomWidth: 1, borderBottomColor: '#F5F9F8',
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
-    optionText: { fontSize: 14, color: '#4B5563', flex: 1 },
-    optionTextChecked: { color: '#1C2B2A', fontWeight: '600' },
+    optionText: { fontSize: 14, color: colors.textSecondary, flex: 1 },
+    optionTextChecked: { color: colors.textPrimary, fontWeight: '600' },
 
     sendBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#295C59', borderRadius: 16,
+        backgroundColor: colors.brand, borderRadius: 16,
         paddingVertical: hp('2%'), marginTop: hp('3%'), gap: 8,
         elevation: 3,
     },

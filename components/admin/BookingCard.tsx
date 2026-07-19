@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import ResearchIcon from '../../assets/icons/admin/research.png'
 
@@ -6,6 +6,8 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 // export type BookingStatus = "Completed" | "Pending" | "Cancelled";
 
@@ -49,6 +51,8 @@ const getStatusType = (status: string) => {
 };
 
 const BookingCard = ({ item, isOpen, onToggle, onPress, displayName }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const statusType = getStatusType(item.status);
   return (
     <View style={styles.card}>
@@ -97,21 +101,22 @@ const BookingCard = ({ item, isOpen, onToggle, onPress, displayName }: Props) =>
 
       
 
-      <View style={{ borderBottomWidth: 1, borderColor: '#295C59', marginVertical: hp('1.5%') }} />
+      <View style={{ borderBottomWidth: 1, borderColor: colors.brand, marginVertical: hp('1.5%') }} />
     </View >
   );
 };
 
 export default React.memo(BookingCard);
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
 
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     paddingHorizontal: hp('4%'),
+    paddingTop: hp('1.5%'),
 
   },
 
@@ -134,7 +139,7 @@ const styles = StyleSheet.create({
 
   dateTop: {
     fontSize: hp('1.4%'),
-    color: '#444',
+    color: colors.textSecondary,
     paddingTop: hp('1%'),
     fontStyle: 'italic'
 
@@ -143,16 +148,17 @@ const styles = StyleSheet.create({
   name: {
     fontSize: hp('2%'),
     fontWeight: '700',
+    color: colors.textPrimary,
   },
 
   service: {
     marginTop: hp('0.3%'),
     fontSize: hp('1.5%'),
-    color: '#555',
+    color: colors.textSecondary,
   },
   budget: {
     fontSize: hp('1.6%'),
-    color: '#555',
+    color: colors.textSecondary,
     marginTop: hp('0.5%')
   },
 
@@ -162,17 +168,18 @@ const styles = StyleSheet.create({
 
   infoText: {
     fontSize: hp('1.4%'),
-    color: '#444',
+    color: colors.textSecondary,
   },
 
   status: {
     fontWeight: '700',
-    fontSize: hp('1.6%')
+    fontSize: hp('1.6%'),
+    color: colors.textPrimary,
   },
 
-  completed: { color: 'green' },
-  pending: { color: '#E8A317' },
-  cancelled: { color: 'red' },
+  completed: { color: colors.success },
+  pending: { color: colors.warning },
+  cancelled: { color: colors.danger },
 
   actionButton: {
     flexDirection: 'row',      // ✅ key fix
@@ -182,7 +189,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 6,
     marginBottom: hp('0.5%'),
-    backgroundColor: '#295C59'                 // ✅ space between text & icon
+    backgroundColor: colors.brand                 // ✅ space between text & icon
   },
   dropdownIcon: {
     height: 18,
@@ -199,7 +206,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     left: hp('20%'),
     top: hp('0.5%'),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     width: '50%',
     shadowColor: '#000',
@@ -209,7 +216,7 @@ const styles = StyleSheet.create({
     elevation: 8,
 
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: colors.border,
 
     overflow: 'hidden',
     minWidth: wp('35%'),
@@ -222,7 +229,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 
-    backgroundColor: '#eaeaea',
+    backgroundColor: colors.surfaceMuted,
   },
 
   dropdownText: {
@@ -230,6 +237,7 @@ const styles = StyleSheet.create({
     width: '100%',
     textAlign: 'center',
     fontWeight: '500',
-    textDecorationLine: 'underline'
+    textDecorationLine: 'underline',
+    color: colors.textPrimary,
   },
 });

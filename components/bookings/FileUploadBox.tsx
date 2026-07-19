@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import * as ImagePicker from 'expo-image-picker';
 
 import ArrowDownIcon from '../../assets/icons/contact/downarrow.png';
 import DelIcon from '../../assets/icons/contact/deleteicon.png';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +32,8 @@ type Props = {
 };
 
 const FileUploadBox: React.FC<Props> = ({ value, onChange, label = 'Drop files/photos here', onPressOverride }) => {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const pickImages = async () => {
@@ -148,7 +152,7 @@ const FileUploadBox: React.FC<Props> = ({ value, onChange, label = 'Drop files/p
 
 export default FileUploadBox;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: {
     marginTop: 6,
     marginBottom: 16,
@@ -168,8 +172,8 @@ const styles = StyleSheet.create({
     minHeight: 110,
     borderWidth: 1.5,
     borderRadius: 12,
-    borderColor: '#E2E8F0',       // Uniform inline static wrapper profile gray
-    backgroundColor: '#fff',
+    borderColor: colors.border,   // Uniform inline static wrapper profile gray
+    backgroundColor: colors.surface,
     padding: 8,
   },
   emptyState: {
@@ -185,7 +189,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#4B5563',
+    color: colors.textSecondary,
   },
   // Optimized Grid mechanics to replace cross-platform gap rendering limitations
   previewGrid: {
@@ -199,7 +203,7 @@ const styles = StyleSheet.create({
   previewCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',   // Light gray layout card backgrounds
+    backgroundColor: colors.surfaceMuted,   // Light gray layout card backgrounds
     padding: 8,
     borderRadius: 10,
     height: 56,
@@ -217,11 +221,13 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1E293B',
+    // Was a hardcoded near-black, illegible on the dark surfaceMuted card behind it
+    // in dark mode — flip to white there, keep the original dark slate in light mode.
+    color: isDark ? '#fff' : '#1E293B',
   },
   size: {
     fontSize: 11,
-    color: '#64748B',
+    color: colors.textMuted,
     marginTop: 1,
   },
   deleteHitSlop: {
@@ -230,7 +236,7 @@ const styles = StyleSheet.create({
   deleteIcon: {
     width: 14,
     height: 14,
-    tintColor: '#94A3B8',
+    tintColor: colors.textMuted,
   },
   addMore: {
     height: 56,
@@ -271,7 +277,7 @@ const styles = StyleSheet.create({
   deleteFromPreview: {
     position: 'absolute',
     bottom: 50,
-    backgroundColor: '#EF4444',   // Standardized destruct item alert color hex
+    backgroundColor: colors.danger,   // Standardized destruct item alert color hex
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,

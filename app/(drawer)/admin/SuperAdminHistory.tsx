@@ -12,6 +12,8 @@ import Header4 from '@/components/Header4Admin';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchBookings } from '../../../api/helper/fetchBookingData';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const DATE_FILTERS = [
     { label: 'Today',      value: 'Today'      },
@@ -71,6 +73,8 @@ const filterByRange = (bookings: any[], range: string): any[] => {
 };
 
 export default function SuperAdminHistory() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [openId, setOpenId] = useState<string | null>(null);
@@ -146,7 +150,7 @@ export default function SuperAdminHistory() {
     ), [openId, toggleCard, handlePress]);
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <Header4 />
 
             {/* HEADER */}
@@ -221,7 +225,7 @@ export default function SuperAdminHistory() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -230,13 +234,13 @@ const styles = StyleSheet.create({
         marginBottom: hp('1%'),
         minHeight: hp('5%'),
     },
-    backIcon: { width: hp('3.5%'), height: hp('3.5%'), tintColor: '#295C59' },
-    title: { fontSize: hp('2.3%'), fontWeight: '700', color: '#295C59' },
-    subtitle: { fontSize: hp('1.5%'), color: '#9BBAB8', fontWeight: '500' },
+    backIcon: { width: hp('3.5%'), height: hp('3.5%'), tintColor: colors.brand },
+    title: { fontSize: hp('2.3%'), fontWeight: '700', color: colors.brand },
+    subtitle: { fontSize: hp('1.5%'), color: colors.textMuted, fontWeight: '500' },
     badge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         borderRadius: 20,
         paddingHorizontal: wp('3%'),
         paddingVertical: hp('0.5%'),
@@ -250,7 +254,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         width: '90%',
         borderRadius: 200,
-        borderColor: 'rgba(0,0,0,0.3)',
+        borderColor: colors.border,
         height: hp('5%'),
         marginTop: hp('1%'),
         marginBottom: hp('1.5%'),
@@ -261,7 +265,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: hp(1.8),
         fontWeight: '500',
-        color: '#000',
+        color: colors.textPrimary,
         paddingLeft: 8,
         letterSpacing: 0.3,
     },
@@ -274,18 +278,18 @@ const styles = StyleSheet.create({
         marginBottom: hp('1%'),
     },
     filterPill: {
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
         paddingHorizontal: wp('3.5%'),
         paddingVertical: hp('0.7%'),
         borderRadius: 20,
     },
     filterPillActive: {
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
     },
     filterText: {
         fontSize: wp('3.2%'),
         fontWeight: '600',
-        color: '#295C59',
+        color: colors.brand,
     },
     filterTextActive: {
         color: '#fff',
@@ -296,12 +300,12 @@ const styles = StyleSheet.create({
         marginBottom: hp('1%'),
         fontSize: hp('1.6%'),
         fontWeight: '600',
-        color: '#9BBAB8',
+        color: colors.textMuted,
     },
 
     emptyText: {
         textAlign: 'center',
-        color: '#9BBAB8',
+        color: colors.textMuted,
         fontSize: hp('1.8%'),
         marginTop: hp('10%'),
     },

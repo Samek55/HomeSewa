@@ -1,5 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { View, TextInput, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type Props = {
   length?: number;
@@ -25,6 +27,8 @@ export default function OtpInput({
   containerStyle,
   boxStyle,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const refs = useRef<(TextInput | null)[]>([]);
 
   const handleChangeText = (text: string, index: number) => {
@@ -90,7 +94,7 @@ export default function OtpInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -102,11 +106,12 @@ const styles = StyleSheet.create({
     height: 50,
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: 'hsl(0, 0%, 79%)',
+    borderColor: colors.border,
     borderRadius: 5,
     textAlign: 'center',
     fontSize: 20,
-    backgroundColor: '#fff',
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
     elevation: 3,
   },
 });

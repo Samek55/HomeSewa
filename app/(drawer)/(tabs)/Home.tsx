@@ -17,6 +17,9 @@ import Header1 from '@/components/Header1';
 import { router } from 'expo-router';
 import { useRef, useMemo } from 'react';
 import { servicesData2 } from '../../../src/data/ServiceData';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { ThemeColors } from '@/theme/colors';
 
 
 // Fixed pool of 9 services shown on Home — order is reshuffled on every app open.
@@ -33,6 +36,9 @@ const HOME_SERVICE_NAMES = [
 ];
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const { t } = useLanguage();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollRef = useRef<ScrollView | null>(null);
 
   const shuffledServices = useMemo(() => {
@@ -61,9 +67,9 @@ export default function HomeScreen() {
             style={styles.heroOverlay}
           >
             {/* HEADLINE */}
-            <Text style={styles.heroTitle}>Express{'\n'}Home Service</Text>
+            <Text style={styles.heroTitle}>{t('home.heroTitle')}</Text>
             <Text style={styles.heroSub}>
-              SuperFast Service at your Home.
+              {t('home.heroSub')}
             </Text>
 
             {/* PHONE BAR */}
@@ -97,7 +103,7 @@ export default function HomeScreen() {
               style={styles.featuredGradient}
             >
               <View style={styles.featuredBadge}>
-                <Text style={styles.featuredBadgeText}>Most Popular</Text>
+                <Text style={styles.featuredBadgeText}>{t('home.mostPopular')}</Text>
               </View>
               <Text style={styles.featuredTitle}>Deep Cleaning</Text>
               <Text style={styles.featuredSub}>Professional home cleaning service</Text>
@@ -105,9 +111,9 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Top Services</Text>
+            <Text style={styles.sectionTitle}>{t('common.topServices')}</Text>
             <TouchableOpacity onPress={() => router.push('/Service')}>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={styles.seeAll}>{t('common.seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -136,8 +142,8 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, paddingBottom: hp('3%') },
 
   /* HERO */
@@ -175,7 +181,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: hp('1.5%'),
   },
-  sectionTitle: { fontSize: wp('4.4%'), fontWeight: '800', color: '#1C2B2A' },
+  sectionTitle: { fontSize: wp('4.4%'), fontWeight: '800', color: colors.textPrimary },
   seeAll: { fontSize: wp('3.2%'), fontWeight: '600', color: '#295C59' },
   /* FEATURED CARD */
   featuredCard: {

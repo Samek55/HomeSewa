@@ -56,6 +56,11 @@ export const fetchBookings = async () => {
         try { return item.add_photos ? JSON.parse(item.add_photos) : []; }
         catch { return []; }
       })(),
+      completionPhotos: (() => {
+        try { return item.completion_photos ? JSON.parse(item.completion_photos) : []; }
+        catch { return []; }
+      })(),
+      acceptedByPhone: item.accepted_by_phone,
     }));
   } catch (error) {
     console.log('Fetch Error:', error);

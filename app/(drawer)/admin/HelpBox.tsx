@@ -9,6 +9,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type HelpEntry = {
     id: string;
@@ -69,6 +71,8 @@ function filterByDuration(data: HelpEntry[], duration: Duration): HelpEntry[] {
 }
 
 export default function HelpBox() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [entries, setEntries] = useState<HelpEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -143,18 +147,18 @@ export default function HelpBox() {
             >
                 {/* SEARCH */}
                 <View style={styles.searchBox}>
-                    <Ionicons name="search-outline" size={18} color="#9BBAB8" />
+                    <Ionicons name="search-outline" size={18} color={colors.textMuted} />
                     <TextInput
                         style={styles.searchInput}
                         placeholder="Search by phone number"
-                        placeholderTextColor="#B0BEC5"
+                        placeholderTextColor={colors.textMuted}
                         value={search}
                         onChangeText={setSearch}
                         keyboardType="number-pad"
                     />
                     {search.length > 0 && (
                         <TouchableOpacity onPress={() => setSearch('')}>
-                            <Ionicons name="close-circle" size={18} color="#B0BEC5" />
+                            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -169,7 +173,7 @@ export default function HelpBox() {
                             onPress={() => { setShowDurationDrop(v => !v); setShowStatusDrop(false); }}
                         >
                             <Text style={styles.dropBtnText}>{duration}</Text>
-                            <Ionicons name={showDurationDrop ? 'chevron-up' : 'chevron-down'} size={16} color="#295C59" />
+                            <Ionicons name={showDurationDrop ? 'chevron-up' : 'chevron-down'} size={16} color={colors.brand} />
                         </TouchableOpacity>
                         {showDurationDrop && (
                             <View style={styles.dropMenu}>
@@ -196,7 +200,7 @@ export default function HelpBox() {
                             <Text style={styles.dropBtnText}>
                                 {statusFilter === 'All' ? 'All' : statusFilter === 'solved' ? 'Solved' : 'Open'}
                             </Text>
-                            <Ionicons name={showStatusDrop ? 'chevron-up' : 'chevron-down'} size={16} color="#295C59" />
+                            <Ionicons name={showStatusDrop ? 'chevron-up' : 'chevron-down'} size={16} color={colors.brand} />
                         </TouchableOpacity>
                         {showStatusDrop && (
                             <View style={styles.dropMenu}>
@@ -219,11 +223,11 @@ export default function HelpBox() {
                 {/* TABLE */}
                 {loading ? (
                     <View style={styles.center}>
-                        <ActivityIndicator size="large" color="#295C59" />
+                        <ActivityIndicator size="large" color={colors.brand} />
                     </View>
                 ) : filtered.length === 0 ? (
                     <View style={styles.center}>
-                        <Ionicons name="chatbox-ellipses-outline" size={44} color="#D6E8E7" />
+                        <Ionicons name="chatbox-ellipses-outline" size={44} color={colors.border} />
                         <Text style={styles.emptyText}>No help requests found</Text>
                     </View>
                 ) : (
@@ -280,7 +284,7 @@ export default function HelpBox() {
                                     onPress={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page === 1}
                                 >
-                                    <Ionicons name="chevron-back" size={18} color={page === 1 ? '#B9CFCD' : '#295C59'} />
+                                    <Ionicons name="chevron-back" size={18} color={page === 1 ? colors.textMuted : colors.brand} />
                                 </TouchableOpacity>
 
                                 <Text style={styles.pageIndicator}>Page {page} of {totalPages}</Text>
@@ -290,7 +294,7 @@ export default function HelpBox() {
                                     onPress={() => setPage(p => Math.min(totalPages, p + 1))}
                                     disabled={page === totalPages}
                                 >
-                                    <Ionicons name="chevron-forward" size={18} color={page === totalPages ? '#B9CFCD' : '#295C59'} />
+                                    <Ionicons name="chevron-forward" size={18} color={page === totalPages ? colors.textMuted : colors.brand} />
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -301,14 +305,14 @@ export default function HelpBox() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     center: { alignItems: 'center', justifyContent: 'center', paddingVertical: hp('8%'), gap: 12 },
-    emptyText: { fontSize: 15, color: '#9BBAB8', fontWeight: '500' },
+    emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: '500' },
 
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
     },
     backBtn: { padding: 4, marginRight: wp('3%') },
@@ -319,70 +323,70 @@ const styles = StyleSheet.create({
 
     searchBox: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 14,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), height: hp('6%'),
         marginBottom: hp('2%'),
     },
-    searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A', fontWeight: '500' },
+    searchInput: { flex: 1, fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
 
     filtersRow: { flexDirection: 'row', gap: wp('4%'), marginBottom: hp('2%') },
     filterGroup: { flex: 1 },
     filterLabel: {
-        fontSize: 12, fontWeight: '700', color: '#295C59',
+        fontSize: 12, fontWeight: '700', color: colors.brand,
         marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4,
     },
     dropBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('3%'), paddingVertical: hp('1.2%'),
     },
-    dropBtnText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A', flex: 1 },
+    dropBtnText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, flex: 1 },
     dropMenu: {
         position: 'absolute', top: '100%', left: 0, right: 0,
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         marginTop: 4, zIndex: 999,
         elevation: 8, shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8,
     },
     dropItem: { paddingHorizontal: wp('3%'), paddingVertical: hp('1.3%') },
-    dropItemActive: { backgroundColor: '#E8F4F3' },
-    dropItemText: { fontSize: 14, fontWeight: '500', color: '#1C2B2A' },
-    dropItemTextActive: { color: '#295C59', fontWeight: '700' },
+    dropItemActive: { backgroundColor: colors.surfaceMuted },
+    dropItemText: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
+    dropItemTextActive: { color: colors.brand, fontWeight: '700' },
 
     table: {
-        backgroundColor: '#fff', borderRadius: 16,
-        overflow: 'hidden', borderWidth: 1, borderColor: '#E8F4F3',
+        backgroundColor: colors.surface, borderRadius: 16,
+        overflow: 'hidden', borderWidth: 1, borderColor: colors.border,
         elevation: 2, shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
         marginTop: hp('1%'),
     },
     tableHeader: {
-        flexDirection: 'row', backgroundColor: '#295C59',
+        flexDirection: 'row', backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.3%'),
     },
     colHeader: { fontSize: 12, fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: 0.5 },
     tableRow: {
         flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
-        borderBottomWidth: 1, borderBottomColor: '#F0F7F6',
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
-    tableRowAlt: { backgroundColor: '#FAFEFE' },
-    cell: { fontSize: 13, fontWeight: '500', color: '#1C2B2A' },
+    tableRowAlt: { backgroundColor: colors.surfaceMuted },
+    cell: { fontSize: 13, fontWeight: '500', color: colors.textPrimary },
     uidCell: { fontWeight: '700', letterSpacing: 0.5 },
     statusCell: { alignItems: 'center' },
 
     solvedText: {
-        fontSize: 18, fontWeight: '800', color: '#22c55e',
+        fontSize: 18, fontWeight: '800', color: colors.success,
     },
     openText: {
-        fontSize: 15, fontWeight: '800', color: '#f59e0b',
+        fontSize: 15, fontWeight: '800', color: colors.warning,
     },
 
     countText: {
-        textAlign: 'center', fontSize: 13, color: '#9BBAB8',
+        textAlign: 'center', fontSize: 13, color: colors.textMuted,
         fontWeight: '500', marginTop: hp('2%'),
     },
 
@@ -393,8 +397,8 @@ const styles = StyleSheet.create({
     pageBtn: {
         width: 36, height: 36, borderRadius: 10,
         alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border,
     },
-    pageBtnDisabled: { backgroundColor: '#F5F9F8', borderColor: '#EAF2F1' },
-    pageIndicator: { fontSize: 13, fontWeight: '700', color: '#295C59', minWidth: wp('28%'), textAlign: 'center' },
+    pageBtnDisabled: { backgroundColor: colors.background, borderColor: colors.divider },
+    pageIndicator: { fontSize: 13, fontWeight: '700', color: colors.brand, minWidth: wp('28%'), textAlign: 'center' },
 });

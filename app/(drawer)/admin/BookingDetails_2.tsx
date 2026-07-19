@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View, Text, Image, TouchableOpacity, ScrollView,
     StyleSheet, ActivityIndicator, Alert, Linking,
@@ -15,6 +15,13 @@ import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import { pushAreaProfessionals } from '../../../api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { invokeEdgeFunction } from '../../../api/functionsClient';
+import StarRating from '@/components/bookings/StarRating';
+import TextArea from '@/components/bookings/TextArea';
+import { getBookingRatings, submitRating, BookingRating } from '@/api/ratings';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
+
+const normalizePhone = (phone?: string | null) => (phone || '').replace(/\D/g, '').replace(/^977/, '');
 
 interface SendOtpResponse { success: boolean; message?: string }
 
@@ -22,6 +29,8 @@ type StatusType = 'Completed' | 'Pending' | 'Cancelled' | 'Dispute';
 
 export default function BookingDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [booking, setBooking] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [openDropdown, setOpenDropdown] = useState(false);
@@ -30,6 +39,11 @@ export default function BookingDetails() {
     const [isLocked, setIsLocked] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [confirming, setConfirming] = useState(false);
+    const [adminPhone, setAdminPhone] = useState<string | null>(null);
+    const [professionalRating, setProfessionalRating] = useState<BookingRating | null>(null);
+    const [ratingStars, setRatingStars] = useState(0);
+    const [ratingComment, setRatingComment] = useState('');
+    const [submittingRating, setSubmittingRating] = useState(false);
 
     const STATUS_OPTIONS: StatusType[] = ['Completed', 'Pending', 'Cancelled', 'Dispute'];
 
@@ -37,17 +51,27 @@ export default function BookingDetails() {
         const loadBooking = async () => {
             setLoading(true);
             try {
-                const [data, adminTable] = await Promise.all([
+                const [data, adminTable, phone] = await Promise.all([
                     fetchBookings(),
                     AsyncStorage.getItem('adminTable'),
+                    AsyncStorage.getItem('adminPhone'),
                 ]);
                 if (adminTable === 'admins') setIsSuperAdmin(true);
+                setAdminPhone(phone);
                 const found = data.find((item: any) => item.id === id);
                 if (found) {
                     setBooking(found);
                     if (found.status) {
                         setWorkStatus(found.status);
                         if (found.status.toLowerCase().includes('completed')) setIsLocked(true);
+                    }
+                    if (
+                        found.status?.toLowerCase().includes('completed') &&
+                        phone && found.acceptedByPhone &&
+                        normalizePhone(phone) === normalizePhone(found.acceptedByPhone)
+                    ) {
+                        const ratings = await getBookingRatings(found.id);
+                        setProfessionalRating(ratings.professional);
                     }
                 }
             } catch (error) {
@@ -58,6 +82,30 @@ export default function BookingDetails() {
         };
         loadBooking();
     }, [id]);
+
+    const isMine = !!adminPhone && !!booking?.acceptedByPhone && normalizePhone(adminPhone) === normalizePhone(booking.acceptedByPhone);
+
+    const handleSubmitRating = async () => {
+        if (!booking || ratingStars === 0 || submittingRating || !adminPhone) return;
+        setSubmittingRating(true);
+        try {
+            await submitRating(booking.id, 'professional', adminPhone, booking.phone, ratingStars, ratingComment);
+            setProfessionalRating({
+                id: 0,
+                booking_id: booking.id,
+                rater_role: 'professional',
+                rater_phone: adminPhone,
+                rated_phone: booking.phone,
+                rating: ratingStars,
+                comment: ratingComment || null,
+                created_at: new Date().toISOString(),
+            });
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Could not submit rating.');
+        } finally {
+            setSubmittingRating(false);
+        }
+    };
 
     const handleStatusChange = (newStatus: StatusType) => {
         setWorkStatus(newStatus);
@@ -139,15 +187,23 @@ export default function BookingDetails() {
                 <Text style={styles.headerTitle}>
                     {booking?.bookingId ? `Booking ID: B${booking.bookingId}` : 'Booking Details'}
                 </Text>
+                {isMine && (
+                    <TouchableOpacity
+                        onPress={() => router.push({ pathname: '/Chat' as any, params: { id: booking.id } })}
+                        style={styles.shareBtn}
+                    >
+                        <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.brand} />
+                    </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={handleSharePDF} style={styles.shareBtn} disabled={!booking}>
-                    <Ionicons name="share-outline" size={22} color="#295C59" />
+                    <Ionicons name="share-outline" size={22} color={colors.brand} />
                 </TouchableOpacity>
             </View>
 
             {/* CONTENT */}
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#295C59" />
+                    <ActivityIndicator size="large" color={colors.brand} />
                     <Text style={styles.loadingText}>Loading...</Text>
                 </View>
             ) : !booking ? (
@@ -250,6 +306,41 @@ export default function BookingDetails() {
                                     <Text style={styles.lockedNote}>Completed — cannot be modified.</Text>
                                 )}
 
+                                {isLocked && isMine && (
+                                    <View style={styles.ratingBox}>
+                                        {professionalRating ? (
+                                            <>
+                                                <Text style={styles.ratingLabel}>You rated this customer</Text>
+                                                <StarRating value={professionalRating.rating} readOnly size={26} />
+                                                {professionalRating.comment ? (
+                                                    <Text style={styles.ratingComment}>{professionalRating.comment}</Text>
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Text style={styles.ratingLabel}>Rate the Customer</Text>
+                                                <StarRating value={ratingStars} onChange={setRatingStars} size={28} />
+                                                <TextArea
+                                                    value={ratingComment}
+                                                    onChangeText={setRatingComment}
+                                                    placeholder="Add a comment (optional)"
+                                                    minHeight={70}
+                                                />
+                                                <TouchableOpacity
+                                                    style={[styles.submitBtn, (ratingStars === 0 || submittingRating) && { opacity: 0.5 }]}
+                                                    onPress={handleSubmitRating}
+                                                    disabled={ratingStars === 0 || submittingRating}
+                                                >
+                                                    {submittingRating
+                                                        ? <ActivityIndicator color="#fff" />
+                                                        : <Text style={styles.submitText}>Submit Rating</Text>
+                                                    }
+                                                </TouchableOpacity>
+                                            </>
+                                        )}
+                                    </View>
+                                )}
+
                                 <View style={styles.dropdownWrapper}>
                                     <TouchableOpacity
                                         style={[styles.dropdownBtn, isLocked && !isSuperAdmin && { opacity: 0.4 }]}
@@ -264,7 +355,7 @@ export default function BookingDetails() {
                                     >
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                             <Text style={styles.dropdownText}>{workStatus}</Text>
-                                            <Image source={dropdownIcon} style={{ height: 18, width: 20, tintColor: '#295C59' }} />
+                                            <Image source={dropdownIcon} style={{ height: 18, width: 20, tintColor: colors.brand }} />
                                         </View>
                                     </TouchableOpacity>
                                     {openDropdown && (
@@ -298,10 +389,10 @@ export default function BookingDetails() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#f6f7fb' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    loadingText: { marginTop: 12, fontSize: hp('2%'), color: '#555' },
+    loadingText: { marginTop: 12, fontSize: hp('2%'), color: colors.textSecondary },
 
     headerRow: {
         flexDirection: 'row',
@@ -310,12 +401,12 @@ const styles = StyleSheet.create({
         paddingVertical: hp('1.2%'),
     },
     backBtn: { padding: 4 },
-    backIcon: { width: hp('3.2%'), height: hp('3.2%'), tintColor: '#295C59' },
-    headerTitle: { flex: 1, fontSize: hp('2.2%'), fontWeight: '600', color: '#295C59', marginLeft: wp('2%') },
+    backIcon: { width: hp('3.2%'), height: hp('3.2%'), tintColor: colors.brand },
+    headerTitle: { flex: 1, fontSize: hp('2.2%'), fontWeight: '600', color: colors.brand, marginLeft: wp('2%') },
     shareBtn: { padding: 4 },
 
     card: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         marginHorizontal: wp('4%'),
         borderRadius: 16,
         flexGrow: 0,
@@ -331,48 +422,56 @@ const styles = StyleSheet.create({
         paddingBottom: hp('3%'),
     },
 
-    heading: { fontSize: hp('2.2%'), fontWeight: '700', color: '#222', marginBottom: hp('0.6%') },
-    phone: { fontSize: hp('1.5%'), color: '#295C59', fontWeight: '600', marginTop: hp('0.4%') },
+    heading: { fontSize: hp('2.2%'), fontWeight: '700', color: colors.textPrimary, marginBottom: hp('0.6%') },
+    phone: { fontSize: hp('1.5%'), color: colors.brand, fontWeight: '600', marginTop: hp('0.4%') },
 
-    divider: { height: 1, backgroundColor: '#E8F4F3', marginVertical: hp('1%') },
+    divider: { height: 1, backgroundColor: colors.divider, marginVertical: hp('1%') },
 
     field: { marginBottom: hp('1.1%') },
 
-    label: { fontSize: hp('1.55%'), fontWeight: '700', color: '#888', marginBottom: 3 },
-    value: { fontSize: hp('1.65%'), fontWeight: '500', color: '#333' },
+    label: { fontSize: hp('1.55%'), fontWeight: '700', color: colors.textMuted, marginBottom: 3 },
+    value: { fontSize: hp('1.65%'), fontWeight: '500', color: colors.textPrimary },
 
-    statusLabel: { fontSize: hp('2%'), fontWeight: '700', color: '#111', marginBottom: hp('0.5%') },
-    lockedNote: { fontSize: hp('1.7%'), color: '#22c55e', fontWeight: '500', marginBottom: hp('0.5%') },
-    pendingNote: { fontSize: hp('1.7%'), color: '#d97706', fontWeight: '500', marginBottom: hp('1%') },
+    statusLabel: { fontSize: hp('2%'), fontWeight: '700', color: colors.textPrimary, marginBottom: hp('0.5%') },
+    lockedNote: { fontSize: hp('1.7%'), color: colors.success, fontWeight: '500', marginBottom: hp('0.5%') },
+    ratingBox: {
+        backgroundColor: colors.background,
+        borderRadius: 12,
+        padding: wp('4%'),
+        marginBottom: hp('1.5%'),
+    },
+    ratingLabel: { fontSize: hp('1.8%'), fontWeight: '700', color: colors.textPrimary, marginBottom: hp('0.8%') },
+    ratingComment: { fontSize: hp('1.6%'), color: colors.textPrimary, marginTop: hp('0.5%') },
+    pendingNote: { fontSize: hp('1.7%'), color: colors.warning, fontWeight: '500', marginBottom: hp('1%') },
 
     dropdownWrapper: { marginBottom: hp('1%') },
     dropdownBtn: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         paddingVertical: hp('0.9%'),
         paddingHorizontal: wp('4%'),
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#295C59',
+        borderColor: colors.brand,
     },
-    dropdownText: { fontWeight: '600', color: '#555', fontSize: hp('1.7%') },
+    dropdownText: { fontWeight: '600', color: colors.textSecondary, fontSize: hp('1.7%') },
     dropdownMenu: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         marginTop: 4,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: colors.border,
         elevation: 6,
     },
     dropdownItem: {
         paddingVertical: hp('1.4%'),
         paddingHorizontal: wp('4%'),
         borderBottomWidth: 0.5,
-        borderBottomColor: '#eee',
+        borderBottomColor: colors.divider,
     },
-    dropdownItemText: { fontWeight: '600', color: '#555', fontSize: hp('1.6%') },
+    dropdownItemText: { fontWeight: '600', color: colors.textSecondary, fontSize: hp('1.6%') },
 
     submitBtn: {
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingVertical: hp('1.3%'),
         borderRadius: 8,
         alignItems: 'center',

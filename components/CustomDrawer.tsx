@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, DeviceEventEmitter } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, DeviceEventEmitter, Switch } from 'react-native';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,9 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import type { ThemeColors } from '../theme/colors';
 
 type Profile = {
     fullName: string;
@@ -17,6 +20,9 @@ type Profile = {
 };
 
 export default function CustomDrawer(props: DrawerContentComponentProps) {
+    const { colors, isDark, toggle } = useTheme();
+    const { language, setLanguage } = useLanguage();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const pathname = usePathname();
     const isActive = (route: string) => pathname === route;
 
@@ -147,6 +153,9 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                     {adminTable !== 'admins' && (
                         <MenuItem icon="book-outline" label="Glossary" active={isActive('/Glossary')} onPress={() => navigate('/Glossary')} compact={!isLoggedIn} />
                     )}
+                    {adminTable !== 'admins' && (
+                        <MenuItem icon="heart-outline" label="Favorites" active={isActive('/Favorites')} onPress={() => navigate('/Favorites')} compact={!isLoggedIn} />
+                    )}
 
                     {adminTable === 'admins' && (
                         <>
@@ -167,6 +176,34 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
                     {isLoggedIn && (
                         <MenuItem icon="key-outline" label="Change PIN" active={isActive('/AdminChangePassword')} onPress={() => { props.navigation.closeDrawer(); router.push({ pathname: '/AdminChangePassword', params: { mode: 'change' } } as any); }} superAdmin={adminTable === 'admins'} />
                     )}
+                </View>
+
+                {/* THEME TOGGLE */}
+                <View style={styles.themeRow}>
+                    <View style={styles.themeRowLabel}>
+                        <Ionicons name={isDark ? 'moon' : 'sunny'} size={18} color={colors.textSecondary} />
+                        <Text style={styles.themeRowText}>Dark Mode</Text>
+                    </View>
+                    <Switch
+                        value={isDark}
+                        onValueChange={toggle}
+                        trackColor={{ false: '#D1D5DB', true: colors.brand }}
+                        thumbColor="#fff"
+                    />
+                </View>
+
+                {/* LANGUAGE TOGGLE */}
+                <View style={styles.themeRow}>
+                    <View style={styles.themeRowLabel}>
+                        <Ionicons name="language-outline" size={18} color={colors.textSecondary} />
+                        <Text style={styles.themeRowText}>{language === 'ne' ? 'नेपाली' : 'English'}</Text>
+                    </View>
+                    <Switch
+                        value={language === 'ne'}
+                        onValueChange={(value) => setLanguage(value ? 'ne' : 'en')}
+                        trackColor={{ false: '#D1D5DB', true: colors.brand }}
+                        thumbColor="#fff"
+                    />
                 </View>
 
                 {/* ADMIN LOGIN / UPDATE PROFILE */}
@@ -193,6 +230,8 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 }
 
 function MenuItem({ icon, label, onPress, active, superAdmin, compact: compactProp }: any) {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const compact = !!superAdmin || !!compactProp;
     return (
         <TouchableOpacity
@@ -201,7 +240,7 @@ function MenuItem({ icon, label, onPress, active, superAdmin, compact: compactPr
             activeOpacity={0.7}
         >
             <View style={[styles.iconBox, active && styles.iconBoxActive, compact && styles.iconBoxCompact]}>
-                <Ionicons name={icon} size={compact ? 20 : 22} color={active ? '#295C59' : '#6B7280'} />
+                <Ionicons name={icon} size={compact ? 20 : 22} color={active ? colors.brand : colors.textSecondary} />
             </View>
             <Text style={[styles.label, active && styles.labelActive, compact && styles.labelCompact]}>{label}</Text>
             {active && <View style={styles.activeBar} />}
@@ -209,7 +248,7 @@ function MenuItem({ icon, label, onPress, active, superAdmin, compact: compactPr
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     wrapper: {
         flex: 1,
         backgroundColor: 'transparent',
@@ -217,7 +256,7 @@ const styles = StyleSheet.create({
     },
     card: {
         height: SCREEN_H * 0.90,
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 30,
         marginHorizontal: 10,
         overflow: 'hidden',
@@ -242,7 +281,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.6)',
         overflow: 'hidden',
         marginBottom: 6,
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
     },
     avatar: {
         width: '100%',
@@ -270,7 +309,7 @@ const styles = StyleSheet.create({
     },
     divider: {
         borderTopWidth: 1,
-        borderColor: '#eee',
+        borderColor: colors.divider,
     },
     item: {
         flexDirection: 'row',
@@ -280,7 +319,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
     },
     itemActive: {
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
     },
     itemCompact: {
         paddingVertical: 6,
@@ -289,7 +328,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 11,
-        backgroundColor: '#F0F4F3',
+        backgroundColor: colors.surfaceMuted,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 13,
@@ -306,11 +345,11 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 15,
         fontWeight: '500',
-        color: '#4B5563',
+        color: colors.textSecondary,
         flex: 1,
     },
     labelActive: {
-        color: '#295C59',
+        color: colors.brand,
         fontWeight: '700',
     },
     labelCompact: {
@@ -320,16 +359,33 @@ const styles = StyleSheet.create({
         width: 3,
         height: 20,
         borderRadius: 2,
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
     },
     sectionLabel: {
         fontSize: 10,
         fontWeight: '800',
-        color: '#9BBAB8',
+        color: colors.textMuted,
         textTransform: 'uppercase',
         letterSpacing: 0.8,
         paddingHorizontal: 10,
         paddingVertical: 6,
+    },
+    themeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
+    themeRowLabel: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    themeRowText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.textSecondary,
     },
 
     adminWrapper: {
@@ -337,7 +393,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
+        borderTopColor: colors.divider,
     },
     adminBtn: {
         flexDirection: 'row',

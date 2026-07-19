@@ -1,6 +1,6 @@
 import Header2 from '@/components/Header2';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, Text, Image, Dimensions, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 
 // Get screen dimensions
@@ -8,6 +8,8 @@ const { width, height } = Dimensions.get('window');
 import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 // Font scaling utility function
 const scaleFont = (size: number) => {
@@ -16,6 +18,8 @@ const scaleFont = (size: number) => {
 };
 
 export default function AdminOtpVerify() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useEffect(() => {
     const timer = setTimeout(() => router.replace('/Home'), 2000);
     return () => clearTimeout(timer);
@@ -24,7 +28,7 @@ export default function AdminOtpVerify() {
   return (
 
     <TouchableWithoutFeedback onPress={() => router.push('/Home')}>
-      <View style={{ flex: 1 }} >
+      <View style={{ flex: 1, backgroundColor: colors.background }} >
         <Header2 />
         <View style={styles.container}>
           <Text style={styles.thankYouText}>
@@ -45,19 +49,20 @@ export default function AdminOtpVerify() {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     paddingHorizontal: '4%',
     paddingVertical: '5%',
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: colors.background
   },
   thankYouText: {
     fontSize: scaleFont(18),
     fontWeight: '400',
     borderWidth: 0,
     marginTop: hp('3%'),
-    textAlign: 'center'
+    textAlign: 'center',
+    color: colors.textPrimary,
   },
   imageContainer: {
     flex: 1,
@@ -76,7 +81,7 @@ const styles = StyleSheet.create({
     width: '70%',
     textAlign: 'center',
     fontWeight: '600',
-    color: 'green'
+    color: colors.success
   },
 
 });

@@ -9,7 +9,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { createBooking } from '../../../../api/PostApiBooking';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -20,6 +20,8 @@ import { supabase } from '../../../../lib/supabase';
 import { invokeEdgeFunction } from '../../../../api/functionsClient';
 import OtpInput from '@/components/bookings/OtpInput';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +31,8 @@ interface SendOtpResponse { success: boolean; message?: string }
 interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function BookingOtp() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -165,7 +169,7 @@ export default function BookingOtp() {
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
       <Header2 />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
@@ -182,7 +186,7 @@ export default function BookingOtp() {
           <TouchableOpacity onPress={sendOtp}>
             <Text style={styles.resendcode}>
               {`Didn't get code? `}
-              <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Resend Code</Text>
+              <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
             </Text>
           </TouchableOpacity>
 
@@ -201,14 +205,14 @@ export default function BookingOtp() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: '5%', paddingTop: height * 0.09, alignItems: 'center', backgroundColor: '#fff' },
-  thankYouText: { fontSize: scaleFont(27), fontWeight: '700' },
-  bookingText: { width: '70%', textAlign: 'center', marginBottom: height * 0.08, fontSize: scaleFont(17), marginTop: height * 0.03, fontWeight: '500', lineHeight: 23 },
-  otpPromptText: { fontSize: scaleFont(16.5), marginBottom: height * 0.04, fontWeight: '400', color: '#295C59' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: '5%', paddingTop: height * 0.09, alignItems: 'center', backgroundColor: colors.background },
+  thankYouText: { fontSize: scaleFont(27), fontWeight: '700', color: colors.textPrimary },
+  bookingText: { width: '70%', textAlign: 'center', marginBottom: height * 0.08, fontSize: scaleFont(17), marginTop: height * 0.03, fontWeight: '500', lineHeight: 23, color: colors.textSecondary },
+  otpPromptText: { fontSize: scaleFont(16.5), marginBottom: height * 0.04, fontWeight: '400', color: colors.brand },
   otpBox: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 3 },
-  input: { width: width * 0.14, height: width * 0.14, marginHorizontal: 5, borderWidth: 1, borderColor: 'hsl(0, 0%, 79%)', borderRadius: 5, textAlign: 'center', fontSize: scaleFont(20), backgroundColor: '#fff', elevation: 3 },
-  resendcode: { marginTop: 25, paddingHorizontal: 20, textAlign: 'center', lineHeight: 22, fontSize: hp('1.5%') },
-  submitButton: { backgroundColor: '#295C59', height: height * 0.065, width: '60%', justifyContent: 'center', alignItems: 'center', borderRadius: 100, marginTop: height * 0.08 },
+  input: { width: width * 0.14, height: width * 0.14, marginHorizontal: 5, borderWidth: 1, borderColor: colors.border, borderRadius: 5, textAlign: 'center', fontSize: scaleFont(20), backgroundColor: colors.surface, color: colors.textPrimary, elevation: 3 },
+  resendcode: { marginTop: 25, paddingHorizontal: 20, textAlign: 'center', lineHeight: 22, fontSize: hp('1.5%'), color: colors.textSecondary },
+  submitButton: { backgroundColor: colors.brand, height: height * 0.065, width: '60%', justifyContent: 'center', alignItems: 'center', borderRadius: 100, marginTop: height * 0.08 },
   submitButtonText: { fontSize: scaleFont(17), color: '#fff', fontWeight: '300' },
 });

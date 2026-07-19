@@ -2,6 +2,8 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Dropdown as LibDropdown } from 'react-native-element-dropdown';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 const DropIcon = require('../../assets/icons/contact/DropDown.png');
 
@@ -30,6 +32,8 @@ const Dropdown = ({
   onOpen,
   onClose
 }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [isFocus, setIsFocus] = useState(false);
 
@@ -52,7 +56,7 @@ const Dropdown = ({
   // ✅ FIX 2: memoized renderItem
   const renderItem = useCallback(
     (item: { label: string; value: string; index: number }) => {
-      const backgroundColor = item.index % 2 === 0 ? '#fff' : '#f9f9f9';
+      const backgroundColor = item.index % 2 === 0 ? colors.surface : colors.surfaceMuted;
       const isSelected = value === item.value;
 
       return (
@@ -67,7 +71,7 @@ const Dropdown = ({
         </View>
       );
     },
-    [value]
+    [value, colors]
   );
 
   const renderRightIcon = useCallback(() => (
@@ -132,7 +136,7 @@ const Dropdown = ({
 };
 
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     marginBottom: hp('2.5%'),
     position: 'relative',
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: wp('3.5%'),
     height: hp('5.5%'), // Slightly taller for better touch targets and prominence
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   dropdownActiveBackground: {
     backgroundColor: '#F4F7FF', // Subtle background color change when open
@@ -156,12 +160,12 @@ const styles = StyleSheet.create({
   selectedText: {
     fontSize: wp('3.6%'),
     fontWeight: '500',
-    color: '#1A1A1A', // Darker text color for better readability
+    color: colors.textPrimary, // Darker text color for better readability
   },
   menuContainer: {
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     marginTop: 4, // Cleans up layout structure so popup menu doesn't crush the input box
     elevation: 8,
     shadowColor: 'hsl(142, 71%, 45%)', // Colored shadow theme accents
@@ -176,7 +180,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: hp('1.7%'),
-    color: '#4A4A4A',
+    color: colors.textSecondary,
   },
   selectedRowBackground: {
     backgroundColor: '#EBF1FF', // Distinct selection row tracking color
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   requiredAbsolute: {
-    color: '#FF3B30',
+    color: colors.danger,
     position: 'absolute',
     right: wp('12%'),
     top: hp('1.5%'),
@@ -194,9 +198,9 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderRadius: 8,
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
     fontSize: wp('3.6%'),
-    color: '#1A1A1A',
+    color: colors.textPrimary,
     height: hp('4.5%'),
   },
 });

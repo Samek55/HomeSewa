@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     ActivityIndicator, Alert, FlatList, Image, Modal, ScrollView,
@@ -12,6 +12,8 @@ import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSignedDocumentUrl } from '@/api/uploadToStorage';
 import { invokeEdgeFunction } from '@/api/functionsClient';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type Professional = {
     uin: number;
@@ -52,6 +54,8 @@ const formatDate = (iso?: string) => {
 
 export default function ProfessionalVerification() {
     const insets = useSafeAreaInsets();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [pending, setPending] = useState<Professional[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -228,7 +232,7 @@ export default function ProfessionalVerification() {
             </View>
 
             {loading ? (
-                <ActivityIndicator size="large" color="#295C59" style={{ marginTop: hp('5%') }} />
+                <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: hp('5%') }} />
             ) : (
                 <FlatList
                     data={pending}
@@ -260,13 +264,13 @@ export default function ProfessionalVerification() {
                                         <Text style={styles.summarySub} numberOfLines={1}>{item.positions.join(', ')}</Text>
                                     )}
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#D6E8E7" />
+                                <Ionicons name="chevron-forward" size={20} color={colors.border} />
                             </View>
                         </TouchableOpacity>
                     )}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Ionicons name="checkmark-done-circle-outline" size={54} color="#D6E8E7" />
+                            <Ionicons name="checkmark-done-circle-outline" size={54} color={colors.border} />
                             <Text style={styles.emptyText}>No pending applications</Text>
                             <Text style={styles.emptySubText}>All professionals have been reviewed</Text>
                         </View>
@@ -280,7 +284,7 @@ export default function ProfessionalVerification() {
                     <View style={styles.modalSheet}>
                         <View style={styles.handleBar} />
                         <TouchableOpacity style={styles.modalClose} onPress={() => setSelected(null)}>
-                            <Ionicons name="close" size={22} color="#295C59" />
+                            <Ionicons name="close" size={22} color={colors.brand} />
                         </TouchableOpacity>
 
                         {selected && (
@@ -309,12 +313,12 @@ export default function ProfessionalVerification() {
                                 </View>
 
                                 <View style={styles.detailsGrid}>
-                                    <InfoRow icon="call-outline" label="Phone" value={`+977 ${selected.phone}`} />
-                                    {selected.email && <InfoRow icon="mail-outline" label="Email" value={selected.email} />}
-                                    {selected.gender && <InfoRow icon="person-outline" label="Gender" value={selected.gender} />}
-                                    {selected.years_of_experience && <InfoRow icon="time-outline" label="Experience" value={`${selected.years_of_experience} years`} />}
-                                    {selected.emergency_contact_number && <InfoRow icon="alert-circle-outline" label="Emergency Contact" value={`+977 ${selected.emergency_contact_number}`} />}
-                                    {selected.referral_phone_number && <InfoRow icon="people-outline" label="Referred By" value={`+977 ${selected.referral_phone_number}`} />}
+                                    <InfoRow icon="call-outline" label="Phone" value={`+977 ${selected.phone}`} colors={colors} />
+                                    {selected.email && <InfoRow icon="mail-outline" label="Email" value={selected.email} colors={colors} />}
+                                    {selected.gender && <InfoRow icon="person-outline" label="Gender" value={selected.gender} colors={colors} />}
+                                    {selected.years_of_experience && <InfoRow icon="time-outline" label="Experience" value={`${selected.years_of_experience} years`} colors={colors} />}
+                                    {selected.emergency_contact_number && <InfoRow icon="alert-circle-outline" label="Emergency Contact" value={`+977 ${selected.emergency_contact_number}`} colors={colors} />}
+                                    {selected.referral_phone_number && <InfoRow icon="people-outline" label="Referred By" value={`+977 ${selected.referral_phone_number}`} colors={colors} />}
                                 </View>
 
                                 {(selected.positions || []).length > 0 && (
@@ -357,9 +361,9 @@ export default function ProfessionalVerification() {
                                         disabled={openingDoc}
                                         activeOpacity={0.8}
                                     >
-                                        <Ionicons name="document-text-outline" size={16} color="#295C59" />
+                                        <Ionicons name="document-text-outline" size={16} color={colors.brand} />
                                         <Text style={styles.idProofText}>{openingDoc ? 'Loading…' : 'View ID / Document'}</Text>
-                                        <Ionicons name="eye-outline" size={14} color="#9BBAB8" />
+                                        <Ionicons name="eye-outline" size={14} color={colors.textMuted} />
                                     </TouchableOpacity>
                                 )}
 
@@ -368,7 +372,7 @@ export default function ProfessionalVerification() {
                                         style={[styles.btn, styles.rejectBtn]}
                                         onPress={() => handleReject(selected.uin, selected.phone, selected.full_name)}
                                     >
-                                        <Ionicons name="close-circle-outline" size={16} color="#ef4444" />
+                                        <Ionicons name="close-circle-outline" size={16} color={colors.danger} />
                                         <Text style={styles.rejectText}>Reject</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
@@ -416,24 +420,25 @@ export default function ProfessionalVerification() {
     );
 }
 
-function InfoRow({ icon, label, value }: { icon: any; label: string; value: string }) {
+function InfoRow({ icon, label, value, colors }: { icon: any; label: string; value: string; colors: ThemeColors }) {
+    const infoStyles = createInfoStyles(colors);
     return (
         <View style={infoStyles.row}>
-            <Ionicons name={icon} size={13} color="#9BBAB8" />
+            <Ionicons name={icon} size={13} color={colors.textMuted} />
             <Text style={infoStyles.label}>{label}:</Text>
             <Text style={infoStyles.value} numberOfLines={1}>{value}</Text>
         </View>
     );
 }
 
-const infoStyles = StyleSheet.create({
+const createInfoStyles = (colors: ThemeColors) => StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 },
-    label: { fontSize: 11, fontWeight: '700', color: '#9BBAB8', minWidth: 80 },
-    value: { fontSize: 12, color: '#1C2B2A', fontWeight: '500', flex: 1 },
+    label: { fontSize: 11, fontWeight: '700', color: colors.textMuted, minWidth: 80 },
+    value: { fontSize: 12, color: colors.textPrimary, fontWeight: '500', flex: 1 },
 });
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
     previewClose: {
         position: 'absolute', right: 16, zIndex: 10,
@@ -445,18 +450,18 @@ const styles = StyleSheet.create({
     previewImage: { width: wp('100%'), height: hp('90%') },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
     badge: {
-        backgroundColor: '#fff', borderRadius: 20,
+        backgroundColor: colors.surface, borderRadius: 20,
         paddingHorizontal: 10, paddingVertical: 4,
     },
-    badgeText: { fontSize: 13, fontWeight: '800', color: '#295C59' },
+    badgeText: { fontSize: 13, fontWeight: '800', color: colors.brand },
     card: {
-        backgroundColor: '#fff', borderRadius: 16,
+        backgroundColor: colors.surface, borderRadius: 16,
         padding: wp('4%'), marginBottom: hp('1.5%'),
         elevation: 2, shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
@@ -465,48 +470,48 @@ const styles = StyleSheet.create({
     avatar: { width: 56, height: 56, borderRadius: 28 },
     avatarPlaceholder: {
         width: 56, height: 56, borderRadius: 28,
-        backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { fontSize: 22, fontWeight: '800', color: '#295C59' },
+    avatarText: { fontSize: 22, fontWeight: '800', color: colors.brand },
     cardInfo: { flex: 1 },
     nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-    name: { fontSize: 15, fontWeight: '800', color: '#1C2B2A', marginBottom: 2 },
-    idPill: { backgroundColor: '#E8F4F3', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
-    idPillText: { fontSize: 11, fontWeight: '800', color: '#295C59' },
-    appliedDate: { fontSize: 11, color: '#B0BEC5' },
-    summarySub: { fontSize: 12, color: '#9BBAB8', marginTop: 2 },
+    name: { fontSize: 15, fontWeight: '800', color: colors.textPrimary, marginBottom: 2 },
+    idPill: { backgroundColor: colors.surfaceMuted, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
+    idPillText: { fontSize: 11, fontWeight: '800', color: colors.brand },
+    appliedDate: { fontSize: 11, color: colors.textMuted },
+    summarySub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
 
     modalOverlay: {
         flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
         justifyContent: 'flex-end',
     },
     modalSheet: {
-        backgroundColor: '#F5F9F8', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        backgroundColor: colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingHorizontal: wp('5%'), paddingTop: hp('1.5%'),
         maxHeight: hp('88%'),
     },
     handleBar: {
         width: 40, height: 4, borderRadius: 2,
-        backgroundColor: '#D6E8E7', alignSelf: 'center', marginBottom: hp('1%'),
+        backgroundColor: colors.border, alignSelf: 'center', marginBottom: hp('1%'),
     },
     modalClose: {
         alignSelf: 'flex-end', padding: 6,
-        backgroundColor: '#E8F4F3', borderRadius: 20, marginBottom: hp('1%'),
+        backgroundColor: colors.surfaceMuted, borderRadius: 20, marginBottom: hp('1%'),
     },
 
     detailsGrid: {
-        backgroundColor: '#F8FFFE', borderRadius: 10, padding: wp('3%'),
-        marginBottom: hp('1.2%'), borderWidth: 1, borderColor: '#E8F4F3',
+        backgroundColor: colors.surface, borderRadius: 10, padding: wp('3%'),
+        marginBottom: hp('1.2%'), borderWidth: 1, borderColor: colors.border,
     },
 
     chipSection: { marginBottom: hp('1.2%') },
-    chipSectionLabel: { fontSize: 11, fontWeight: '800', color: '#295C59', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+    chipSectionLabel: { fontSize: 11, fontWeight: '800', color: colors.brand, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
     chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     chip: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
     chipGreen: { backgroundColor: '#dcfce7' },
-    chipBlue: { backgroundColor: '#E8F4F3' },
-    chipTextGreen: { fontSize: 11, color: '#16a34a', fontWeight: '700' },
-    chipTextBlue: { fontSize: 11, color: '#295C59', fontWeight: '600' },
+    chipBlue: { backgroundColor: colors.surfaceMuted },
+    chipTextGreen: { fontSize: 11, color: colors.success, fontWeight: '700' },
+    chipTextBlue: { fontSize: 11, color: colors.brand, fontWeight: '600' },
 
     messageBox: {
         backgroundColor: '#FFFBEB', borderRadius: 10, padding: wp('3%'),
@@ -516,11 +521,11 @@ const styles = StyleSheet.create({
 
     idProofBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#E8F4F3', borderRadius: 10,
+        backgroundColor: colors.surfaceMuted, borderRadius: 10,
         paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.2%'),
-        marginBottom: hp('1.5%'), borderWidth: 1, borderColor: '#C9E8E6',
+        marginBottom: hp('1.5%'), borderWidth: 1, borderColor: colors.border,
     },
-    idProofText: { flex: 1, fontSize: 13, fontWeight: '700', color: '#295C59' },
+    idProofText: { flex: 1, fontSize: 13, fontWeight: '700', color: colors.brand },
 
     btnRow: { flexDirection: 'row', gap: 10, marginTop: hp('0.5%') },
     btn: {
@@ -528,11 +533,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center', borderRadius: 12,
         paddingVertical: hp('1.4%'), gap: 6,
     },
-    rejectBtn: { borderWidth: 1.5, borderColor: '#fee2e2', backgroundColor: '#fff' },
-    approveBtn: { backgroundColor: '#295C59', elevation: 2 },
-    rejectText: { fontSize: 14, fontWeight: '700', color: '#ef4444' },
+    rejectBtn: { borderWidth: 1.5, borderColor: '#fee2e2', backgroundColor: colors.surface },
+    approveBtn: { backgroundColor: colors.brand, elevation: 2 },
+    rejectText: { fontSize: 14, fontWeight: '700', color: colors.danger },
     approveText: { fontSize: 14, fontWeight: '700', color: '#fff' },
     empty: { alignItems: 'center', paddingVertical: hp('10%'), gap: 8 },
-    emptyText: { fontSize: 16, color: '#9BBAB8', fontWeight: '700' },
-    emptySubText: { fontSize: 13, color: '#B0BEC5' },
+    emptyText: { fontSize: 16, color: colors.textMuted, fontWeight: '700' },
+    emptySubText: { fontSize: 13, color: colors.textMuted },
 });

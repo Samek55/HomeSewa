@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, StyleSheet,
     Alert, ActivityIndicator, ScrollView, DeviceEventEmitter, Linking,
@@ -10,6 +10,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { supabase } from '../../../lib/supabase';
 import Header4 from '@/components/Header4Admin';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const ISSUE_OPTIONS = [
     'Professional Membership',
@@ -23,6 +25,8 @@ const ISSUE_OPTIONS = [
 
 export default function HelpBoxDetail() {
     const { entry } = useLocalSearchParams<{ entry: string }>();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     let item: any = {};
     try { item = JSON.parse(entry || '{}'); } catch {}
 
@@ -103,13 +107,13 @@ export default function HelpBoxDetail() {
                     {item.created_at ? <Text style={styles.headerSub}>{formatDate(item.created_at)}</Text> : null}
                 </View>
                 <View style={[styles.statusPill, { backgroundColor: isSolved ? '#dcfce7' : '#fee2e2' }]}>
-                    <Text style={[styles.statusPillText, { color: isSolved ? '#16a34a' : '#ef4444' }]}>
+                    <Text style={[styles.statusPillText, { color: isSolved ? colors.success : colors.danger }]}>
                         {isSolved ? 'Solved' : 'Open'}
                     </Text>
                 </View>
             </View>
 
-            <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: hp('10%') }} showsVerticalScrollIndicator={false}>
 
                 <View style={styles.card}>
@@ -156,7 +160,7 @@ export default function HelpBoxDetail() {
                         <Text style={issue ? styles.issueBtnText : styles.issueBtnPlaceholder}>
                             {issue || 'Select issue type'}
                         </Text>
-                        <Ionicons name={showIssueDrop ? 'chevron-up' : 'chevron-down'} size={16} color="#295C59" />
+                        <Ionicons name={showIssueDrop ? 'chevron-up' : 'chevron-down'} size={16} color={colors.brand} />
                     </TouchableOpacity>
                     {showIssueDrop && (
                         <View style={styles.issueDropMenu}>
@@ -182,7 +186,7 @@ export default function HelpBoxDetail() {
                         value={reply}
                         onChangeText={setReply}
                         placeholder="Add a note or reply…"
-                        placeholderTextColor="#B0BEC5"
+                        placeholderTextColor={colors.textMuted}
                         multiline
                         textAlignVertical="top"
                         editable={!isSolved}
@@ -225,7 +229,7 @@ export default function HelpBoxDetail() {
 
                 {isSolved && (
                     <View style={styles.solvedNote}>
-                        <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+                        <Ionicons name="checkmark-circle" size={18} color={colors.success} />
                         <Text style={styles.solvedNoteText}>This request has been resolved.</Text>
                     </View>
                 )}
@@ -235,12 +239,12 @@ export default function HelpBoxDetail() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
 
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
@@ -254,43 +258,43 @@ const styles = StyleSheet.create({
     content: { flex: 1, padding: wp('4%') },
 
     card: {
-        backgroundColor: '#fff', borderRadius: 16,
+        backgroundColor: colors.surface, borderRadius: 16,
         padding: wp('4%'), marginBottom: hp('1.5%'),
         elevation: 2, shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
     },
     sectionLabel: {
-        fontSize: 11, fontWeight: '800', color: '#295C59',
+        fontSize: 11, fontWeight: '800', color: colors.brand,
         textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8,
     },
     phoneRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    phoneText: { fontSize: 20, fontWeight: '700', color: '#1C2B2A' },
-    phoneLink: { textDecorationLine: 'underline', color: '#295C59' },
+    phoneText: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
+    phoneLink: { textDecorationLine: 'underline', color: colors.brand },
     whatsappBtn: { padding: 4 },
-    dateText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A' },
+    dateText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
 
     issueBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: '#F5F9F8', borderRadius: 10,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.background, borderRadius: 10,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('3%'), paddingVertical: hp('1.5%'),
     },
-    issueBtnText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A' },
-    issueBtnPlaceholder: { fontSize: 14, fontWeight: '500', color: '#B0BEC5' },
+    issueBtnText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+    issueBtnPlaceholder: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
     issueDropMenu: {
-        backgroundColor: '#fff', borderRadius: 10,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 10,
+        borderWidth: 1.5, borderColor: colors.border,
         marginTop: 6, overflow: 'hidden',
     },
     issueDropItem: { paddingHorizontal: wp('3%'), paddingVertical: hp('1.3%') },
-    issueDropItemActive: { backgroundColor: '#E8F4F3' },
-    issueDropItemText: { fontSize: 13.5, fontWeight: '500', color: '#1C2B2A' },
-    issueDropItemTextActive: { color: '#295C59', fontWeight: '700' },
+    issueDropItemActive: { backgroundColor: colors.surfaceMuted },
+    issueDropItemText: { fontSize: 13.5, fontWeight: '500', color: colors.textPrimary },
+    issueDropItemTextActive: { color: colors.brand, fontWeight: '700' },
 
     replyInput: {
-        fontSize: 14, color: '#1C2B2A', lineHeight: 22,
-        minHeight: hp('12%'), backgroundColor: '#F5F9F8',
-        borderRadius: 10, borderWidth: 1.5, borderColor: '#D6E8E7',
+        fontSize: 14, color: colors.textPrimary, lineHeight: 22,
+        minHeight: hp('12%'), backgroundColor: colors.background,
+        borderRadius: 10, borderWidth: 1.5, borderColor: colors.border,
         padding: wp('3%'),
     },
 
@@ -300,14 +304,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center', borderRadius: 14,
         paddingVertical: hp('1.8%'), gap: 6,
     },
-    btnOutline: { borderWidth: 1.5, borderColor: '#D6E8E7', backgroundColor: '#fff' },
-    btnOutlineText: { fontSize: 14, fontWeight: '700', color: '#1C2B2A' },
-    btnSolve: { backgroundColor: '#295C59', elevation: 3 },
+    btnOutline: { borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
+    btnOutlineText: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+    btnSolve: { backgroundColor: colors.brand, elevation: 3 },
     btnSolveText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
     solvedNote: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         backgroundColor: '#dcfce7', borderRadius: 12, padding: wp('4%'),
     },
-    solvedNoteText: { fontSize: 14, fontWeight: '600', color: '#16a34a' },
+    solvedNoteText: { fontSize: 14, fontWeight: '600', color: colors.success },
 });

@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
 import { Text, Image, StyleSheet, Pressable, View } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
   title: string;
@@ -9,6 +12,8 @@ type Props = {
 };
 
 const ServicesCard = ({ title, image, onPress }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
@@ -22,11 +27,11 @@ const ServicesCard = ({ title, image, onPress }: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     alignItems: 'center',
     width: wp('30%'),
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     paddingBottom: 10,
     elevation: 3,
@@ -54,7 +59,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: wp('3.4%'),
     fontWeight: '700',
-    color: '#295C59',
+    color: colors.brand,
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 4,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -21,12 +21,16 @@ import { supabase } from '../../../lib/supabase';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { invokeEdgeFunction } from '../../../api/functionsClient';
 import { DeviceEventEmitter } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
 
 export default function AdminLogin() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [pin, setPin] = useState(['', '', '', '']);
@@ -195,7 +199,7 @@ export default function AdminLogin() {
                     <Image source={countryLogo} style={{ width: 28, height: 18 }} resizeMode="contain" />
                     <TextInput
                         placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
-                        placeholderTextColor="#B0BEC5"
+                        placeholderTextColor={colors.textMuted}
                         style={styles.textInput}
                         keyboardType="number-pad"
                         value={phoneNumber}
@@ -221,7 +225,7 @@ export default function AdminLogin() {
                         <Ionicons
                             name={passwordVisible ? 'eye-outline' : 'eye-off-outline'}
                             size={18}
-                            color="#90A4AE"
+                            color={colors.textMuted}
                         />
                     </TouchableOpacity>
                 </View>
@@ -260,10 +264,10 @@ export default function AdminLogin() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
     },
 
     /* BRANDING */
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     /* CARD */
     card: {
         flex: 1,
-        backgroundColor: '#F5F9F8',
+        backgroundColor: colors.background,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         paddingHorizontal: wp('8%'),
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: scaleFont(24),
         fontWeight: '800',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
         marginBottom: hp('2.5%'),
     },
 
@@ -321,10 +325,10 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
+        borderColor: colors.border,
         paddingHorizontal: 14,
         height: hp('6.5%'),
         marginBottom: hp('2%'),
@@ -334,7 +338,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: scaleFont(15),
         fontWeight: '500',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
         letterSpacing: 0.5,
     },
 
@@ -348,7 +352,7 @@ const styles = StyleSheet.create({
     pinLabel: {
         fontSize: scaleFont(13),
         fontWeight: '700',
-        color: '#5A7270',
+        color: colors.textSecondary,
     },
     pinBoxRow: {
         flexDirection: 'row',
@@ -361,17 +365,17 @@ const styles = StyleSheet.create({
         height: hp('6.5%'),
         borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
-        backgroundColor: '#fff',
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         textAlign: 'center',
         fontSize: scaleFont(18),
         fontWeight: '700',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
 
     /* BUTTON */
     loginBtn: {
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         borderRadius: 14,
         height: hp('6.5%'),
         width: '60%',
@@ -395,7 +399,7 @@ const styles = StyleSheet.create({
     /* DIVIDER */
     divider: {
         height: 1,
-        backgroundColor: '#D6E8E7',
+        backgroundColor: colors.border,
         marginVertical: hp('3.5%'),
     },
 
@@ -406,11 +410,11 @@ const styles = StyleSheet.create({
     },
     linkText: {
         fontSize: scaleFont(13.5),
-        color: '#5A7270',
+        color: colors.textSecondary,
         fontWeight: '500',
     },
     linkAction: {
-        color: '#295C59',
+        color: colors.brand,
         fontWeight: '800',
     },
     changePinRow: {
@@ -418,12 +422,12 @@ const styles = StyleSheet.create({
     },
     changePinText: {
         fontSize: scaleFont(13.5),
-        color: '#295C59',
+        color: colors.brand,
         fontWeight: '600',
     },
     logoutText: {
         fontSize: scaleFont(13.5),
-        color: '#E53935',
+        color: colors.danger,
         fontWeight: '700',
         marginTop: hp('0.5%'),
     },

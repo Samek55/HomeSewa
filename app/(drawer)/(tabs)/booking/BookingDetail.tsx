@@ -2,21 +2,30 @@ import { router, useLocalSearchParams } from "expo-router";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import Header2 from '@/components/Header2';
+import { useMemo } from 'react';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 
-const Row = ({ label, value }: { label: string; value: string }) => (
-  <View style={styles.row}>
-    <Text style={styles.rowLabel}>{label}</Text>
-    <Text style={styles.rowValue}>{value}</Text>
-  </View>
-);
+const Row = ({ label, value }: { label: string; value: string }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+};
 
 export default function BookingDetails() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const {
     name,
     number,
@@ -130,14 +139,14 @@ export default function BookingDetails() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#295C59' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.brand },
   container: { paddingHorizontal: width * 0.05, paddingBottom: hp('6%') },
   titleArea: { paddingTop: hp('3%'), paddingBottom: hp('2%'), paddingHorizontal: 4 },
   title: { fontSize: width * 0.065, fontWeight: '800', color: '#fff', marginBottom: 5, letterSpacing: 0.2 },
   subtitle: { fontSize: width * 0.033, color: 'rgba(255,255,255,0.70)', fontWeight: '400' },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     paddingHorizontal: wp('5%'),
     paddingVertical: 4,
@@ -149,11 +158,11 @@ const styles = StyleSheet.create({
     marginBottom: hp('3%'),
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: hp('1%') },
-  rowLabel: { fontSize: wp('3.4%'), color: '#9BBAB8', fontWeight: '500', flex: 1 },
-  rowValue: { fontSize: wp('3.5%'), color: '#1C2B2A', fontWeight: '700', flex: 1.6, textAlign: 'right' },
+  rowLabel: { fontSize: wp('3.4%'), color: colors.textMuted, fontWeight: '500', flex: 1 },
+  rowValue: { fontSize: wp('3.5%'), color: colors.textPrimary, fontWeight: '700', flex: 1.6, textAlign: 'right' },
   messageBlock: { paddingVertical: hp('1.8%'), gap: 6 },
-  messageText: { fontSize: wp('3.5%'), color: '#5A7270', fontWeight: '500', lineHeight: 20 },
-  divider: { height: 1, backgroundColor: '#F0F7F6' },
+  messageText: { fontSize: wp('3.5%'), color: colors.textSecondary, fontWeight: '500', lineHeight: 20 },
+  divider: { height: 1, backgroundColor: colors.divider },
   confirmBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: hp('1.8%') },
   confirmBtnText: { color: '#fff', fontSize: wp('4.2%'), fontWeight: '700', letterSpacing: 0.5 },
   backBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.40)' },

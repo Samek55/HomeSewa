@@ -4,11 +4,13 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
   name: string;
@@ -32,6 +34,8 @@ const ServicesDisplaycard = ({
   style,
   textStyle,
 }: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity onPress={onPress} style={[styles.cardContainer, style]}>
       <Image source={image} style={styles.image} resizeMode="cover" />
@@ -41,12 +45,12 @@ const ServicesDisplaycard = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   cardContainer: {
     marginBottom: hp(1.5),
     borderRadius: 13,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     minHeight: hp(23),
     height: hp(24),
     shadowColor: '#7cbc7a',
@@ -65,14 +69,14 @@ const styles = StyleSheet.create({
     fontSize: wp(3.7),
     fontWeight: '600',
     marginTop: hp(1.2),
-    color: '#000',
+    color: colors.textPrimary,
     paddingHorizontal: 11,
   },
 
   words: {
     fontSize: wp(3),
     fontWeight: '500',
-    color: 'grey',
+    color: colors.textSecondary,
     paddingHorizontal: 11,
     marginTop: hp(0.5),
     flexShrink: 1,

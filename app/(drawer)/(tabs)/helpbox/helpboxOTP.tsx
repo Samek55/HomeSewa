@@ -9,7 +9,7 @@ import {
     Keyboard,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 const { width, height } = Dimensions.get('window');
@@ -19,6 +19,8 @@ import Header2 from '@/components/Header3drawer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OtpInput from '@/components/bookings/OtpInput';
 import { invokeEdgeFunction } from '../../../../api/functionsClient';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const LAST_HELP_REQUEST_KEY = 'lastHelpRequestAt';
 
@@ -28,6 +30,8 @@ interface SendOtpResponse { success: boolean; message?: string }
 interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function HelpboxOTP() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [otp, setOtp] = useState(['', '', '', '']);
     const route = useRoute<any>();
     const phone = route.params?.phone;
@@ -93,7 +97,7 @@ export default function HelpboxOTP() {
     };
 
     return (
-        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
             <Header2 />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.container}>
@@ -110,7 +114,7 @@ export default function HelpboxOTP() {
                     <TouchableOpacity onPress={sendOtp}>
                         <Text style={styles.resendcode}>
                             {`Didn't get code? `}
-                            <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Resend Code</Text>
+                            <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
                         </Text>
                     </TouchableOpacity>
 
@@ -129,18 +133,19 @@ export default function HelpboxOTP() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: '5%',
         paddingTop: height * 0.09,
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: colors.background,
     },
     thankYouText: {
         marginTop: hp('3%'),
         fontSize: scaleFont(27),
         fontWeight: '500',
+        color: colors.textPrimary,
     },
     bookingText: {
         width: '70%',
@@ -150,12 +155,13 @@ const styles = StyleSheet.create({
         marginTop: height * 0.03,
         fontWeight: '400',
         lineHeight: 23,
+        color: colors.textSecondary,
     },
     otpPromptText: {
         fontSize: scaleFont(16.5),
         marginBottom: height * 0.04,
         fontWeight: '400',
-        color: '#295C59',
+        color: colors.brand,
     },
     otpBox: {
         flexDirection: 'row',
@@ -168,11 +174,12 @@ const styles = StyleSheet.create({
         height: width * 0.14,
         marginHorizontal: 5,
         borderWidth: 1,
-        borderColor: 'hsl(0, 0%, 79%)',
+        borderColor: colors.border,
         borderRadius: 5,
         textAlign: 'center',
         fontSize: scaleFont(20),
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
+        color: colors.textPrimary,
         elevation: 3,
     },
     resendcode: {
@@ -181,9 +188,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 22,
         fontSize: hp('1.5%'),
+        color: colors.textSecondary,
     },
     submitButton: {
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         height: height * 0.07,
         width: '60%',
         justifyContent: 'center',

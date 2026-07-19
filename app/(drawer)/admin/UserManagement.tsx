@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     ActivityIndicator, Alert, TextInput, FlatList, RefreshControl,
@@ -14,6 +14,8 @@ import { supabase } from '../../../lib/supabase';
 import { invokeEdgeFunction } from '../../../api/functionsClient';
 import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type Professional = {
     id: number;
@@ -62,7 +64,7 @@ const isPendingStatus = (status: string) => /pending|waiting/i.test(status || ''
 
 const PAGE_SIZE = 15;
 
-function FilterDropdown({ label, value, options, isOpen, onToggle, onChange, zIndex }: {
+function FilterDropdown({ label, value, options, isOpen, onToggle, onChange, zIndex, styles, colors }: {
     label: string;
     value: string;
     options: string[];
@@ -70,13 +72,15 @@ function FilterDropdown({ label, value, options, isOpen, onToggle, onChange, zIn
     onToggle: () => void;
     onChange: (v: string) => void;
     zIndex: number;
+    styles: ReturnType<typeof createStyles>;
+    colors: ThemeColors;
 }) {
     return (
         <View style={[styles.filterGroup, { zIndex }]}>
             <Text style={styles.filterLabel}>{label}</Text>
             <TouchableOpacity style={styles.dropBtn} onPress={onToggle} activeOpacity={0.8}>
                 <Text style={styles.dropBtnText} numberOfLines={1}>{value}</Text>
-                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#295C59" />
+                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.brand} />
             </TouchableOpacity>
             {isOpen && (
                 <ScrollView style={styles.dropMenu} nestedScrollEnabled showsVerticalScrollIndicator={false}>
@@ -95,7 +99,7 @@ function FilterDropdown({ label, value, options, isOpen, onToggle, onChange, zIn
     );
 }
 
-function CitySelector({ selected, onChange }: { selected: string[]; onChange: (v: string[]) => void }) {
+function CitySelector({ selected, onChange, styles }: { selected: string[]; onChange: (v: string[]) => void; styles: ReturnType<typeof createStyles> }) {
     const allSelected = selected.length === 0;
     return (
         <View style={styles.cityChipsWrap}>
@@ -123,6 +127,8 @@ function CitySelector({ selected, onChange }: { selected: string[]; onChange: (v
 
 export default function UserManagement() {
     const insets = useSafeAreaInsets();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [tab, setTab] = useState<'professionals' | 'customers' | 'admins'>('professionals');
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
@@ -567,17 +573,17 @@ export default function UserManagement() {
             )}
 
             <View style={styles.searchBox}>
-                <Ionicons name="search-outline" size={16} color="#9BBAB8" />
+                <Ionicons name="search-outline" size={16} color={colors.textMuted} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search by name or phone"
-                    placeholderTextColor="#B0BEC5"
+                    placeholderTextColor={colors.textMuted}
                     value={search}
                     onChangeText={setSearch}
                 />
                 {search.length > 0 && (
                     <TouchableOpacity onPress={() => setSearch('')}>
-                        <Ionicons name="close-circle" size={16} color="#B0BEC5" />
+                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -590,11 +596,13 @@ export default function UserManagement() {
                                 label="City" value={cityFilter} options={['All', ...professionalCities]}
                                 isOpen={openFilter === 'city'} onToggle={() => setOpenFilter(f => f === 'city' ? null : 'city')}
                                 onChange={(v) => { setCityFilter(v); setOpenFilter(null); }} zIndex={30}
+                                styles={styles} colors={colors}
                             />
                             <FilterDropdown
                                 label="Service" value={serviceFilter} options={['All', ...professionalServices]}
                                 isOpen={openFilter === 'service'} onToggle={() => setOpenFilter(f => f === 'service' ? null : 'service')}
                                 onChange={(v) => { setServiceFilter(v); setOpenFilter(null); }} zIndex={20}
+                                styles={styles} colors={colors}
                             />
                         </>
                     ) : (
@@ -603,11 +611,13 @@ export default function UserManagement() {
                                 label="City" value={customerCityFilter} options={['All', ...customerCities]}
                                 isOpen={openFilter === 'city'} onToggle={() => setOpenFilter(f => f === 'city' ? null : 'city')}
                                 onChange={(v) => { setCustomerCityFilter(v); setOpenFilter(null); }} zIndex={30}
+                                styles={styles} colors={colors}
                             />
                             <FilterDropdown
                                 label="Area" value={customerAreaFilter} options={['All', ...customerAreas]}
                                 isOpen={openFilter === 'area'} onToggle={() => setOpenFilter(f => f === 'area' ? null : 'area')}
                                 onChange={(v) => { setCustomerAreaFilter(v); setOpenFilter(null); }} zIndex={20}
+                                styles={styles} colors={colors}
                             />
                         </>
                     )}
@@ -615,7 +625,7 @@ export default function UserManagement() {
             )}
 
             {loading ? (
-                <ActivityIndicator size="large" color="#295C59" style={{ marginTop: hp('5%') }} />
+                <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: hp('5%') }} />
             ) : (
                 <FlatList
                     data={paginatedList as any[]}
@@ -628,7 +638,7 @@ export default function UserManagement() {
                                 onPress={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
                             >
-                                <Ionicons name="chevron-back" size={18} color={page === 1 ? '#B9CFCD' : '#295C59'} />
+                                <Ionicons name="chevron-back" size={18} color={page === 1 ? colors.textMuted : colors.brand} />
                             </TouchableOpacity>
                             <Text style={styles.pageIndicator}>Page {page} of {totalPages}</Text>
                             <TouchableOpacity
@@ -636,7 +646,7 @@ export default function UserManagement() {
                                 onPress={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
                             >
-                                <Ionicons name="chevron-forward" size={18} color={page === totalPages ? '#B9CFCD' : '#295C59'} />
+                                <Ionicons name="chevron-forward" size={18} color={page === totalPages ? colors.textMuted : colors.brand} />
                             </TouchableOpacity>
                         </View>
                     ) : null}
@@ -644,8 +654,8 @@ export default function UserManagement() {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={['#295C59']}
-                            tintColor="#295C59"
+                            colors={[colors.brand]}
+                            tintColor={colors.brand}
                         />
                     }
                     renderItem={({ item }: any) => tab === 'admins' ? (
@@ -667,7 +677,7 @@ export default function UserManagement() {
                             </View>
                             <View style={styles.cardRight}>
                                 <View style={[styles.statusPill, item.status === 'Active' ? styles.pillActive : styles.pillInactive]}>
-                                    <Text style={[styles.statusText, { color: item.status === 'Active' ? '#16a34a' : '#ef4444' }]}>
+                                    <Text style={[styles.statusText, { color: item.status === 'Active' ? colors.success : colors.danger }]}>
                                         {item.status}
                                     </Text>
                                 </View>
@@ -728,13 +738,13 @@ export default function UserManagement() {
                             <View style={styles.cardRight}>
                                 {tab === 'professionals' ? (
                                     <View style={[styles.statusPill, item.status === 'Active' ? styles.pillActive : isPendingStatus(item.status) ? styles.pillPending : styles.pillInactive]}>
-                                        <Text style={[styles.statusText, { color: item.status === 'Active' ? '#16a34a' : isPendingStatus(item.status) ? '#d97706' : '#ef4444' }]}>
+                                        <Text style={[styles.statusText, { color: item.status === 'Active' ? colors.success : isPendingStatus(item.status) ? colors.warning : colors.danger }]}>
                                             {item.status}
                                         </Text>
                                     </View>
                                 ) : (
                                     <View style={[styles.statusPill, item.blocked ? styles.pillInactive : styles.pillActive]}>
-                                        <Text style={[styles.statusText, { color: item.blocked ? '#ef4444' : '#16a34a' }]}>
+                                        <Text style={[styles.statusText, { color: item.blocked ? colors.danger : colors.success }]}>
                                             {item.blocked ? 'Blocked' : 'Active'}
                                         </Text>
                                     </View>
@@ -744,7 +754,7 @@ export default function UserManagement() {
                     )}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Ionicons name="people-outline" size={44} color="#D6E8E7" />
+                            <Ionicons name="people-outline" size={44} color={colors.border} />
                             <Text style={styles.emptyText}>No {tab} found</Text>
                         </View>
                     }
@@ -765,11 +775,11 @@ export default function UserManagement() {
 
                         {/* Close */}
                         <TouchableOpacity style={styles.modalClose} onPress={closeDetail}>
-                            <Ionicons name="close" size={22} color="#295C59" />
+                            <Ionicons name="close" size={22} color={colors.brand} />
                         </TouchableOpacity>
 
                         {loadingDetail ? (
-                            <ActivityIndicator size="large" color="#295C59" style={{ marginVertical: hp('5%') }} />
+                            <ActivityIndicator size="large" color={colors.brand} style={{ marginVertical: hp('5%') }} />
                         ) : detailData ? (
                             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('4%') + insets.bottom }}>
 
@@ -798,14 +808,14 @@ export default function UserManagement() {
                                             : styles.pillInactive
                                         ]}>
                                             <Text style={[styles.statusText, {
-                                                color: detailData.status === 'Active' ? '#16a34a'
-                                                    : isPendingStatus(detailData.status) ? '#d97706' : '#ef4444'
+                                                color: detailData.status === 'Active' ? colors.success
+                                                    : isPendingStatus(detailData.status) ? colors.warning : colors.danger
                                             }]}>{detailData.status}</Text>
                                         </View>
                                     )}
                                     {selectedItem?._type === 'customers' && (
                                         <View style={[styles.statusPill, detailData.blocked ? styles.pillInactive : styles.pillActive]}>
-                                            <Text style={[styles.statusText, { color: detailData.blocked ? '#ef4444' : '#16a34a' }]}>
+                                            <Text style={[styles.statusText, { color: detailData.blocked ? colors.danger : colors.success }]}>
                                                 {detailData.blocked ? 'Blocked' : 'Active'}
                                             </Text>
                                         </View>
@@ -945,7 +955,7 @@ export default function UserManagement() {
                                 setNewAdminCities([]);
                             }}
                         >
-                            <Ionicons name="close" size={22} color="#295C59" />
+                            <Ionicons name="close" size={22} color={colors.brand} />
                         </TouchableOpacity>
 
                         <Text style={styles.modalName}>Add Admin</Text>
@@ -957,16 +967,16 @@ export default function UserManagement() {
                         >
                             <Text style={styles.detailLabel}>Find Existing Professional or Customer</Text>
                             <View style={styles.userSearchBox}>
-                                <Ionicons name="search-outline" size={16} color="#9BBAB8" />
+                                <Ionicons name="search-outline" size={16} color={colors.textMuted} />
                                 <TextInput
                                     style={styles.userSearchInput}
                                     value={userSearchQuery}
                                     onChangeText={t => { setUserSearchQuery(t); setPickedUserType(null); }}
                                     placeholder="Search by phone number"
-                                    placeholderTextColor="#B0BEC5"
+                                    placeholderTextColor={colors.textMuted}
                                     keyboardType="number-pad"
                                 />
-                                {searchingUsers && <ActivityIndicator size="small" color="#295C59" />}
+                                {searchingUsers && <ActivityIndicator size="small" color={colors.brand} />}
                             </View>
                             {userSearchResults.length > 0 && (
                                 <View style={styles.userSearchResults}>
@@ -1001,7 +1011,7 @@ export default function UserManagement() {
                                 value={newAdminName}
                                 onChangeText={setNewAdminName}
                                 placeholder="Enter full name"
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                             />
 
                             <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>Phone Number</Text>
@@ -1010,7 +1020,7 @@ export default function UserManagement() {
                                 value={newAdminPhone}
                                 onChangeText={t => { setNewAdminPhone(t.replace(/[^0-9]/g, '').slice(0, 10)); setPickedUserType(null); }}
                                 placeholder="98XXXXXXXX"
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 keyboardType="number-pad"
                                 maxLength={10}
                             />
@@ -1025,7 +1035,7 @@ export default function UserManagement() {
                                 value={newAdminPin}
                                 onChangeText={t => setNewAdminPin(t.replace(/[^0-9]/g, '').slice(0, 4))}
                                 placeholder="1234"
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 keyboardType="number-pad"
                                 maxLength={4}
                                 secureTextEntry
@@ -1035,7 +1045,7 @@ export default function UserManagement() {
                             <Text style={styles.addAdminHint}>
                                 Choose which cities this admin can operate in, or leave "All Cities" for unrestricted access.
                             </Text>
-                            <CitySelector selected={newAdminCities} onChange={setNewAdminCities} />
+                            <CitySelector selected={newAdminCities} onChange={setNewAdminCities} styles={styles} />
 
                             <TouchableOpacity
                                 style={[styles.modalActionBtn, styles.btnEnableLarge, addingAdmin && { opacity: 0.6 }]}
@@ -1043,7 +1053,7 @@ export default function UserManagement() {
                                 disabled={addingAdmin}
                             >
                                 {addingAdmin
-                                    ? <ActivityIndicator color="#16a34a" />
+                                    ? <ActivityIndicator color={colors.success} />
                                     : <Text style={styles.modalActionText}>Create Admin Account</Text>
                                 }
                             </TouchableOpacity>
@@ -1063,7 +1073,7 @@ export default function UserManagement() {
                     <View style={styles.modalSheet}>
                         <View style={styles.handleBar} />
                         <TouchableOpacity style={styles.modalClose} onPress={() => setEditingCitiesAdmin(null)}>
-                            <Ionicons name="close" size={22} color="#295C59" />
+                            <Ionicons name="close" size={22} color={colors.brand} />
                         </TouchableOpacity>
 
                         <Text style={styles.modalName}>{editingCitiesAdmin?.full_name}</Text>
@@ -1071,7 +1081,7 @@ export default function UserManagement() {
                         <Text style={styles.addAdminHint}>
                             Choose which cities this admin can operate in, or leave "All Cities" for unrestricted access.
                         </Text>
-                        <CitySelector selected={editCitiesSelection} onChange={setEditCitiesSelection} />
+                        <CitySelector selected={editCitiesSelection} onChange={setEditCitiesSelection} styles={styles} />
 
                         <TouchableOpacity
                             style={[styles.modalActionBtn, styles.btnEnableLarge, savingCities && { opacity: 0.6 }, { marginBottom: hp('2%') + insets.bottom }]}
@@ -1079,7 +1089,7 @@ export default function UserManagement() {
                             disabled={savingCities}
                         >
                             {savingCities
-                                ? <ActivityIndicator color="#16a34a" />
+                                ? <ActivityIndicator color={colors.success} />
                                 : <Text style={styles.modalActionText}>Save City Access</Text>
                             }
                         </TouchableOpacity>
@@ -1090,67 +1100,67 @@ export default function UserManagement() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
     tabs: {
-        flexDirection: 'row', backgroundColor: '#fff',
-        borderBottomWidth: 1, borderBottomColor: '#E8F4F3',
+        flexDirection: 'row', backgroundColor: colors.surface,
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
     tab: { flex: 1, paddingVertical: hp('1.5%'), alignItems: 'center' },
-    tabActive: { borderBottomWidth: 3, borderBottomColor: '#295C59' },
-    tabText: { fontSize: 14, fontWeight: '600', color: '#9BBAB8' },
-    tabTextActive: { color: '#295C59', fontWeight: '700' },
+    tabActive: { borderBottomWidth: 3, borderBottomColor: colors.brand },
+    tabText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
+    tabTextActive: { color: colors.brand, fontWeight: '700' },
     addAdminBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-        backgroundColor: '#295C59', borderRadius: 14,
+        backgroundColor: colors.brand, borderRadius: 14,
         marginHorizontal: wp('4%'), marginTop: hp('1.5%'),
         paddingVertical: hp('1.5%'),
     },
     addAdminBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
-    addAdminHint: { fontSize: 11.5, color: '#9BBAB8', marginTop: 8, lineHeight: 16 },
+    addAdminHint: { fontSize: 11.5, color: colors.textMuted, marginTop: 8, lineHeight: 16 },
     userSearchBox: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('3.5%'), height: hp('5.8%'), marginTop: 6,
     },
-    userSearchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
+    userSearchInput: { flex: 1, fontSize: 14, color: colors.textPrimary },
     userSearchResults: {
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         marginTop: 6, overflow: 'hidden',
     },
     userSearchItem: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.3%'),
-        borderBottomWidth: 1, borderBottomColor: '#F0F4F3',
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
-    userSearchItemName: { fontSize: 13.5, fontWeight: '700', color: '#1C2B2A' },
-    userSearchItemPhone: { fontSize: 11.5, color: '#9BBAB8', marginTop: 1 },
+    userSearchItemName: { fontSize: 13.5, fontWeight: '700', color: colors.textPrimary },
+    userSearchItemPhone: { fontSize: 11.5, color: colors.textMuted, marginTop: 1 },
     userTypeTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
     userTypeTagPro: { backgroundColor: '#dcfce7' },
-    userTypeTagCust: { backgroundColor: '#E8F4F3' },
-    userTypeTagText: { fontSize: 10.5, fontWeight: '700', color: '#295C59' },
+    userTypeTagCust: { backgroundColor: colors.surfaceMuted },
+    userTypeTagText: { fontSize: 10.5, fontWeight: '700', color: colors.brand },
     formInput: {
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), height: hp('6%'),
-        fontSize: 14, color: '#1C2B2A', marginTop: 6,
+        fontSize: 14, color: colors.textPrimary, marginTop: 6,
     },
     searchBox: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#fff', margin: wp('4%'), marginBottom: wp('2%'),
-        borderRadius: 14, borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, margin: wp('4%'), marginBottom: wp('2%'),
+        borderRadius: 14, borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), height: hp('5.5%'),
     },
-    searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
+    searchInput: { flex: 1, fontSize: 14, color: colors.textPrimary },
 
     filtersRow: {
         flexDirection: 'row', gap: wp('4%'),
@@ -1158,28 +1168,28 @@ const styles = StyleSheet.create({
     },
     filterGroup: { flex: 1 },
     filterLabel: {
-        fontSize: 12, fontWeight: '700', color: '#295C59',
+        fontSize: 12, fontWeight: '700', color: colors.brand,
         marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4,
     },
     dropBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('3%'), paddingVertical: hp('1.2%'),
     },
-    dropBtnText: { fontSize: 14, fontWeight: '600', color: '#1C2B2A', flex: 1 },
+    dropBtnText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, flex: 1 },
     dropMenu: {
         position: 'absolute', top: '100%', left: 0, right: 0,
-        backgroundColor: '#fff', borderRadius: 12,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 12,
+        borderWidth: 1.5, borderColor: colors.border,
         marginTop: 4, zIndex: 999, maxHeight: hp('30%'),
         elevation: 8, shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8,
     },
     dropItem: { paddingHorizontal: wp('3%'), paddingVertical: hp('1.3%') },
-    dropItemActive: { backgroundColor: '#E8F4F3' },
-    dropItemText: { fontSize: 14, fontWeight: '500', color: '#1C2B2A' },
-    dropItemTextActive: { color: '#295C59', fontWeight: '700' },
+    dropItemActive: { backgroundColor: colors.surfaceMuted },
+    dropItemText: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
+    dropItemTextActive: { color: colors.brand, fontWeight: '700' },
 
     paginationRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -1188,12 +1198,12 @@ const styles = StyleSheet.create({
     pageBtn: {
         width: 36, height: 36, borderRadius: 10,
         alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border,
     },
-    pageBtnDisabled: { backgroundColor: '#F5F9F8', borderColor: '#EAF2F1' },
-    pageIndicator: { fontSize: 13, fontWeight: '700', color: '#295C59', minWidth: wp('28%'), textAlign: 'center' },
+    pageBtnDisabled: { backgroundColor: colors.background, borderColor: colors.divider },
+    pageIndicator: { fontSize: 13, fontWeight: '700', color: colors.brand, minWidth: wp('28%'), textAlign: 'center' },
     card: {
-        backgroundColor: '#fff', borderRadius: 16,
+        backgroundColor: colors.surface, borderRadius: 16,
         padding: wp('3.5%'), marginBottom: hp('1.2%'),
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         elevation: 2, shadowColor: '#000',
@@ -1202,15 +1212,15 @@ const styles = StyleSheet.create({
     cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: wp('3%') },
     avatarCircle: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { fontSize: 18, fontWeight: '800', color: '#295C59' },
+    avatarText: { fontSize: 18, fontWeight: '800', color: colors.brand },
     cardInfo: { flex: 1 },
     nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-    name: { fontSize: 14, fontWeight: '700', color: '#1C2B2A', marginBottom: 2 },
-    idPill: { backgroundColor: '#E8F4F3', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, marginBottom: 2 },
-    idPillText: { fontSize: 10.5, fontWeight: '800', color: '#295C59' },
-    sub: { fontSize: 11, color: '#9BBAB8', marginTop: 1 },
+    name: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
+    idPill: { backgroundColor: colors.surfaceMuted, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20, marginBottom: 2 },
+    idPillText: { fontSize: 10.5, fontWeight: '800', color: colors.brand },
+    sub: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
     cardRight: { alignItems: 'flex-end', gap: 6 },
     statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
     pillActive: { backgroundColor: '#dcfce7' },
@@ -1221,18 +1231,18 @@ const styles = StyleSheet.create({
     toggleBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 },
     btnDisable: { backgroundColor: '#fee2e2' },
     btnEnable: { backgroundColor: '#dcfce7' },
-    btnCities: { backgroundColor: '#E8F4F3' },
+    btnCities: { backgroundColor: colors.surfaceMuted },
     cityChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: hp('1%') },
     cityChip: {
         paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-        backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border,
     },
-    cityChipActive: { backgroundColor: '#295C59', borderColor: '#295C59' },
-    cityChipText: { fontSize: 13, fontWeight: '600', color: '#1C2B2A' },
+    cityChipActive: { backgroundColor: colors.brand, borderColor: colors.brand },
+    cityChipText: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
     cityChipTextActive: { color: '#fff' },
-    toggleBtnText: { fontSize: 12, fontWeight: '700', color: '#1C2B2A' },
+    toggleBtnText: { fontSize: 12, fontWeight: '700', color: colors.textPrimary },
     empty: { alignItems: 'center', paddingVertical: hp('8%'), gap: 12 },
-    emptyText: { fontSize: 15, color: '#9BBAB8', fontWeight: '500' },
+    emptyText: { fontSize: 15, color: colors.textMuted, fontWeight: '500' },
 
     // Detail Modal
     modalOverlay: {
@@ -1240,46 +1250,46 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalSheet: {
-        backgroundColor: '#F5F9F8', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        backgroundColor: colors.background, borderTopLeftRadius: 28, borderTopRightRadius: 28,
         paddingHorizontal: wp('5%'), paddingTop: hp('1.5%'),
         maxHeight: hp('88%'),
     },
     handleBar: {
         width: 40, height: 4, borderRadius: 2,
-        backgroundColor: '#D6E8E7', alignSelf: 'center', marginBottom: hp('1%'),
+        backgroundColor: colors.border, alignSelf: 'center', marginBottom: hp('1%'),
     },
     modalClose: {
         alignSelf: 'flex-end', padding: 6,
-        backgroundColor: '#E8F4F3', borderRadius: 20, marginBottom: hp('1%'),
+        backgroundColor: colors.surfaceMuted, borderRadius: 20, marginBottom: hp('1%'),
     },
     modalAvatarRow: { alignItems: 'center', gap: 8, marginBottom: hp('2%') },
     modalAvatar: {
         width: 72, height: 72, borderRadius: 36,
-        backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center',
     },
-    modalAvatarText: { fontSize: 30, fontWeight: '800', color: '#295C59' },
-    modalName: { fontSize: 20, fontWeight: '800', color: '#1C2B2A', textAlign: 'center' },
-    idPillLarge: { backgroundColor: '#E8F4F3', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
+    modalAvatarText: { fontSize: 30, fontWeight: '800', color: colors.brand },
+    modalName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
+    idPillLarge: { backgroundColor: colors.surfaceMuted, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
 
     detailCard: {
-        backgroundColor: '#fff', borderRadius: 16,
+        backgroundColor: colors.surface, borderRadius: 16,
         padding: wp('4%'), marginBottom: hp('1.2%'),
         elevation: 2, shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4,
     },
     detailLabel: {
-        fontSize: 11, fontWeight: '800', color: '#295C59',
+        fontSize: 11, fontWeight: '800', color: colors.brand,
         textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6,
     },
-    detailValue: { fontSize: 15, fontWeight: '600', color: '#1C2B2A' },
-    phoneLink: { textDecorationLine: 'underline', color: '#295C59', fontSize: 18, fontWeight: '700' },
+    detailValue: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+    phoneLink: { textDecorationLine: 'underline', color: colors.brand, fontSize: 18, fontWeight: '700' },
 
     tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
     tag: {
-        backgroundColor: '#E8F4F3', borderRadius: 20,
+        backgroundColor: colors.surfaceMuted, borderRadius: 20,
         paddingHorizontal: 10, paddingVertical: 4,
     },
-    tagText: { fontSize: 12, fontWeight: '600', color: '#295C59' },
+    tagText: { fontSize: 12, fontWeight: '600', color: colors.brand },
 
     modalActionBtn: {
         borderRadius: 16, paddingVertical: hp('2%'),
@@ -1287,5 +1297,5 @@ const styles = StyleSheet.create({
     },
     btnDisableLarge: { backgroundColor: '#fee2e2' },
     btnEnableLarge: { backgroundColor: '#dcfce7' },
-    modalActionText: { fontSize: 15, fontWeight: '700', color: '#1C2B2A' },
+    modalActionText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
 });

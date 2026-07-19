@@ -21,6 +21,8 @@ import { getRejectedBookingIds } from '../../../api/leadRejections';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { maskCustomerName } from '../../../src/utils/maskName';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_NAMES = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -49,6 +51,8 @@ const todayYMD = (): string => {
 };
 
 export default function BookingHistory() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [openId, setOpenId] = useState<string | null>(null);
@@ -210,7 +214,7 @@ export default function BookingHistory() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+        <View style={styles.screen}>
             <Header4 />
             <KeyboardAvoidingView
                 style={styles.container}
@@ -225,10 +229,10 @@ export default function BookingHistory() {
                                 style={styles.backButton}
                                 onPress={() => { setShowSearch(false); setSearchQuery(''); }}
                             >
-                                <Ionicons name="arrow-back" size={22} color="#295C59" />
+                                <Ionicons name="arrow-back" size={22} color={colors.brand} />
                             </TouchableOpacity>
                             <View style={styles.inlineSearchBox}>
-                                <Ionicons name="search-outline" size={17} color="#9BBAB8" />
+                                <Ionicons name="search-outline" size={17} color={colors.textMuted} />
                                 <TextInput
                                     autoFocus
                                     placeholder="Search"
@@ -240,7 +244,7 @@ export default function BookingHistory() {
                                 />
                                 {searchQuery.length > 0 && (
                                     <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                        <Ionicons name="close-circle" size={17} color="#B0BEC5" />
+                                        <Ionicons name="close-circle" size={17} color={colors.textMuted} />
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -252,14 +256,14 @@ export default function BookingHistory() {
                             </TouchableOpacity>
                             <Text style={styles.title}>Booking History</Text>
                             <TouchableOpacity style={styles.searchIconBtn} onPress={() => setShowSearch(true)}>
-                                <Ionicons name="search-outline" size={20} color="#295C59" />
+                                <Ionicons name="search-outline" size={20} color={colors.brand} />
                             </TouchableOpacity>
                             {isSuperAdmin && (
                                 <TouchableOpacity
                                     style={styles.superAdminBtn}
                                     onPress={() => router.push('/admin/SuperAdminHistory')}
                                 >
-                                    <Ionicons name="shield-outline" size={20} color="#295C59" />
+                                    <Ionicons name="shield-outline" size={20} color={colors.brand} />
                                 </TouchableOpacity>
                             )}
                             <TouchableOpacity
@@ -272,7 +276,7 @@ export default function BookingHistory() {
                                 <Ionicons
                                     name={showCalendar ? 'list-outline' : 'calendar-outline'}
                                     size={22}
-                                    color="#295C59"
+                                    color={colors.brand}
                                 />
                             </TouchableOpacity>
                         </>
@@ -286,13 +290,13 @@ export default function BookingHistory() {
                             {/* Month nav */}
                             <View style={styles.calMonthRow}>
                                 <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                    <Ionicons name="chevron-back" size={20} color="#295C59" />
+                                    <Ionicons name="chevron-back" size={20} color={colors.brand} />
                                 </TouchableOpacity>
                                 <Text style={styles.calMonthLabel}>
                                     {MONTH_NAMES[month]}, <Text style={{ fontWeight: '800' }}>{year}</Text>
                                 </Text>
                                 <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                    <Ionicons name="chevron-forward" size={20} color="#295C59" />
+                                    <Ionicons name="chevron-forward" size={20} color={colors.brand} />
                                 </TouchableOpacity>
                             </View>
 
@@ -388,7 +392,7 @@ export default function BookingHistory() {
                                 <Text style={styles.filterDropBtnText}>
                                     {FILTERS.find(f => f.value === filter)?.label || 'All'}
                                 </Text>
-                                <Ionicons name={showFilterMenu ? 'chevron-up' : 'chevron-down'} size={18} color="#295C59" />
+                                <Ionicons name={showFilterMenu ? 'chevron-up' : 'chevron-down'} size={18} color={colors.brand} />
                             </TouchableOpacity>
                             {showFilterMenu && (
                                 <View style={styles.filterDropMenu}>
@@ -401,7 +405,7 @@ export default function BookingHistory() {
                                             <Text style={[styles.filterDropItemText, filter === f.value && styles.filterDropItemTextActive]}>
                                                 {f.label}
                                             </Text>
-                                            {filter === f.value && <Ionicons name="checkmark" size={16} color="#295C59" />}
+                                            {filter === f.value && <Ionicons name="checkmark" size={16} color={colors.brand} />}
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -430,8 +434,9 @@ export default function BookingHistory() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -443,11 +448,11 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: hp('2.3%'),
         fontWeight: '600',
-        color: '#295C59',
+        color: colors.brand,
         marginLeft: wp('2%'),
     },
     backButton: { padding: 4 },
-    backBtn: { width: hp('3.5%'), height: hp('3.5%'), tintColor: '#295C59' },
+    backBtn: { width: hp('3.5%'), height: hp('3.5%'), tintColor: colors.brand },
     calendarIconBtn: { padding: 4 },
     superAdminBtn: { padding: 4, marginRight: wp('2%') },
     searchIconBtn: { padding: 4, marginRight: wp('2%') },
@@ -458,9 +463,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: '#F5F9F8',
+        backgroundColor: colors.surfaceMuted,
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
+        borderColor: colors.border,
         borderRadius: 200,
         height: hp('5%'),
         paddingHorizontal: wp('3.5%'),
@@ -470,7 +475,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: hp(1.8),
         fontWeight: '500',
-        color: '#000',
+        color: colors.textPrimary,
         letterSpacing: 0.3,
     },
 
@@ -487,22 +492,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
         borderRadius: 14,
         paddingHorizontal: wp('4%'),
         paddingVertical: hp('1.2%'),
         gap: 8,
     },
-    filterDropBtnText: { fontSize: wp('3.6%'), fontWeight: '700', color: '#295C59' },
+    filterDropBtnText: { fontSize: wp('3.6%'), fontWeight: '700', color: colors.brand },
     filterDropMenu: {
         position: 'absolute',
         top: '100%',
         left: 0,
         right: 0,
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
+        borderColor: colors.border,
         marginTop: 4,
         elevation: 8,
         shadowColor: '#000',
@@ -517,14 +522,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp('4%'),
         paddingVertical: hp('1.3%'),
     },
-    filterDropItemActive: { backgroundColor: '#E8F4F3' },
-    filterDropItemText: { fontSize: 14, fontWeight: '500', color: '#1C2B2A' },
-    filterDropItemTextActive: { color: '#295C59', fontWeight: '700' },
+    filterDropItemActive: { backgroundColor: colors.surfaceMuted },
+    filterDropItemText: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
+    filterDropItemTextActive: { color: colors.brand, fontWeight: '700' },
 
     /* Calendar */
     calendarCard: {
         margin: wp('4%'),
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 16,
         padding: wp('4%'),
         elevation: 4,
@@ -542,7 +547,7 @@ const styles = StyleSheet.create({
     calMonthLabel: {
         fontSize: hp('2%'),
         fontWeight: '500',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
     calDayHeaderRow: {
         flexDirection: 'row',
@@ -553,7 +558,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: hp('1.4%'),
         fontWeight: '600',
-        color: '#9BBAB8',
+        color: colors.textMuted,
     },
     calWeekRow: {
         flexDirection: 'row',
@@ -567,18 +572,18 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
     },
     calCellToday: {
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
     },
     calCellSelected: {
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
     },
     calDayNum: {
         fontSize: hp('2%'),
         fontWeight: '500',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
     calDayNumToday: {
-        color: '#295C59',
+        color: colors.brand,
         fontWeight: '800',
     },
     calDayNumSelected: {
@@ -588,7 +593,7 @@ const styles = StyleSheet.create({
     calCount: {
         fontSize: hp('1.2%'),
         fontWeight: '700',
-        color: '#295C59',
+        color: colors.brand,
         marginTop: 1,
     },
     clearDateBtn: {
@@ -596,24 +601,24 @@ const styles = StyleSheet.create({
         marginTop: hp('1.5%'),
         paddingVertical: 6,
         paddingHorizontal: 16,
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
         borderRadius: 20,
     },
     clearDateText: {
         fontSize: hp('1.5%'),
-        color: '#295C59',
+        color: colors.brand,
         fontWeight: '600',
     },
     selectedDateLabel: {
         fontSize: hp('1.8%'),
         fontWeight: '700',
-        color: '#295C59',
+        color: colors.brand,
         marginBottom: hp('1.5%'),
         marginTop: hp('0.5%'),
     },
     noBookingsText: {
         textAlign: 'center',
-        color: '#9BBAB8',
+        color: colors.textMuted,
         fontSize: hp('1.8%'),
         marginTop: hp('3%'),
     },

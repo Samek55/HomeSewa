@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -32,8 +32,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import TermsCheckbox from '../../components/bookings/TermsCheckbox';
 import { logEvent } from '@/lib/analytics';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width, height } = Dimensions.get('window');
+
+const staticStyles = StyleSheet.create({
+  text: {
+    color: '#fff',
+    fontSize: width * 0.04,
+    fontWeight: '600',
+  },
+});
 
 const Button = ({ children, style, textStyle, onPress }: any) => {
   return (
@@ -42,7 +52,7 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
       activeOpacity={0.85}
       style={style}
     >
-      <Text style={[styles.text, textStyle]}>
+      <Text style={[staticStyles.text, textStyle]}>
         {children}
       </Text>
     </TouchableOpacity>
@@ -50,6 +60,8 @@ const Button = ({ children, style, textStyle, onPress }: any) => {
 };
 
 export default function CareerScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { clearForm } = useLocalSearchParams<{ clearForm?: string }>();
 
   const [name, setName] = useState('');
@@ -268,7 +280,7 @@ export default function CareerScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header3 goHome />
       <SubmitOverlay
         visible={overlayVisible}
@@ -303,7 +315,7 @@ export default function CareerScreen() {
           <View style={styles.spacerGap} />
 
           {/* Full Name */}
-          <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Full Name <Text style={{ color: colors.danger }}>*</Text></Text>
           <TextInput
             placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
             value={name}
@@ -314,11 +326,11 @@ export default function CareerScreen() {
               styles.input,
               activeInput === 'name' && styles.inputActive
             ]}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
           />
 
           {/* Phone Number */}
-          <Text style={styles.label}>Phone Number <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Phone Number <Text style={{ color: colors.danger }}>*</Text></Text>
           <View style={styles.phoneContainer}>
             <Image
               source={countryLogo}
@@ -347,13 +359,13 @@ export default function CareerScreen() {
                 styles.phoneInput,
                 activeInput === 'phone' && styles.inputActive
               ]}
-              placeholderTextColor={'#4B4B4B'}
+              placeholderTextColor={colors.textMuted}
             />
           </View>
 
           {/* Gender */}
           <View style={styles.genderRow}>
-            <Text style={[styles.label, { marginBottom: 0 }]}>Gender <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={[styles.label, { marginBottom: 0 }]}>Gender <Text style={{ color: colors.danger }}>*</Text></Text>
             <View style={styles.radioRow}>
               {['Male', 'Female'].map((option) => (
                 <TouchableOpacity
@@ -392,15 +404,15 @@ export default function CareerScreen() {
               styles.input,
               activeInput === 'email' && styles.inputActive
             ]}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
           />
 
           {/* Your Expertise */}
-          <Text style={styles.label}>Your Expertise <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Your Expertise <Text style={{ color: colors.danger }}>*</Text></Text>
           <DropdownAdd
             options={servicesData2.map(s => s.name)}
             placeholder="Select maximum UpTo 5"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             value={selectedExpertise}
             onSelectOption={setSelectedExpertise}
             onOpen={() => setActiveInput('expertise')}
@@ -409,7 +421,7 @@ export default function CareerScreen() {
           />
 
           {/* Years of Experience */}
-          <Text style={styles.label}>Years of Experience <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Years of Experience <Text style={{ color: colors.danger }}>*</Text></Text>
           <TextInput
             placeholder={activeInput === 'experience' ? '' : '5'}
             value={experience}
@@ -424,24 +436,24 @@ export default function CareerScreen() {
               styles.input,
               activeInput === 'experience' && styles.inputActive
             ]}
-            placeholderTextColor={'#4B4B4B'}
+            placeholderTextColor={colors.textMuted}
             keyboardType="numeric"
             maxLength={2}
           />
 
           {/* ID Proof */}
-          <Text style={styles.label}>Citizenship / Driving Licence / NID <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Citizenship / Driving Licence / NID <Text style={{ color: colors.danger }}>*</Text></Text>
           <FileUploadBox
             value={selectedID}
             onChange={setSelectedID}
           />
 
           {/* Preferred City */}
-          <Text style={styles.label}>Preferred City <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Preferred City <Text style={{ color: colors.danger }}>*</Text></Text>
           <DropdownAdd
             options={city}
             placeholder="Select your preferred city"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             value={selectedCity ? [selectedCity] : []}
             onSelectOption={(vals) => {
               const picked = vals[vals.length - 1] ?? '';
@@ -454,11 +466,11 @@ export default function CareerScreen() {
           />
 
           {/* Preferred Working Area */}
-          <Text style={styles.label}>Preferred Working Area <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Preferred Working Area <Text style={{ color: colors.danger }}>*</Text></Text>
           <DropdownAdd
             options={area}
             placeholder="Select maximum UpTo 5"
-            placeholderColor="#4B4B4B"
+            placeholderColor={colors.textMuted}
             value={selectedArea}
             onSelectOption={setSelectedArea}
             onOpen={() => setActiveInput('workingArea')}
@@ -468,7 +480,7 @@ export default function CareerScreen() {
 
 
           {/* Emergency Contact Number */}
-          <Text style={styles.label}>Emergency Contact Number <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>Emergency Contact Number <Text style={{ color: colors.danger }}>*</Text></Text>
           <View style={styles.phoneContainer}>
             <Image
               source={countryLogo}
@@ -497,7 +509,7 @@ export default function CareerScreen() {
                 styles.phoneInput,
                 activeInput === 'emergencyPhone' && styles.inputActive
               ]}
-              placeholderTextColor={'#4B4B4B'}
+              placeholderTextColor={colors.textMuted}
             />
           </View>
 
@@ -530,7 +542,7 @@ export default function CareerScreen() {
                 styles.phoneInput,
                 activeInput === 'referralPhone' && styles.inputActive
               ]}
-              placeholderTextColor={'#4B4B4B'}
+              placeholderTextColor={colors.textMuted}
             />
           </View>
 
@@ -540,7 +552,7 @@ export default function CareerScreen() {
             value={message}
             onChangeText={setMessage}
             placeholder=""
-            placeholderTextColor="#4B4B4B"
+            placeholderTextColor={colors.textMuted}
             maxHeight={160}
             onFocus={() => setActiveInput('message')}
             onBlur={() => setActiveInput(null)}
@@ -570,21 +582,21 @@ export default function CareerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     flexGrow: 1,
     paddingBottom: hp('4%'),
   },
   formContainer: {
     paddingHorizontal: width * 0.06, // Optimized padding grid alignment
     paddingTop: height * 0.02,
-    backgroundColor: 'white',
+    backgroundColor: colors.background,
   },
   title: {
     fontSize: width * 0.065,
     fontWeight: '700',
-    color: '#295C59',
+    color: colors.brand,
     paddingLeft: 3,
   },
   spacerGap: {
@@ -598,13 +610,13 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.02,
     fontSize: width * 0.035,
     fontWeight: '500',
-    borderColor: '#E2E8F0', // Replaced raw dark black outline with slate neutral gray
-    color: '#1A1A1A',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
   },
   inputActive: {
-    borderColor: '#295C59',
-    backgroundColor: '#EFF8F7',
+    borderColor: colors.brand,
+    backgroundColor: colors.surfaceMuted,
   },
   phoneContainer: {
     position: 'relative',
@@ -623,30 +635,30 @@ const styles = StyleSheet.create({
     height: hp('2.5%'),
     resizeMode: 'contain',
     marginRight: 4,
-    tintColor: '#295C59',
+    tintColor: colors.brand,
   },
   phoneInput: {
     borderWidth: 1.5,
     borderRadius: 12,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     height: height * 0.055,
     paddingLeft: wp('12%'),
     paddingRight: 10,
     fontSize: width * 0.035,
     fontWeight: '500',
-    color: '#1A1A1A',
-    backgroundColor: '#fff',
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
   },
   label: {
     marginBottom: 6,
     paddingLeft: 4,
     fontSize: wp('3.6%'),
     fontWeight: '600',
-    color: '#4A4A4A',
+    color: colors.textSecondary,
   },
   helperText: {
     fontSize: wp('3%'),
-    color: '#888',
+    color: colors.textMuted,
     paddingLeft: 4,
     marginTop: -hp('1.5%'),
     marginBottom: hp('1.5%'),
@@ -672,7 +684,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#295C59',
+    borderColor: colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -680,11 +692,11 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
   },
   radioLabel: {
     fontSize: wp('3.6%'),
-    color: '#4A4A4A',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   buttonContainer: {
@@ -700,10 +712,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     marginBottom: 40,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
   },
   buttonClear: {
-    color: '#295C59',
+    color: colors.brand,
     fontSize: width * 0.038,
     fontWeight: '500',
   },

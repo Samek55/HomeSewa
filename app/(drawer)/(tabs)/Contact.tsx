@@ -1,12 +1,16 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Linking, StyleSheet, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header2 from '@/components/Header2';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const MAP_URL = 'https://maps.app.goo.gl/pfWTFfxpxqXRfXha7?g_st=ac';
 
 export default function ContactScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const openWebsite = useCallback(() => { Linking.openURL('https://homesewa.app'); }, []);
   const handleEmailPress = useCallback(() => { Linking.openURL('mailto:homesewa@sriyog.com'); }, []);
   const handlePhonePress = useCallback(() => { Linking.openURL('tel:+9779852024365'); }, []);
@@ -78,16 +82,18 @@ export default function ContactScreen() {
 }
 
 function ContactCard({ icon, title, value, onPress, tappable }: any) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const Inner = (
     <View style={styles.card}>
       <View style={styles.iconBox}>
-        <Ionicons name={icon} size={20} color="#295C59" />
+        <Ionicons name={icon} size={20} color={colors.brand} />
       </View>
       <View style={styles.cardText}>
         <Text style={styles.cardTitle}>{title}</Text>
         <Text style={[styles.cardValue, tappable && styles.cardValueLink]}>{value}</Text>
       </View>
-      {tappable && <Ionicons name="chevron-forward" size={16} color="#C0D4D2" />}
+      {tappable && <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />}
     </View>
   );
   return tappable
@@ -95,18 +101,18 @@ function ContactCard({ icon, title, value, onPress, tappable }: any) {
     : Inner;
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   scrollContent: { paddingBottom: hp('5%') },
 
   hero: {
-    backgroundColor: '#F5F9F8',
+    backgroundColor: colors.background,
     paddingHorizontal: wp('6%'),
     paddingTop: hp('3%'),
     paddingBottom: hp('1.5%'),
   },
-  heroTitle: { fontSize: wp('7%'), fontWeight: '800', color: '#1C2B2A', letterSpacing: 0.3 },
-  heroSub: { fontSize: wp('3.5%'), color: '#5A7270', marginTop: 6 },
+  heroTitle: { fontSize: wp('7%'), fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.3 },
+  heroSub: { fontSize: wp('3.5%'), color: colors.textSecondary, marginTop: 6 },
 
   /* STATIC MAP */
   mapCard: {
@@ -130,7 +136,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
     paddingVertical: 10,
   },
   mapOpenText: { fontSize: wp('3.2%'), color: '#fff', fontWeight: '600' },
@@ -140,8 +146,8 @@ const styles = StyleSheet.create({
     paddingTop: hp('2%'),
     paddingBottom: hp('0.5%'),
   },
-  brandName: { fontSize: wp('5%'), fontWeight: '800', color: '#1C2B2A' },
-  brandTag: { fontSize: wp('3.3%'), color: '#5A7270', marginTop: 2 },
+  brandName: { fontSize: wp('5%'), fontWeight: '800', color: colors.textPrimary },
+  brandTag: { fontSize: wp('3.3%'), color: colors.textSecondary, marginTop: 2 },
 
   cards: {
     paddingHorizontal: wp('4%'),
@@ -151,12 +157,12 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     gap: 14,
     borderWidth: 1,
-    borderColor: '#E0ECEB',
+    borderColor: colors.border,
     elevation: 1,
     shadowColor: '#295C59',
     shadowOffset: { width: 0, height: 1 },
@@ -167,13 +173,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: '#E8F4F3',
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   cardText: { flex: 1 },
-  cardTitle: { fontSize: wp('3.2%'), fontWeight: '600', color: '#5A7270', marginBottom: 2 },
-  cardValue: { fontSize: wp('3.7%'), fontWeight: '600', color: '#1C2B2A' },
-  cardValueLink: { color: '#295C59' },
+  cardTitle: { fontSize: wp('3.2%'), fontWeight: '600', color: colors.textSecondary, marginBottom: 2 },
+  cardValue: { fontSize: wp('3.7%'), fontWeight: '600', color: colors.textPrimary },
+  cardValueLink: { color: colors.brand },
 });

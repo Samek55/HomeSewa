@@ -3,7 +3,7 @@ import {
   Alert, Dimensions, TouchableWithoutFeedback, Keyboard,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +14,8 @@ import OtpInput from '@/components/bookings/OtpInput';
 import Header3 from '@/components/Header3drawer';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { invokeEdgeFunction } from '@/api/functionsClient';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width, height } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
@@ -22,6 +24,8 @@ interface SendOtpResponse { success: boolean; message?: string }
 interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function PartnershipOTP() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { phone, name } = useLocalSearchParams<{ phone: string; name?: string }>();
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,7 +91,7 @@ export default function PartnershipOTP() {
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
       <Header3 />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
@@ -102,7 +106,7 @@ export default function PartnershipOTP() {
           <TouchableOpacity onPress={sendOtp}>
             <Text style={styles.resend}>
               {"Didn't get code? "}
-              <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Resend Code</Text>
+              <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
             </Text>
           </TouchableOpacity>
 
@@ -126,14 +130,14 @@ export default function PartnershipOTP() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: '5%', paddingTop: height * 0.09, alignItems: 'center', backgroundColor: '#fff' },
-  title: { fontSize: scaleFont(27), fontWeight: '700' },
-  subtitle: { width: '75%', textAlign: 'center', marginTop: height * 0.03, marginBottom: height * 0.06, fontSize: scaleFont(14), fontWeight: '400', lineHeight: 22 },
-  prompt: { fontSize: scaleFont(16.5), marginBottom: height * 0.04, fontWeight: '400', color: '#295C59' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: '5%', paddingTop: height * 0.09, alignItems: 'center', backgroundColor: colors.background },
+  title: { fontSize: scaleFont(27), fontWeight: '700', color: colors.textPrimary },
+  subtitle: { width: '75%', textAlign: 'center', marginTop: height * 0.03, marginBottom: height * 0.06, fontSize: scaleFont(14), fontWeight: '400', lineHeight: 22, color: colors.textSecondary },
+  prompt: { fontSize: scaleFont(16.5), marginBottom: height * 0.04, fontWeight: '400', color: colors.brand },
   otpBox: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 3 },
-  input: { width: width * 0.14, height: width * 0.14, marginHorizontal: 5, borderWidth: 1, borderColor: 'hsl(0, 0%, 79%)', borderRadius: 5, textAlign: 'center', fontSize: scaleFont(20), backgroundColor: '#fff', elevation: 3 },
-  resend: { marginTop: 25, paddingHorizontal: 20, textAlign: 'center', lineHeight: 22, fontSize: hp('1.5%') },
-  button: { backgroundColor: '#295C59', height: height * 0.065, width: '60%', justifyContent: 'center', alignItems: 'center', borderRadius: 100, marginTop: height * 0.08 },
+  input: { width: width * 0.14, height: width * 0.14, marginHorizontal: 5, borderWidth: 1, borderColor: colors.border, borderRadius: 5, textAlign: 'center', fontSize: scaleFont(20), backgroundColor: colors.surface, elevation: 3, color: colors.textPrimary },
+  resend: { marginTop: 25, paddingHorizontal: 20, textAlign: 'center', lineHeight: 22, fontSize: hp('1.5%'), color: colors.textSecondary },
+  button: { backgroundColor: colors.brand, height: height * 0.065, width: '60%', justifyContent: 'center', alignItems: 'center', borderRadius: 100, marginTop: height * 0.08 },
   buttonText: { fontSize: scaleFont(17), color: '#fff', fontWeight: '300' },
 });

@@ -13,6 +13,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header4 from '@/components/Header4Admin';
 import { supabase } from '../../lib/supabase';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const READ_IDS_KEY = 'readNotificationIds';
 
@@ -55,6 +57,8 @@ const formatRelative = (iso: string) => {
 };
 
 export default function Notifications() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [notifications, setNotifications] = useState<NotificationRow[]>([]);
     const [readIds, setReadIds] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
@@ -186,7 +190,7 @@ export default function Notifications() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f6f7fb' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <Header4 />
             <View style={styles.headerRow}>
                 <View>
@@ -197,7 +201,7 @@ export default function Notifications() {
                 </View>
                 {unreadCount > 0 && (
                     <TouchableOpacity onPress={markAllAsRead} style={styles.markAllBtn} activeOpacity={0.7}>
-                        <Ionicons name="checkmark-done" size={16} color="#295C59" />
+                        <Ionicons name="checkmark-done" size={16} color={colors.brand} />
                         <Text style={styles.markAllText}>Mark all as read</Text>
                     </TouchableOpacity>
                 )}
@@ -205,11 +209,11 @@ export default function Notifications() {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#295C59" />
+                    <ActivityIndicator size="large" color={colors.brand} />
                 </View>
             ) : notifications.length === 0 ? (
                 <View style={styles.center}>
-                    <Ionicons name="notifications-off-outline" size={40} color="#9BBAB8" />
+                    <Ionicons name="notifications-off-outline" size={40} color={colors.textMuted} />
                     <Text style={styles.emptyText}>No notifications yet.</Text>
                 </View>
             ) : (
@@ -230,7 +234,7 @@ export default function Notifications() {
                                     <Ionicons
                                         name={ICONS_BY_AUDIENCE[item.audience] || 'notifications-outline'}
                                         size={18}
-                                        color="#295C59"
+                                        color={colors.brand}
                                     />
                                 </View>
                                 <View style={styles.cardBody}>
@@ -252,7 +256,7 @@ export default function Notifications() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -264,12 +268,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: hp('2.3%'),
         fontWeight: '700',
-        color: '#295C59',
+        color: colors.brand,
     },
     unreadSubtitle: {
         fontSize: hp('1.4%'),
         fontWeight: '600',
-        color: '#9BBAB8',
+        color: colors.textMuted,
         marginTop: 2,
     },
     markAllBtn: {
@@ -279,12 +283,12 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 10,
         borderRadius: 20,
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
     },
     markAllText: {
         fontSize: hp('1.4%'),
         fontWeight: '700',
-        color: '#295C59',
+        color: colors.brand,
     },
     center: {
         flex: 1,
@@ -294,28 +298,28 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: hp('1.8%'),
-        color: '#9BBAB8',
+        color: colors.textMuted,
         fontWeight: '500',
     },
     card: {
         flexDirection: 'row',
         gap: 12,
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: '#E8F4F3',
+        borderColor: colors.surfaceMuted,
         padding: wp('4%'),
         marginBottom: hp('1.5%'),
     },
     cardUnread: {
-        borderColor: '#295C59',
-        backgroundColor: '#FBFEFE',
+        borderColor: colors.brand,
+        backgroundColor: colors.surface,
     },
     cardIconWrap: {
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: '#E8F4F3',
+        backgroundColor: colors.surfaceMuted,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -331,7 +335,7 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: hp('1.8%'),
         fontWeight: '600',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
         marginBottom: 4,
     },
     cardTitleUnread: {
@@ -347,13 +351,13 @@ const styles = StyleSheet.create({
     cardText: {
         fontSize: hp('1.6%'),
         fontWeight: '500',
-        color: '#5A7270',
+        color: colors.textSecondary,
         lineHeight: hp('2.1%'),
         marginBottom: 6,
     },
     cardDate: {
         fontSize: hp('1.3%'),
         fontWeight: '600',
-        color: '#9BBAB8',
+        color: colors.textMuted,
     },
 });

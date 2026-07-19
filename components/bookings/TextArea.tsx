@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TextInput,
   StyleSheet,
   TextInputProps,
 } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type TextAreaProps = {
   value: string;
@@ -26,6 +28,8 @@ const TextArea: React.FC<TextAreaProps> = ({
   style,
   ...rest
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [height, setHeight] = useState(minHeight);
   // Internal focus state tracking to switch style configurations seamlessly
   const [isFocused, setIsFocused] = useState(false);
@@ -68,16 +72,16 @@ const TextArea: React.FC<TextAreaProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   input: {
     borderWidth: 1.5,           // Standard premium blueprint outline thickness
     borderRadius: 12,
     padding: 12,
     fontSize: 14,
     fontWeight: '500',
-    borderColor: '#E2E8F0',     // Premium fallback neutral slate gray
-    backgroundColor: '#fff',
-    color: '#1A1A1A',
+    borderColor: colors.border,     // Premium fallback neutral slate gray
+    backgroundColor: colors.surface,
+    color: colors.textPrimary,
     marginTop: 6,
     marginBottom: 16,
   },

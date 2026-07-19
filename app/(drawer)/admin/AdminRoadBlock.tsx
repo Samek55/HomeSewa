@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet,
     Alert, TextInput, ScrollView, ActivityIndicator,
@@ -21,6 +21,8 @@ import {
     ROAD_BLOCK_BUTTON_TEXT_OPTIONS, RoadBlockButtonText, RoadBlockRole, RoadBlock,
     listRoadBlocks, createRoadBlock, updateRoadBlock, setRoadBlockActive,
 } from '../../../api/roadBlocks';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 // UI label <-> stored role value for audience targeting (Section II of the HR wireframe).
 const USER_TYPE_OPTIONS: { label: string; value: RoadBlockRole }[] = [
@@ -80,14 +82,14 @@ function getStatus(rb: RoadBlock): { label: string; color: string } {
     return { label: 'Live', color: '#2F7D5A' };
 }
 
-function ButtonTextDropdown({ value, onChange }: { value: RoadBlockButtonText; onChange: (v: RoadBlockButtonText) => void }) {
+function ButtonTextDropdown({ value, onChange, styles, colors }: { value: RoadBlockButtonText; onChange: (v: RoadBlockButtonText) => void; styles: ReturnType<typeof createStyles>; colors: ThemeColors }) {
     const [open, setOpen] = useState(false);
 
     return (
         <>
             <TouchableOpacity style={styles.dropdownBtn} onPress={() => setOpen(true)} activeOpacity={0.8}>
                 <Text style={styles.dropdownValue}>{value}</Text>
-                <Ionicons name="chevron-down" size={18} color="#9BBAB8" />
+                <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
             </TouchableOpacity>
 
             <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
@@ -96,7 +98,7 @@ function ButtonTextDropdown({ value, onChange }: { value: RoadBlockButtonText; o
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Button Text</Text>
                             <TouchableOpacity onPress={() => setOpen(false)}>
-                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                                <Ionicons name="close" size={22} color={colors.textPrimary} />
                             </TouchableOpacity>
                         </View>
                         <ScrollView style={{ maxHeight: hp('55%') }}>
@@ -110,7 +112,7 @@ function ButtonTextDropdown({ value, onChange }: { value: RoadBlockButtonText; o
                                         activeOpacity={0.7}
                                     >
                                         <Text style={[styles.optionText, selected && styles.optionTextChecked]}>{opt}</Text>
-                                        {selected && <Ionicons name="checkmark" size={18} color="#295C59" />}
+                                        {selected && <Ionicons name="checkmark" size={18} color={colors.brand} />}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -122,7 +124,7 @@ function ButtonTextDropdown({ value, onChange }: { value: RoadBlockButtonText; o
     );
 }
 
-function LinkPicker({ onSelect }: { onSelect: (path: string) => void }) {
+function LinkPicker({ onSelect, styles, colors }: { onSelect: (path: string) => void; styles: ReturnType<typeof createStyles>; colors: ThemeColors }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
 
@@ -137,7 +139,7 @@ function LinkPicker({ onSelect }: { onSelect: (path: string) => void }) {
     return (
         <>
             <TouchableOpacity style={styles.linkSuggestBtn} onPress={() => setOpen(true)} activeOpacity={0.8}>
-                <Ionicons name="compass-outline" size={15} color="#295C59" />
+                <Ionicons name="compass-outline" size={15} color={colors.brand} />
                 <Text style={styles.linkSuggestBtnText}>Browse app pages…</Text>
             </TouchableOpacity>
 
@@ -147,15 +149,15 @@ function LinkPicker({ onSelect }: { onSelect: (path: string) => void }) {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Link to an App Page</Text>
                             <TouchableOpacity onPress={close}>
-                                <Ionicons name="close" size={22} color="#1C2B2A" />
+                                <Ionicons name="close" size={22} color={colors.textPrimary} />
                             </TouchableOpacity>
                         </View>
                         <View style={styles.searchRow}>
-                            <Ionicons name="search-outline" size={16} color="#9BBAB8" />
+                            <Ionicons name="search-outline" size={16} color={colors.textMuted} />
                             <TextInput
                                 style={styles.searchInput}
                                 placeholder="Search pages or services…"
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 value={query}
                                 onChangeText={setQuery}
                                 autoFocus
@@ -188,6 +190,8 @@ function LinkPicker({ onSelect }: { onSelect: (path: string) => void }) {
 }
 
 export default function AdminRoadBlock() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [hasAccess, setHasAccess] = useState(false);
     const [tab, setTab] = useState<Tab>('compose');
     const [adminPhone, setAdminPhone] = useState('');
@@ -384,14 +388,14 @@ export default function AdminRoadBlock() {
             </View>
 
             {tab === 'compose' ? (
-                <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+                <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.background }}>
                     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
                         <Text style={styles.label}>BANNER NAME (INTERNAL)</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. Monsoon Plumbing Flash Offer"
-                            placeholderTextColor="#B0BEC5"
+                            placeholderTextColor={colors.textMuted}
                             value={bannerName}
                             onChangeText={setBannerName}
                         />
@@ -402,7 +406,7 @@ export default function AdminRoadBlock() {
                                 <RNImage source={{ uri: imageUri || imageUrl! }} style={styles.imagePreview} resizeMode="cover" />
                             ) : (
                                 <View style={styles.imagePlaceholder}>
-                                    <Ionicons name="image-outline" size={26} color="#9BBAB8" />
+                                    <Ionicons name="image-outline" size={26} color={colors.textMuted} />
                                     <Text style={styles.imagePlaceholderText}>Tap to upload a 1080×1080 image</Text>
                                 </View>
                             )}
@@ -417,7 +421,7 @@ export default function AdminRoadBlock() {
                         <TextInput
                             style={styles.input}
                             placeholder="Bold headline shown above the countdown, e.g. Flat 20% Off Plumbing Repair"
-                            placeholderTextColor="#B0BEC5"
+                            placeholderTextColor={colors.textMuted}
                             value={title}
                             onChangeText={setTitle}
                         />
@@ -426,7 +430,7 @@ export default function AdminRoadBlock() {
                         <TextInput
                             style={[styles.input, styles.textarea]}
                             placeholder="Shown under the image — keep it short and specific."
-                            placeholderTextColor="#B0BEC5"
+                            placeholderTextColor={colors.textMuted}
                             value={message}
                             onChangeText={setMessage}
                             multiline
@@ -434,12 +438,12 @@ export default function AdminRoadBlock() {
                         />
 
                         <Text style={styles.label}>BUTTON TEXT</Text>
-                        <ButtonTextDropdown value={buttonText} onChange={setButtonText} />
+                        <ButtonTextDropdown value={buttonText} onChange={setButtonText} styles={styles} colors={colors} />
                         {buttonText === 'Other' && (
                             <TextInput
                                 style={[styles.input, { marginTop: 10 }]}
                                 placeholder="Custom button text"
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 value={buttonTextCustom}
                                 onChangeText={setButtonTextCustom}
                             />
@@ -449,12 +453,12 @@ export default function AdminRoadBlock() {
                         <TextInput
                             style={styles.input}
                             placeholder="https:// or an in-app route"
-                            placeholderTextColor="#B0BEC5"
+                            placeholderTextColor={colors.textMuted}
                             value={buttonLink}
                             onChangeText={setButtonLink}
                             autoCapitalize="none"
                         />
-                        <LinkPicker onSelect={setButtonLink} />
+                        <LinkPicker onSelect={setButtonLink} styles={styles} colors={colors} />
 
                         <Text style={styles.label}>CLOSE BUTTON COUNTDOWN</Text>
                         <View style={styles.countdownRow}>
@@ -485,12 +489,12 @@ export default function AdminRoadBlock() {
                         <Text style={styles.label}>SCHEDULE</Text>
                         <View style={styles.dateRow}>
                             <TouchableOpacity style={styles.dateBtn} onPress={() => setShowStartPicker(true)}>
-                                <Ionicons name="calendar-outline" size={16} color="#295C59" />
+                                <Ionicons name="calendar-outline" size={16} color={colors.brand} />
                                 <Text style={styles.dateBtnText}>{formatDate(startDate.toISOString())}</Text>
                             </TouchableOpacity>
                             <Text style={styles.dateDash}>–</Text>
                             <TouchableOpacity style={styles.dateBtn} onPress={() => setShowEndPicker(true)}>
-                                <Ionicons name="calendar-outline" size={16} color="#295C59" />
+                                <Ionicons name="calendar-outline" size={16} color={colors.brand} />
                                 <Text style={styles.dateBtnText}>{formatDate(endDate.toISOString())}</Text>
                             </TouchableOpacity>
                         </View>
@@ -569,17 +573,17 @@ export default function AdminRoadBlock() {
                         </TouchableOpacity>
                         {editingId && (
                             <TouchableOpacity onPress={resetForm} style={{ alignSelf: 'center', marginTop: 10 }}>
-                                <Text style={{ color: '#9BBAB8', fontWeight: '700', fontSize: 13 }}>Cancel edit, start new</Text>
+                                <Text style={{ color: colors.textMuted, fontWeight: '700', fontSize: 13 }}>Cancel edit, start new</Text>
                             </TouchableOpacity>
                         )}
                     </ScrollView>
                 </KeyboardAvoidingView>
             ) : (
                 historyLoading ? (
-                    <View style={styles.historyCenter}><ActivityIndicator size="large" color="#295C59" /></View>
+                    <View style={styles.historyCenter}><ActivityIndicator size="large" color={colors.brand} /></View>
                 ) : history.length === 0 ? (
                     <View style={styles.historyCenter}>
-                        <Ionicons name="pricetags-outline" size={40} color="#9BBAB8" />
+                        <Ionicons name="pricetags-outline" size={40} color={colors.textMuted} />
                         <Text style={styles.emptyText}>No banners yet.</Text>
                     </View>
                 ) : (
@@ -601,11 +605,11 @@ export default function AdminRoadBlock() {
                                     <Text style={styles.historyCardDates}>{formatDate(item.start_at)} – {formatDate(item.end_at)}</Text>
                                     <View style={styles.historyCardActions}>
                                         <TouchableOpacity style={styles.historyActionBtn} onPress={() => startEdit(item)}>
-                                            <Ionicons name="create-outline" size={15} color="#295C59" />
+                                            <Ionicons name="create-outline" size={15} color={colors.brand} />
                                             <Text style={styles.historyActionText}>Edit</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={styles.historyActionBtn} onPress={() => toggleActive(item)}>
-                                            <Ionicons name={item.is_active ? 'pause-circle-outline' : 'play-circle-outline'} size={15} color="#295C59" />
+                                            <Ionicons name={item.is_active ? 'pause-circle-outline' : 'play-circle-outline'} size={15} color={colors.brand} />
                                             <Text style={styles.historyActionText}>{item.is_active ? 'Disable' : 'Enable'}</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -619,119 +623,119 @@ export default function AdminRoadBlock() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
 
-    tabRow: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E8F4F3' },
+    tabRow: { flexDirection: 'row', backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.divider },
     tabBtn: { flex: 1, alignItems: 'center', paddingVertical: hp('1.6%'), borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    tabBtnActive: { borderBottomColor: '#295C59' },
-    tabText: { fontSize: 13.5, fontWeight: '700', color: '#9BBAB8' },
-    tabTextActive: { color: '#295C59' },
+    tabBtnActive: { borderBottomColor: colors.brand },
+    tabText: { fontSize: 13.5, fontWeight: '700', color: colors.textMuted },
+    tabTextActive: { color: colors.brand },
 
     content: { padding: wp('4%'), paddingBottom: hp('8%') },
     label: {
-        fontSize: 11, fontWeight: '800', color: '#295C59',
+        fontSize: 11, fontWeight: '800', color: colors.brand,
         textTransform: 'uppercase', letterSpacing: 0.6,
         marginBottom: 8, marginTop: hp('2%'),
     },
     input: {
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 14,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'),
-        fontSize: 14, color: '#1C2B2A',
+        fontSize: 14, color: colors.textPrimary,
     },
     textarea: { minHeight: hp('12%'), paddingTop: hp('1.5%') },
 
-    imagePicker: { borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderColor: '#D6E8E7' },
-    imagePreview: { width: '100%', aspectRatio: 1, backgroundColor: '#E8F4F3' },
-    imagePlaceholder: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#F5F9F8' },
-    imagePlaceholderText: { fontSize: 12.5, color: '#9BBAB8', fontWeight: '600' },
+    imagePicker: { borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.border },
+    imagePreview: { width: '100%', aspectRatio: 1, backgroundColor: colors.surfaceMuted },
+    imagePlaceholder: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.background },
+    imagePlaceholderText: { fontSize: 12.5, color: colors.textMuted, fontWeight: '600' },
     imageUploadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
 
     dropdownBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: '#fff', borderRadius: 14,
-        borderWidth: 1.5, borderColor: '#D6E8E7',
+        backgroundColor: colors.surface, borderRadius: 14,
+        borderWidth: 1.5, borderColor: colors.border,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.8%'),
     },
-    dropdownValue: { fontSize: 14, color: '#1C2B2A', fontWeight: '600' },
+    dropdownValue: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     modalSheet: {
-        backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
         paddingTop: 8, paddingBottom: hp('2%'), maxHeight: hp('75%'),
     },
     modalHeader: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: wp('5%'), paddingVertical: hp('1.8%'),
-        borderBottomWidth: 1, borderBottomColor: '#F0F4F3',
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
-    modalTitle: { fontSize: 16, fontWeight: '800', color: '#1C2B2A' },
+    modalTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
     optionRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingVertical: hp('1.6%'), paddingHorizontal: wp('5%'),
-        borderBottomWidth: 1, borderBottomColor: '#F5F9F8',
+        borderBottomWidth: 1, borderBottomColor: colors.divider,
     },
-    optionText: { fontSize: 14, color: '#4B5563' },
-    optionTextChecked: { color: '#1C2B2A', fontWeight: '700' },
-    optionSubtext: { fontSize: 11.5, color: '#9BBAB8', fontWeight: '500', marginTop: 2 },
+    optionText: { fontSize: 14, color: colors.textSecondary },
+    optionTextChecked: { color: colors.textPrimary, fontWeight: '700' },
+    optionSubtext: { fontSize: 11.5, color: colors.textMuted, fontWeight: '500', marginTop: 2 },
 
     linkSuggestBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 8 },
-    linkSuggestBtnText: { fontSize: 12.5, fontWeight: '700', color: '#295C59', textDecorationLine: 'underline' },
+    linkSuggestBtnText: { fontSize: 12.5, fontWeight: '700', color: colors.brand, textDecorationLine: 'underline' },
     searchRow: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
         marginHorizontal: wp('5%'), marginBottom: 8,
-        backgroundColor: '#F5F9F8', borderRadius: 12,
+        backgroundColor: colors.background, borderRadius: 12,
         paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.2%'),
     },
-    searchInput: { flex: 1, fontSize: 14, color: '#1C2B2A' },
-    emptySearchText: { textAlign: 'center', fontSize: 13, color: '#9BBAB8', fontWeight: '500', paddingVertical: hp('3%') },
+    searchInput: { flex: 1, fontSize: 14, color: colors.textPrimary },
+    emptySearchText: { textAlign: 'center', fontSize: 13, color: colors.textMuted, fontWeight: '500', paddingVertical: hp('3%') },
 
     countdownRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    toggle: { width: 44, height: 26, borderRadius: 13, backgroundColor: '#D6E8E7', padding: 3, justifyContent: 'center' },
-    toggleOn: { backgroundColor: '#295C59' },
+    toggle: { width: 44, height: 26, borderRadius: 13, backgroundColor: colors.border, padding: 3, justifyContent: 'center' },
+    toggleOn: { backgroundColor: colors.brand },
     toggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff' },
     toggleKnobOn: { alignSelf: 'flex-end' },
-    countdownLabel: { flex: 1, fontSize: 12.5, color: '#5A7270', fontWeight: '500' },
+    countdownLabel: { flex: 1, fontSize: 12.5, color: colors.textSecondary, fontWeight: '500' },
     minutesRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
     minutesInput: {
-        backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#D6E8E7',
-        paddingHorizontal: 14, paddingVertical: hp('1.2%'), fontSize: 14, color: '#1C2B2A', width: 80, textAlign: 'center',
+        backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border,
+        paddingHorizontal: 14, paddingVertical: hp('1.2%'), fontSize: 14, color: colors.textPrimary, width: 80, textAlign: 'center',
     },
-    minutesSuffix: { fontSize: 13, color: '#5A7270', fontWeight: '600' },
+    minutesSuffix: { fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
 
     dateRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    dateBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#D6E8E7', paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.5%') },
-    dateBtnText: { fontSize: 13, fontWeight: '600', color: '#1C2B2A' },
-    dateDash: { color: '#9BBAB8', fontWeight: '700' },
+    dateBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: wp('3.5%'), paddingVertical: hp('1.5%') },
+    dateBtnText: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+    dateDash: { color: colors.textMuted, fontWeight: '700' },
 
     previewWrap: { marginTop: 4, alignItems: 'center' },
 
     publishBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: '#295C59', borderRadius: 16,
+        backgroundColor: colors.brand, borderRadius: 16,
         paddingVertical: hp('2%'), marginTop: hp('3%'), gap: 8,
         elevation: 3,
     },
     publishBtnText: { fontSize: 16, fontWeight: '800', color: '#fff' },
 
     historyCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
-    emptyText: { fontSize: 14, color: '#9BBAB8', fontWeight: '500' },
+    emptyText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
     historyList: { padding: wp('4%'), paddingBottom: hp('5%') },
-    historyCard: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#E8F4F3', padding: wp('4%'), marginBottom: hp('1.5%') },
+    historyCard: { backgroundColor: colors.surface, borderRadius: 14, borderWidth: 1, borderColor: colors.border, padding: wp('4%'), marginBottom: hp('1.5%') },
     historyCardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    historyCardTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1C2B2A' },
+    historyCardTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.textPrimary },
     statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
     statusPillText: { fontSize: 10.5, fontWeight: '800', color: '#fff', textTransform: 'uppercase' },
-    historyCardDates: { fontSize: 12, color: '#9BBAB8', fontWeight: '600', marginTop: 4, marginBottom: 10 },
+    historyCardDates: { fontSize: 12, color: colors.textMuted, fontWeight: '600', marginTop: 4, marginBottom: 10 },
     historyCardActions: { flexDirection: 'row', gap: 16 },
     historyActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    historyActionText: { fontSize: 12.5, fontWeight: '700', color: '#295C59' },
+    historyActionText: { fontSize: 12.5, fontWeight: '700', color: colors.brand },
 });

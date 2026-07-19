@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -21,6 +21,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { invokeEdgeFunction } from '../../api/functionsClient';
 import Header4 from '@/components/Header4Admin';
 import OtpInput from '@/components/bookings/OtpInput';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
@@ -29,6 +31,8 @@ interface SendOtpResponse { success: boolean; message?: string }
 interface SetPinResponse { success: boolean; message?: string; fullName?: string }
 
 export default function AdminChangePassword() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const { mode, phone: prefillPhone } = useLocalSearchParams<{ mode?: string; phone?: string }>();
     // 'change' = logged-in user updating PIN (no phone needed)
     // 'reset'  = forgot PIN, phone number required
@@ -202,14 +206,14 @@ export default function AdminChangePassword() {
                     <>
                         <Text style={styles.label}>Phone Number</Text>
                         <View style={styles.inputRow}>
-                            <Ionicons name="call-outline" size={20} color="#295C59" />
+                            <Ionicons name="call-outline" size={20} color={colors.brand} />
                             <TextInput
                                 style={[styles.textInput, styles.phoneInput]}
                                 keyboardType="number-pad"
                                 maxLength={13}
                                 editable={!otpSent}
                                 placeholder={activeInput === 'phone' ? '' : '98520 24 365'}
-                                placeholderTextColor="#B0BEC5"
+                                placeholderTextColor={colors.textMuted}
                                 value={phoneNumber}
                                 onFocus={() => setActiveInput('phone')}
                                 onBlur={() => setActiveInput(null)}
@@ -247,7 +251,7 @@ export default function AdminChangePassword() {
                         <View style={styles.pinLabelRow}>
                             <Text style={styles.label}>Current PIN</Text>
                             <TouchableOpacity onPress={() => setPinVisible(v => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                                <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#90A4AE" />
+                                <Ionicons name={pinVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color={colors.textMuted} />
                             </TouchableOpacity>
                         </View>
                         <OtpInput
@@ -265,7 +269,7 @@ export default function AdminChangePassword() {
                         >
                             <Text style={styles.resendText}>
                                 {"Forgot your PIN? "}
-                                <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Reset via OTP</Text>
+                                <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Reset via OTP</Text>
                             </Text>
                         </TouchableOpacity>
                     </>
@@ -284,7 +288,7 @@ export default function AdminChangePassword() {
                         <TouchableOpacity onPress={handleSendOtp} disabled={sendingOtp}>
                             <Text style={styles.resendText}>
                                 {"Didn't get code? "}
-                                <Text style={{ color: '#295C59', fontWeight: 'bold' }}>Resend Code</Text>
+                                <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
                             </Text>
                         </TouchableOpacity>
                     </>
@@ -328,10 +332,10 @@ export default function AdminChangePassword() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
     },
 
     /* BRAND AREA */
@@ -368,7 +372,7 @@ const styles = StyleSheet.create({
     /* CARD */
     card: {
         flex: 1,
-        backgroundColor: '#F5F9F8',
+        backgroundColor: colors.background,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
     },
@@ -381,7 +385,7 @@ const styles = StyleSheet.create({
     label: {
         fontSize: scaleFont(13.5),
         fontWeight: '700',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
         marginBottom: hp('1%'),
     },
 
@@ -389,10 +393,10 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: colors.surface,
         borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
+        borderColor: colors.border,
         paddingHorizontal: 14,
         height: hp('6.5%'),
         marginBottom: hp('2.5%'),
@@ -404,7 +408,7 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         textAlign: 'center',
         letterSpacing: 8,
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
     phoneInput: {
         fontSize: scaleFont(15),
@@ -431,17 +435,17 @@ const styles = StyleSheet.create({
         height: hp('6.5%'),
         borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
-        backgroundColor: '#fff',
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         textAlign: 'center',
         fontSize: scaleFont(18),
         fontWeight: '700',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
     resendText: {
         textAlign: 'center',
         fontSize: scaleFont(13),
-        color: '#5A7270',
+        color: colors.textSecondary,
         marginBottom: hp('2.5%'),
     },
 
@@ -459,13 +463,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: '#D6E8E7',
-        backgroundColor: '#fff',
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
     },
     cancelBtnText: {
         fontSize: scaleFont(15),
         fontWeight: '700',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
     saveBtn: {
         flex: 1,
@@ -473,7 +477,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         elevation: 4,
         shadowColor: '#295C59',
         shadowOffset: { width: 0, height: 4 },

@@ -1,4 +1,7 @@
 import React, { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { ThemeColors } from '@/theme/colors';
 import * as ImagePicker from 'expo-image-picker';
 import {
   View,
@@ -38,6 +41,11 @@ import { logEvent } from '../../../lib/analytics';
 
 const { width, height } = Dimensions.get('window');
 
+const staticStyles = StyleSheet.create({
+  button1: { width: width * 0.4, height: height * 0.06, justifyContent: 'center', alignItems: 'center', borderRadius: 10 },
+  text: { color: '#fff', fontSize: width * 0.04, fontWeight: '600' },
+});
+
 const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} disabled={disabled}>
@@ -45,9 +53,9 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
         colors={disabled ? ['#9ca3af', '#6b7280', '#4b5563'] : ['#295C59', '#3D7A76', '#295C59']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={[styles.button1, style]}
+        style={[staticStyles.button1, style]}
       >
-        <Text style={[styles.text, textStyle]}>
+        <Text style={[staticStyles.text, textStyle]}>
           {children}
         </Text>
       </LinearGradient>
@@ -56,6 +64,9 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
 };
 
 export default function ServiceBookingScreen() {
+  const { colors } = useTheme();
+  const { t } = useLanguage();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const scrollRef = useRef<ScrollView>(null);
   const inputGroupY = useRef<number>(0);
   const fieldYPositions = useRef<Partial<Record<string, number>>>({});
@@ -154,11 +165,11 @@ export default function ServiceBookingScreen() {
 
   const handleClearForm = () => {
     Alert.alert(
-      'Clear Form',
-      'Are you sure you want to clear all fields?',
+      t('book.clearFormTitle'),
+      t('book.clearFormMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes, Clear', style: 'destructive', onPress: () => { clearAllFields(); logEvent('booking_form_cleared'); } },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('book.yesClear'), style: 'destructive', onPress: () => { clearAllFields(); logEvent('booking_form_cleared'); } },
       ]
     );
   };
@@ -184,17 +195,17 @@ export default function ServiceBookingScreen() {
     const cleanNumber = number.replace(/\s/g, '');
 
     // Standard Form Field Validations
-    if (!name.trim()) { return Alert.alert('Validation Error', 'Full Name is required'); }
-    if (!cleanNumber || cleanNumber.length !== 10) { return Alert.alert('Validation Error', 'Enter a valid 10-digit phone number'); }
-    if (!selectedService) { return Alert.alert('Validation Error', 'Please select a service'); }
-    if (!date) { return Alert.alert('Validation Error', 'Please select a starting date'); }
-    if (!endDate) { return Alert.alert('Validation Error', 'Please select a service ending date'); }
-    if (!selectedShift) { return Alert.alert('Validation Error', 'Please choose a time shift'); }
-    if (!selectedCity) { return Alert.alert('Validation Error', 'Please select your city'); }
-    if (!selectedArea.trim()) { return Alert.alert('Validation Error', 'Please enter your area'); }
-    if (!selectedBudget.trim()) { return Alert.alert('Validation Error', 'Budget cannot be empty'); }
-    if (!selectedPriority.trim()) { return Alert.alert('Validation Error', 'Please choose a Priority'); }
-    if (!acceptedTerms) { return Alert.alert('Validation Error', 'Please accept the Terms & Conditions'); }
+    if (!name.trim()) { return Alert.alert(t('book.validationErrorTitle'), t('book.errFullNameRequired')); }
+    if (!cleanNumber || cleanNumber.length !== 10) { return Alert.alert(t('book.validationErrorTitle'), t('book.errPhoneInvalid')); }
+    if (!selectedService) { return Alert.alert(t('book.validationErrorTitle'), t('book.errSelectService')); }
+    if (!date) { return Alert.alert(t('book.validationErrorTitle'), t('book.errSelectStartDate')); }
+    if (!endDate) { return Alert.alert(t('book.validationErrorTitle'), t('book.errSelectEndDate')); }
+    if (!selectedShift) { return Alert.alert(t('book.validationErrorTitle'), t('book.errChooseShift')); }
+    if (!selectedCity) { return Alert.alert(t('book.validationErrorTitle'), t('book.errSelectCity')); }
+    if (!selectedArea.trim()) { return Alert.alert(t('book.validationErrorTitle'), t('book.errEnterArea')); }
+    if (!selectedBudget.trim()) { return Alert.alert(t('book.validationErrorTitle'), t('book.errBudgetEmpty')); }
+    if (!selectedPriority.trim()) { return Alert.alert(t('book.validationErrorTitle'), t('book.errChoosePriority')); }
+    if (!acceptedTerms) { return Alert.alert(t('book.validationErrorTitle'), t('book.errAcceptTerms')); }
 
 
     setIsSubmitting(true);
@@ -206,8 +217,8 @@ export default function ServiceBookingScreen() {
       setIsSubmitting(false);
       logEvent('booking_limit_reached');
       Alert.alert(
-        'Limit Reached',
-        'This phone number has reached the maximum allowance of 5 bookings for today. Please try again tomorrow.'
+        t('book.limitReachedTitle'),
+        t('book.limitReachedMessage')
       );
       return;
     }
@@ -248,14 +259,14 @@ export default function ServiceBookingScreen() {
       });
     } catch (error) {
       console.log(error);
-      Alert.alert('Error', 'Something went wrong');
+      Alert.alert(t('common.error'), t('common.somethingWentWrong'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#295C59' }}>
+    <View style={{ flex: 1, backgroundColor: colors.brand }}>
       <Header2 />
       <KeyboardAwareScrollView
         ref={scrollRef}
@@ -266,23 +277,23 @@ export default function ServiceBookingScreen() {
         keyboardDismissMode="on-drag"
       >
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Book a Service</Text>
+          <Text style={styles.title}>{t('book.title')}</Text>
 
           <View style={styles.inputGroup} onLayout={(e) => { inputGroupY.current = e.nativeEvent.layout.y; }}>
             {/* Full Name */}
-            <Text style={styles.label}>Full Name <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.fullName')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <TextInput
-              placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
+              placeholder={activeInput === 'name' ? '' : t('book.fullNamePlaceholder')}
               value={name}
               onChangeText={setName}
               onFocus={() => setActiveInput('name')}
               onBlur={() => setActiveInput(null)}
               style={[styles.input, activeInput === 'name' && styles.inputActive]}
-              placeholderTextColor={'#4B4B4B'}
+              placeholderTextColor={colors.textSecondary}
             />
 
             {/* Phone Number */}
-            <Text style={styles.label}>Phone Number <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.phoneNumber')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View style={styles.phoneContainer}>
               <Image source={countryLogo} style={styles.icon} resizeMode="contain" />
               <TextInput
@@ -304,18 +315,18 @@ export default function ServiceBookingScreen() {
                 }}
                 keyboardType="number-pad"
                 style={[styles.phoneInput, activeInput === 'phone' && styles.inputActive]}
-                placeholderTextColor={'#4B4B4B'}
+                placeholderTextColor={colors.textSecondary}
               />
             </View>
 
             {/* Select Service */}
-            <Text style={styles.label}>Select Service <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.selectService')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View onLayout={(e) => { fieldYPositions.current['service'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 value={selectedService}
                 options={services}
                 placeholder="Garden Care"
-                placeholderColor="#4B4B4B"
+                placeholderColor={colors.textSecondary}
                 onSelectOption={setSelectedService}
                 onOpen={() => { setActiveInput('service'); scrollToField('service'); }}
                 onClose={() => setActiveInput(null)}
@@ -323,7 +334,7 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Choose Date */}
-            <Text style={styles.label}>Choose Date <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.chooseDate')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View style={{ marginBottom: height * 0.025 }}>
               <TouchableOpacity
                 onPress={() => {
@@ -332,12 +343,12 @@ export default function ServiceBookingScreen() {
                 }}
                 style={[styles.datePicker, activeInput === 'date' && styles.inputActive]}
               >
-                <Text style={[styles.datePickerText, { color: date ? '#1A1A1A' : '#4B4B4B' }]}>
-                  {date ? `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()}` : 'Pick a Date (DD/MM/YYYY)'}
+                <Text style={[styles.datePickerText, { color: date ? colors.textPrimary : colors.textSecondary }]}>
+                  {date ? `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()}` : t('book.pickDatePlaceholder')}
                 </Text>
                 <Image
                   source={CalenderIcon}
-                  style={[styles.calendarIcon, activeInput === 'date' && { tintColor: '#295C59' }]}
+                  style={[styles.calendarIcon, activeInput === 'date' && { tintColor: colors.brand }]}
                 />
               </TouchableOpacity>
 
@@ -359,18 +370,18 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Service Ending Date */}
-            <Text style={styles.label}>Service Ending Date <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.serviceEndingDate')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View style={{ marginBottom: height * 0.025 }}>
               <TouchableOpacity
                 onPress={() => { setShowEnd(true); setActiveInput('endDate'); }}
                 style={[styles.datePicker, activeInput === 'endDate' && styles.inputActive]}
               >
-                <Text style={[styles.datePickerText, { color: endDate ? '#1A1A1A' : '#4B4B4B' }]}>
+                <Text style={[styles.datePickerText, { color: endDate ? colors.textPrimary : colors.textSecondary }]}>
                   {endDate
                     ? `${String(endDate.getDate()).padStart(2,'0')}/${String(endDate.getMonth()+1).padStart(2,'0')}/${endDate.getFullYear()}`
-                    : 'Pick Ending Date (DD/MM/YYYY)'}
+                    : t('book.pickEndingDatePlaceholder')}
                 </Text>
-                <Image source={CalenderIcon} style={[styles.calendarIcon, activeInput === 'endDate' && { tintColor: '#295C59' }]} />
+                <Image source={CalenderIcon} style={[styles.calendarIcon, activeInput === 'endDate' && { tintColor: colors.brand }]} />
               </TouchableOpacity>
               {showEnd && (
                 <DateTimePicker
@@ -388,12 +399,12 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Preferred Time */}
-            <Text style={styles.label}>Preferred Time <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.preferredTime')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View onLayout={(e) => { fieldYPositions.current['shift'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 options={shifts}
-                placeholder="Choose a Shift"
-                placeholderColor="#4B4B4B"
+                placeholder={t('book.chooseShiftPlaceholder')}
+                placeholderColor={colors.textSecondary}
                 onSelectOption={setSelectedShift}
                 dropdownType="shift"
                 onOpen={() => { setActiveInput('shift'); scrollToField('shift'); }}
@@ -403,12 +414,12 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* City */}
-            <Text style={styles.label}>City <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.city')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View onLayout={(e) => { fieldYPositions.current['city'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 options={city}
-                placeholder="Select your city"
-                placeholderColor="#4B4B4B"
+                placeholder={t('book.selectCityPlaceholder')}
+                placeholderColor={colors.textSecondary}
                 onSelectOption={handleCitySelect}
                 onOpen={() => { setActiveInput('city'); scrollToField('city'); }}
                 onClose={() => setActiveInput(null)}
@@ -417,7 +428,7 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Area with typing suggestions */}
-            <Text style={styles.label}>Area <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.area')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View onLayout={(e) => { fieldYPositions.current['area'] = e.nativeEvent.layout.y; }} style={[styles.areaWrapper, { zIndex: showSuggestions ? 999 : 1 }]}>
               <TextInput
                 value={areaQuery}
@@ -443,14 +454,14 @@ export default function ServiceBookingScreen() {
                     setActiveInput(null);
                   }, 200);
                 }}
-                placeholder={activeInput === 'area' ? '' : (selectedCity ? 'Find your area...' : 'Select a city first')}
-                placeholderTextColor="#4B4B4B"
+                placeholder={activeInput === 'area' ? '' : (selectedCity ? t('book.findAreaPlaceholder') : t('book.selectCityFirstPlaceholder'))}
+                placeholderTextColor={colors.textSecondary}
                 editable={!!selectedCity}
                 style={[
                   styles.input,
                   { marginBottom: 0 },
                   activeInput === 'area' && styles.inputActive,
-                  !selectedCity && { backgroundColor: '#f5f5f5' },
+                  !selectedCity && { backgroundColor: colors.surfaceMuted },
                 ]}
               />
 
@@ -485,12 +496,12 @@ export default function ServiceBookingScreen() {
             <View style={{ height: height * 0.02 }} />
 
             {/* Priority */}
-            <Text style={styles.label}>Priority <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.priority')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View onLayout={(e) => { fieldYPositions.current['priority'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 options={priority}
-                placeholder="Select Priority"
-                placeholderColor="#4B4B4B"
+                placeholder={t('book.selectPriorityPlaceholder')}
+                placeholderColor={colors.textSecondary}
                 onSelectOption={setSelectedPriority}
                 value={selectedPriority}
                 onOpen={() => { setActiveInput('priority'); scrollToField('priority'); }}
@@ -499,13 +510,13 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Select Budget */}
-            <Text style={styles.label}>Select Budget <Text style={{ color: 'red' }}>*</Text></Text>
+            <Text style={styles.label}>{t('book.selectBudget')} <Text style={{ color: colors.danger }}>*</Text></Text>
             <View onLayout={(e) => { fieldYPositions.current['budget'] = e.nativeEvent.layout.y; }}>
               <Dropdown
                 value={selectedBudget}
                 options={budget}
-                placeholder="Select Budget"
-                placeholderColor="#4B4B4B"
+                placeholder={t('book.selectBudget')}
+                placeholderColor={colors.textSecondary}
                 onSelectOption={setSelectedBudget}
                 onOpen={() => { setActiveInput('budget'); scrollToField('budget'); }}
                 onClose={() => setActiveInput(null)}
@@ -513,7 +524,7 @@ export default function ServiceBookingScreen() {
             </View>
 
             {/* Photos */}
-            <Text style={styles.label}>Photos <Text style={{ color: '#888', fontWeight: '400' }}>(up to 5)</Text></Text>
+            <Text style={styles.label}>{t('book.photos')} <Text style={{ color: colors.textMuted, fontWeight: '400' }}>{t('book.upTo5')}</Text></Text>
             <TouchableOpacity
               style={styles.photoDropZone}
               onPress={photos.length < 5 ? pickPhotos : undefined}
@@ -521,8 +532,8 @@ export default function ServiceBookingScreen() {
             >
               {photos.length === 0 ? (
                 <>
-                  <Ionicons name="arrow-down-circle-outline" size={32} color="#295C59" />
-                  <Text style={styles.photoDropText}>Drop files/photos here</Text>
+                  <Ionicons name="arrow-down-circle-outline" size={32} color={colors.brand} />
+                  <Text style={styles.photoDropText}>{t('book.dropPhotosPlaceholder')}</Text>
                 </>
               ) : (
                 <View style={styles.photoSection}>
@@ -544,13 +555,13 @@ export default function ServiceBookingScreen() {
             </TouchableOpacity>
 
             {/* Message */}
-            <Text style={styles.label}>Message</Text>
+            <Text style={styles.label}>{t('book.message')}</Text>
             <View onLayout={(e) => { fieldYPositions.current['message'] = e.nativeEvent.layout.y; }}>
               <TextArea
                 value={message}
                 onChangeText={setMessage}
                 placeholder=""
-                placeholderTextColor="#4B4B4B"
+                placeholderTextColor={colors.textSecondary}
                 maxHeight={160}
                 onFocus={() => { setActiveInput('message'); scrollToField('message'); }}
                 onBlur={() => setActiveInput(null)}
@@ -564,16 +575,16 @@ export default function ServiceBookingScreen() {
             <View style={styles.bottomRow}>
               <Pressable style={styles.buttonClearFlex} onPress={handleClearForm}>
                 <Image source={ClearFormIcon} style={styles.clearIcon} />
-                <Text style={styles.buttonClear}>Clear form</Text>
+                <Text style={styles.buttonClear}>{t('book.clearForm')}</Text>
               </Pressable>
 
               <Button
-                style={styles.button1}
+                style={staticStyles.button1}
                 textStyle={{ color: 'white', textAlign: 'center' }}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <ActivityIndicator color="#fff" size="small" /> : 'SUBMIT'}
+                {isSubmitting ? <ActivityIndicator color="#fff" size="small" /> : t('book.submit')}
               </Button>
             </View>
 
@@ -584,38 +595,35 @@ export default function ServiceBookingScreen() {
   );
 }
 
-// ... styles remain unchanged ...
-const styles = StyleSheet.create({
-  container: { backgroundColor: '#295C59', flexGrow: 1, paddingBottom: hp('4%') },
-  formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: '#295C59' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { backgroundColor: colors.brand, flexGrow: 1, paddingBottom: hp('4%') },
+  formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: colors.brand },
   title: { fontSize: width * 0.06, fontWeight: '700', color: 'white', paddingLeft: 8, marginBottom: 10 },
-  inputGroup: { marginTop: height * 0.015, padding: 20, borderRadius: 20, backgroundColor: '#fff', elevation: 10, marginBottom: height * 0.05 },
-  input: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: width * 0.035, height: height * 0.055, marginBottom: height * 0.02, fontSize: width * 0.035, fontWeight: '500', borderColor: '#E2E8F0', color: '#1A1A1A', backgroundColor: '#fff' },
-  inputActive: { borderColor: '#295C59', backgroundColor: '#EFF8F7' },
+  inputGroup: { marginTop: height * 0.015, padding: 20, borderRadius: 20, backgroundColor: colors.surface, elevation: 10, marginBottom: height * 0.05 },
+  input: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: width * 0.035, height: height * 0.055, marginBottom: height * 0.02, fontSize: width * 0.035, fontWeight: '500', borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.surface },
+  inputActive: { borderColor: colors.brand, backgroundColor: colors.surfaceMuted },
   phoneContainer: { position: 'relative', justifyContent: 'center', marginBottom: height * 0.02 },
   icon: { width: wp('7%'), height: hp('3%'), position: 'absolute', left: 10, zIndex: 2 },
-  phoneInput: { borderWidth: 1.5, borderRadius: 12, borderColor: '#E2E8F0', height: height * 0.055, paddingLeft: wp('12%'), paddingRight: 10, fontSize: width * 0.035, fontWeight: '500', color: '#1A1A1A', backgroundColor: '#fff' },
-  datePicker: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: width * 0.035, height: height * 0.055, justifyContent: 'space-between', backgroundColor: '#fff' },
-  datePickerText: { fontSize: width * 0.035, fontWeight: '500', color: '#4a4a4a' },
-  label: { marginBottom: hp('0.6%'), paddingLeft: wp('1%'), fontSize: wp('3.5%'), fontWeight: '600', color: '#4A4A4A' },
+  phoneInput: { borderWidth: 1.5, borderRadius: 12, borderColor: colors.border, height: height * 0.055, paddingLeft: wp('12%'), paddingRight: 10, fontSize: width * 0.035, fontWeight: '500', color: colors.textPrimary, backgroundColor: colors.surface },
+  datePicker: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: width * 0.035, height: height * 0.055, justifyContent: 'space-between', backgroundColor: colors.surface },
+  datePickerText: { fontSize: width * 0.035, fontWeight: '500', color: colors.textSecondary },
+  label: { marginBottom: hp('0.6%'), paddingLeft: wp('1%'), fontSize: wp('3.5%'), fontWeight: '600', color: colors.textSecondary },
   calendarIcon: { height: hp('2.5%'), width: hp('2.5%'), resizeMode: 'contain' },
   buttonPadding: { paddingBottom: 10, alignItems: 'center' },
-  button1: { width: width * 0.4, height: height * 0.06, justifyContent: 'center', alignItems: 'center', borderRadius: 10 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 10 },
-  photoDropZone: { borderWidth: 1.5, borderRadius: 12, borderColor: '#295C59', borderStyle: 'dashed', backgroundColor: '#fff', paddingVertical: 22, paddingHorizontal: 12, marginBottom: height * 0.02, alignItems: 'center', justifyContent: 'center' },
-  photoDropText: { fontSize: wp('3.5%'), color: '#295C59', fontWeight: '500', marginTop: 8 },
+  photoDropZone: { borderWidth: 1.5, borderRadius: 12, borderColor: colors.brand, borderStyle: 'dashed', backgroundColor: colors.surface, paddingVertical: 22, paddingHorizontal: 12, marginBottom: height * 0.02, alignItems: 'center', justifyContent: 'center' },
+  photoDropText: { fontSize: wp('3.5%'), color: colors.brand, fontWeight: '500', marginTop: 8 },
   photoSection: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-start', width: '100%' },
   photoThumb: { width: width * 0.17, height: width * 0.17, borderRadius: 10, overflow: 'hidden', position: 'relative' },
   photoImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   photoRemove: { position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, width: 18, height: 18, justifyContent: 'center', alignItems: 'center' },
   photoRemoveText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  photoAdd: { width: width * 0.17, height: width * 0.17, borderRadius: 10, borderWidth: 1.5, borderColor: '#295C59', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: '#EFF8F7' },
-  photoAddIcon: { fontSize: 24, color: '#295C59', lineHeight: 28, textAlign: 'center' },
-  photoAddLabel: { fontSize: wp('2.4%'), color: '#295C59', fontWeight: '600' },
-  text: { color: '#fff', fontSize: width * 0.04, fontWeight: '600' },
+  photoAdd: { width: width * 0.17, height: width * 0.17, borderRadius: 10, borderWidth: 1.5, borderColor: colors.brand, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surfaceMuted },
+  photoAddIcon: { fontSize: 24, color: colors.brand, lineHeight: 28, textAlign: 'center' },
+  photoAddLabel: { fontSize: wp('2.4%'), color: colors.brand, fontWeight: '600' },
   buttonClearFlex: { flexDirection: 'row', alignItems: 'center', paddingRight: 10 },
-  buttonClear: { color: '#295C59', fontSize: width * 0.038, fontWeight: '500' },
-  clearIcon: { width: wp('6%'), height: hp('2.5%'), resizeMode: 'contain', marginRight: 2, tintColor: '#295C59' },
+  buttonClear: { color: colors.brand, fontSize: width * 0.038, fontWeight: '500' },
+  clearIcon: { width: wp('6%'), height: hp('2.5%'), resizeMode: 'contain', marginRight: 2, tintColor: colors.brand },
   areaWrapper: { position: 'relative', marginBottom: 0 },
   suggestionBox: {
     position: 'absolute',
@@ -623,10 +631,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     maxHeight: height * 0.35,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#295C59',
+    borderColor: colors.brand,
     elevation: 20,
     shadowColor: '#295C59',
     shadowOffset: { width: 0, height: 4 },
@@ -641,11 +649,11 @@ const styles = StyleSheet.create({
   },
   suggestionDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F7F6',
+    borderBottomColor: colors.divider,
   },
   suggestionText: {
     fontSize: width * 0.035,
     fontWeight: '500',
-    color: '#1C2B2A',
+    color: colors.textPrimary,
   },
 });

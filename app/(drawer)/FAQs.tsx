@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FaqsData } from '../../src/data/FAQsData';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import Header3 from '@/components/Header3drawer';
+import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { ThemeColors } from '@/theme/colors';
 
 type FaqItem = { id: number; question: string; answer: string };
 
 export default function FaqsScreen() {
+  const { colors } = useTheme();
+  const { t } = useLanguage();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const toggleItem = (id: number) => setExpandedId(prev => prev === id ? null : id);
 
@@ -18,8 +24,8 @@ export default function FaqsScreen() {
 
         {/* HERO */}
         <View style={styles.hero}>
-          <Text style={styles.heroTitle}>FAQs</Text>
-          <Text style={styles.heroSub}>Everything you need to know about HomeSewa</Text>
+          <Text style={styles.heroTitle}>{t('faqs.title')}</Text>
+          <Text style={styles.heroSub}>{t('faqs.subtitle')}</Text>
         </View>
 
         {/* ACCORDION */}
@@ -43,7 +49,7 @@ export default function FaqsScreen() {
                   <Ionicons
                     name={isOpen ? 'chevron-up' : 'chevron-down'}
                     size={18}
-                    color={isOpen ? '#295C59' : '#9CA3AF'}
+                    color={isOpen ? colors.brand : colors.textMuted}
                   />
                 </View>
                 {isOpen && (
@@ -59,8 +65,8 @@ export default function FaqsScreen() {
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Still have questions?</Text>
-          <Text style={styles.footerSub}>Contact us at homesewa@sriyog.com</Text>
+          <Text style={styles.footerText}>{t('faqs.stillHaveQuestions')}</Text>
+          <Text style={styles.footerSub}>{t('faqs.contactUs')}</Text>
         </View>
 
       </ScrollView>
@@ -68,13 +74,13 @@ export default function FaqsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F5F9F8' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: hp('5%') },
 
   hero: {
-    backgroundColor: '#F5F9F8',
+    backgroundColor: colors.background,
     paddingHorizontal: wp('6%'),
     paddingTop: hp('3%'),
     paddingBottom: hp('1.5%'),
@@ -82,12 +88,12 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: wp('7%'),
     fontWeight: '800',
-    color: '#1C2B2A',
+    color: colors.textPrimary,
     letterSpacing: 0.3,
   },
   heroSub: {
     fontSize: wp('3.5%'),
-    color: '#5A7270',
+    color: colors.textSecondary,
     marginTop: 6,
     fontWeight: '400',
   },
@@ -99,11 +105,11 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: '#E0ECEB',
+    borderColor: colors.border,
     elevation: 1,
     shadowColor: '#295C59',
     shadowOffset: { width: 0, height: 1 },
@@ -111,8 +117,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   cardOpen: {
-    borderColor: '#295C59',
-    backgroundColor: '#FAFFFE',
+    borderColor: colors.brand,
+    backgroundColor: colors.surface,
     elevation: 3,
   },
 
@@ -126,17 +132,17 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#E8F4F3',
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  numBadgeOpen: { backgroundColor: '#295C59' },
+  numBadgeOpen: { backgroundColor: colors.brand },
 
   num: {
     fontSize: wp('3%'),
     fontWeight: '700',
-    color: '#295C59',
+    color: colors.brand,
   },
   numOpen: { color: '#fff' },
 
@@ -144,36 +150,36 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: wp('3.7%'),
     fontWeight: '600',
-    color: '#1C2B2A',
+    color: colors.textPrimary,
     lineHeight: 20,
   },
-  questionOpen: { color: '#295C59' },
+  questionOpen: { color: colors.brand },
 
   answerBox: {
     flexDirection: 'row',
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E8F4F3',
+    borderTopColor: colors.surfaceMuted,
     gap: 10,
   },
   answerLine: {
     width: 3,
     borderRadius: 2,
-    backgroundColor: '#295C59',
+    backgroundColor: colors.brand,
     flexShrink: 0,
   },
   answer: {
     flex: 1,
     fontSize: wp('3.5%'),
-    color: '#5A7270',
+    color: colors.textSecondary,
     lineHeight: 21,
     fontWeight: '400',
   },
 
   footer: {
     margin: wp('4%'),
-    backgroundColor: '#E8F4F3',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -182,11 +188,11 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: wp('4%'),
     fontWeight: '700',
-    color: '#295C59',
+    color: colors.brand,
   },
   footerSub: {
     fontSize: wp('3.3%'),
-    color: '#5A7270',
+    color: colors.textSecondary,
     marginTop: 4,
   },
 });

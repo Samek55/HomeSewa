@@ -1,6 +1,8 @@
 import {View, Image, GestureResponderEvent, StyleSheet} from 'react-native';
-import React from 'react';
+import React, { useMemo } from 'react';
 import ButtonComponent from './ButtonComponent';
+import { useTheme } from '../../context/ThemeContext';
+import type { ThemeColors } from '../../theme/colors';
 
 type Props = {
   title: string;
@@ -9,6 +11,8 @@ type Props = {
 };
 
 const OnboardingComponent = ({title, onPress, image}: Props) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
 
     <View style={styles.container}>
@@ -20,14 +24,14 @@ const OnboardingComponent = ({title, onPress, image}: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 40,
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingBottom: 40,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   content: {
     top: '5%',

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking,
 } from 'react-native';
@@ -9,6 +9,8 @@ import Header4 from '@/components/Header4Admin';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { initiateLeadPayment, confirmLeadUnlock } from '@/api/khalti';
 import { LEAD_FEE_NPR, LEAD_FEE_REGULAR_NPR } from '@/src/constants/leadFee';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 // 'recordFailed' is distinct from 'error': it means Khalti already confirmed the payment and
 // only the follow-up unlock confirmation failed, so its retry must NOT re-run the payment
@@ -17,6 +19,8 @@ type Stage = 'offer' | 'initiating' | 'waiting' | 'recording' | 'success' | 'err
 
 export default function LeadPayment() {
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [stage, setStage] = useState<Stage>('offer');
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -136,7 +140,7 @@ export default function LeadPayment() {
                 {stage === 'success' && (
                     <View style={styles.center}>
                         <View style={styles.successCircle}>
-                            <Ionicons name="checkmark-circle" size={72} color="#16a34a" />
+                            <Ionicons name="checkmark-circle" size={72} color={colors.success} />
                         </View>
                         <Text style={styles.successTitle}>Successfully Paid!</Text>
                         <Text style={styles.successAmount}>NPR {LEAD_FEE_NPR}</Text>
@@ -148,7 +152,7 @@ export default function LeadPayment() {
 
                 {stage === 'error' && (
                     <View style={styles.center}>
-                        <Ionicons name="alert-circle-outline" size={52} color="#ef4444" />
+                        <Ionicons name="alert-circle-outline" size={52} color={colors.danger} />
                         <Text style={styles.errorText}>{errorMsg}</Text>
                         <TouchableOpacity style={styles.payBtn} onPress={() => setStage('offer')} activeOpacity={0.85}>
                             <Text style={styles.payBtnText}>Try Again</Text>
@@ -158,7 +162,7 @@ export default function LeadPayment() {
 
                 {stage === 'recordFailed' && (
                     <View style={styles.center}>
-                        <Ionicons name="alert-circle-outline" size={52} color="#ef4444" />
+                        <Ionicons name="alert-circle-outline" size={52} color={colors.danger} />
                         <Text style={styles.errorText}>{errorMsg}</Text>
                         <TouchableOpacity style={styles.payBtn} onPress={finalizeUnlock} activeOpacity={0.85}>
                             <Text style={styles.payBtnText}>Retry</Text>
@@ -171,8 +175,8 @@ export default function LeadPayment() {
     );
 }
 
-const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#fff' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     container: {
         flex: 1,
         alignItems: 'center',
@@ -208,25 +212,25 @@ const styles = StyleSheet.create({
     },
     regularPrice: {
         fontSize: hp('1.7%'),
-        color: '#9BBAB8',
+        color: colors.textMuted,
         textDecorationLine: 'line-through',
         marginBottom: 4,
     },
     price: {
         fontSize: hp('4.5%'),
         fontWeight: '900',
-        color: '#1C2B2A',
+        color: colors.textPrimary,
     },
     subtitle: {
         fontSize: hp('1.9%'),
-        color: '#5A7270',
+        color: colors.textSecondary,
         marginTop: 6,
         fontWeight: '600',
     },
 
     payBtn: {
         width: '100%',
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         borderRadius: 16,
         paddingVertical: hp('1.8%'),
         alignItems: 'center',
@@ -235,8 +239,8 @@ const styles = StyleSheet.create({
     },
     payBtnText: { fontSize: hp('2%'), fontWeight: '800', color: '#fff' },
 
-    waitingText: { fontSize: hp('2%'), fontWeight: '600', color: '#1C2B2A', marginTop: 16, textAlign: 'center' },
-    waitingSub: { fontSize: hp('1.6%'), color: '#5A7270', marginTop: 8, textAlign: 'center' },
+    waitingText: { fontSize: hp('2%'), fontWeight: '600', color: colors.textPrimary, marginTop: 16, textAlign: 'center' },
+    waitingSub: { fontSize: hp('1.6%'), color: colors.textSecondary, marginTop: 8, textAlign: 'center' },
 
     successCircle: {
         width: 110,
@@ -247,8 +251,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: 20,
     },
-    successTitle: { fontSize: hp('3%'), fontWeight: '800', color: '#16a34a', marginBottom: 8 },
-    successAmount: { fontSize: hp('3.5%'), fontWeight: '900', color: '#1C2B2A', marginBottom: 24 },
+    successTitle: { fontSize: hp('3%'), fontWeight: '800', color: colors.success, marginBottom: 8 },
+    successAmount: { fontSize: hp('3.5%'), fontWeight: '900', color: colors.textPrimary, marginBottom: 24 },
 
-    errorText: { fontSize: hp('1.9%'), color: '#ef4444', textAlign: 'center', marginTop: 12, marginBottom: 24 },
+    errorText: { fontSize: hp('1.9%'), color: colors.danger, textAlign: 'center', marginTop: 12, marginBottom: 24 },
 });

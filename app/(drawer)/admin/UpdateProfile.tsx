@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     View, Text, Image, TouchableOpacity,
     StyleSheet, TextInput, Alert, ActivityIndicator,
@@ -18,11 +18,15 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { city as CITY_OPTIONS, area as AREA_OPTIONS } from '../../../src/data/Data';
 import { servicesData2 } from '../../../src/data/ServiceData';
 import DropdownAdd from '../../../components/bookings/DropdownAdd';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const scaleFont = (s: number) => (s * width) / 375;
 
 export default function UpdateProfile() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [phone, setPhone] = useState('');
@@ -196,14 +200,14 @@ export default function UpdateProfile() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#295C59' }}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.brand }}>
                 <ActivityIndicator size="large" color="#fff" />
             </View>
         );
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#F5F9F8' }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <Header4 />
 
             {tempUri && (
@@ -235,7 +239,7 @@ export default function UpdateProfile() {
                         <Image source={{ uri: displayPhoto }} style={styles.avatar} resizeMode="cover" />
                     ) : (
                         <View style={styles.avatarPlaceholder}>
-                            <Ionicons name="person" size={44} color="#9BBAB8" />
+                            <Ionicons name="person" size={44} color={colors.textMuted} />
                         </View>
                     )}
                     <View style={styles.cameraChip}>
@@ -251,36 +255,36 @@ export default function UpdateProfile() {
             <View style={styles.card}>
 
                 {/* Personal Info */}
-                <SectionHeader icon="person-outline" title="Personal Information" />
+                <SectionHeader icon="person-outline" title="Personal Information" colors={colors} />
 
-                <Field label="Full Name">
+                <Field label="Full Name" colors={colors}>
                     <TextInput
                         style={[styles.input, activeInput === 'name' && styles.inputActive]}
                         value={fullName}
                         onChangeText={setFullName}
                         placeholder="Enter your Full Name"
-                        placeholderTextColor="#4B4B4B"
+                        placeholderTextColor={colors.textMuted}
                         onFocus={() => setActiveInput('name')}
                         onBlur={() => setActiveInput(null)}
                     />
                 </Field>
 
-                <Field label="Phone Number">
+                <Field label="Phone Number" colors={colors}>
                     <View style={styles.inputReadonly}>
                         <Text style={styles.inputReadonlyText}>+977 {phone}</Text>
-                        <Ionicons name="lock-closed-outline" size={15} color="#9BBAB8" />
+                        <Ionicons name="lock-closed-outline" size={15} color={colors.textMuted} />
                     </View>
                 </Field>
 
                 {adminTable !== 'admins' && (
                     <>
-                        <Field label="Email">
+                        <Field label="Email" colors={colors}>
                             <TextInput
                                 style={[styles.input, activeInput === 'email' && styles.inputActive]}
                                 value={email}
                                 onChangeText={setEmail}
                                 placeholder="Enter your email address"
-                                placeholderTextColor="#4B4B4B"
+                                placeholderTextColor={colors.textMuted}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 onFocus={() => setActiveInput('email')}
@@ -288,7 +292,7 @@ export default function UpdateProfile() {
                             />
                         </Field>
 
-                        <Field label="Gender">
+                        <Field label="Gender" colors={colors}>
                             <View style={styles.radioRow}>
                                 {['Male', 'Female'].map(g => (
                                     <TouchableOpacity key={g} style={styles.radioOption} onPress={() => setGender(g)} activeOpacity={0.7}>
@@ -304,16 +308,16 @@ export default function UpdateProfile() {
                 )}
 
                 {/* Professional Info — hidden for super admin */}
-                {adminTable !== 'admins' && <SectionHeader icon="briefcase-outline" title="Professional Information" />}
+                {adminTable !== 'admins' && <SectionHeader icon="briefcase-outline" title="Professional Information" colors={colors} />}
                 {adminTable === 'admins' && null}
 
                 {adminTable !== 'admins' && (
                     <>
-                        <Field label="Your Expertise">
+                        <Field label="Your Expertise" colors={colors}>
                             <DropdownAdd
                                 options={servicesData2.map(s => s.name)}
                                 placeholder="Select maximum UpTo 5"
-                                placeholderColor="#4B4B4B"
+                                placeholderColor={colors.textMuted}
                                 value={positions}
                                 onSelectOption={setPositions}
                                 onOpen={() => setActiveInput('expertise')}
@@ -322,24 +326,24 @@ export default function UpdateProfile() {
                             />
                         </Field>
 
-                        <Field label="Years of Experience">
+                        <Field label="Years of Experience" colors={colors}>
                             <TextInput
                                 style={[styles.input, activeInput === 'experience' && styles.inputActive]}
                                 value={experience}
                                 onChangeText={t => setExperience(t.replace(/[^0-9]/g, ''))}
                                 placeholder="5"
-                                placeholderTextColor="#4B4B4B"
+                                placeholderTextColor={colors.textMuted}
                                 keyboardType="numeric"
                                 onFocus={() => setActiveInput('experience')}
                                 onBlur={() => setActiveInput(null)}
                             />
                         </Field>
 
-                        <Field label="Preferred City">
+                        <Field label="Preferred City" colors={colors}>
                             <DropdownAdd
                                 options={CITY_OPTIONS}
                                 placeholder="Select your preferred city"
-                                placeholderColor="#4B4B4B"
+                                placeholderColor={colors.textMuted}
                                 value={city ? [city] : []}
                                 onSelectOption={vals => { setCity(vals[vals.length - 1] ?? ''); setArea([]); }}
                                 onOpen={() => setActiveInput('city')}
@@ -348,11 +352,11 @@ export default function UpdateProfile() {
                             />
                         </Field>
 
-                        <Field label="Preferred Working Area">
+                        <Field label="Preferred Working Area" colors={colors}>
                             <DropdownAdd
                                 options={AREA_OPTIONS}
                                 placeholder="Select maximum UpTo 5"
-                                placeholderColor="#4B4B4B"
+                                placeholderColor={colors.textMuted}
                                 value={area}
                                 onSelectOption={setArea}
                                 onOpen={() => setActiveInput('workingArea')}
@@ -364,17 +368,17 @@ export default function UpdateProfile() {
                 )}
 
                 {/* Account */}
-                <SectionHeader icon="settings-outline" title="Account" />
+                <SectionHeader icon="settings-outline" title="Account" colors={colors} />
 
                 <TouchableOpacity style={styles.actionRow} onPress={() => router.push({ pathname: '/AdminChangePassword', params: { mode: 'change' } } as any)} activeOpacity={0.75}>
                     <View style={styles.actionIcon}>
-                        <Ionicons name="key-outline" size={19} color="#295C59" />
+                        <Ionicons name="key-outline" size={19} color={colors.brand} />
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.actionLabel}>Change PIN</Text>
                         <Text style={styles.actionSub}>Update your 4-digit login PIN</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={17} color="#9BBAB8" />
+                    <Ionicons name="chevron-forward" size={17} color={colors.textMuted} />
                 </TouchableOpacity>
 
                 {/* Save */}
@@ -384,7 +388,7 @@ export default function UpdateProfile() {
 
                 {/* Logout */}
                 <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                    <Ionicons name="log-out-outline" size={17} color="#ef4444" />
+                    <Ionicons name="log-out-outline" size={17} color={colors.danger} />
                     <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>
 
@@ -396,16 +400,18 @@ export default function UpdateProfile() {
     );
 }
 
-function SectionHeader({ icon, title }: { icon: any; title: string }) {
+function SectionHeader({ icon, title, colors }: { icon: any; title: string; colors: ThemeColors }) {
+    const sectionStyles = createSectionStyles(colors);
     return (
         <View style={sectionStyles.row}>
-            <Ionicons name={icon} size={15} color="#295C59" />
+            <Ionicons name={icon} size={15} color={colors.brand} />
             <Text style={sectionStyles.text}>{title}</Text>
         </View>
     );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, colors }: { label: string; children: React.ReactNode; colors: ThemeColors }) {
+    const fieldStyles = createFieldStyles(colors);
     return (
         <View>
             <Text style={fieldStyles.label}>{label}</Text>
@@ -414,18 +420,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     );
 }
 
-const sectionStyles = StyleSheet.create({
+const createSectionStyles = (colors: ThemeColors) => StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: hp('2.5%'), marginBottom: hp('1.2%') },
-    text: { fontSize: scaleFont(12), fontWeight: '800', color: '#295C59', letterSpacing: 0.3 },
+    text: { fontSize: scaleFont(12), fontWeight: '800', color: colors.brand, letterSpacing: 0.3 },
 });
 
-const fieldStyles = StyleSheet.create({
-    label: { fontSize: wp('3.6%'), fontWeight: '600', color: '#4A4A4A', marginBottom: 6, paddingLeft: 4 },
+const createFieldStyles = (colors: ThemeColors) => StyleSheet.create({
+    label: { fontSize: wp('3.6%'), fontWeight: '600', color: colors.textSecondary, marginBottom: 6, paddingLeft: 4 },
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     hero: {
-        backgroundColor: '#295C59',
+        backgroundColor: colors.brand,
         alignItems: 'center',
         paddingBottom: hp('2.5%'),
         paddingTop: hp('0.5%'),
@@ -434,33 +440,33 @@ const styles = StyleSheet.create({
     screenTitle: { fontSize: scaleFont(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: hp('1.5%'), letterSpacing: 1.2 },
     avatarWrapper: { width: wp('24%'), height: wp('24%'), borderRadius: wp('12%'), borderWidth: 3, borderColor: 'rgba(255,255,255,0.55)', overflow: 'visible', marginBottom: hp('1.2%'), position: 'relative' },
     avatar: { width: '100%', height: '100%', borderRadius: wp('12%') },
-    avatarPlaceholder: { width: '100%', height: '100%', borderRadius: wp('12%'), backgroundColor: '#1E4542', alignItems: 'center', justifyContent: 'center' },
-    cameraChip: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#295C59', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
+    avatarPlaceholder: { width: '100%', height: '100%', borderRadius: wp('12%'), backgroundColor: colors.brandDark, alignItems: 'center', justifyContent: 'center' },
+    cameraChip: { position: 'absolute', bottom: 0, right: 0, backgroundColor: colors.brand, borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
     heroName: { fontSize: scaleFont(18), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
     heroPhone: { fontSize: scaleFont(12), color: 'rgba(255,255,255,0.65)', marginTop: 2 },
 
-    card: { backgroundColor: '#F5F9F8', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
+    card: { backgroundColor: colors.background, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
 
-    input: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: wp('3.5%'), height: hp('6%'), fontSize: wp('3.5%'), fontWeight: '500', color: '#1A1A1A', marginBottom: hp('2%') },
-    inputActive: { borderColor: '#295C59', backgroundColor: '#EFF8F7' },
-    inputReadonly: { backgroundColor: '#EEF5F4', borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: wp('3.5%'), height: hp('6%'), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp('2%') },
-    inputReadonlyText: { fontSize: wp('3.5%'), fontWeight: '500', color: '#9BBAB8' },
+    input: { backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: wp('3.5%'), height: hp('6%'), fontSize: wp('3.5%'), fontWeight: '500', color: colors.textPrimary, marginBottom: hp('2%') },
+    inputActive: { borderColor: colors.brand, backgroundColor: colors.surfaceMuted },
+    inputReadonly: { backgroundColor: colors.surfaceMuted, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: wp('3.5%'), height: hp('6%'), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp('2%') },
+    inputReadonlyText: { fontSize: wp('3.5%'), fontWeight: '500', color: colors.textMuted },
 
     radioRow: { flexDirection: 'row', alignItems: 'center', gap: wp('6%'), paddingLeft: 4, marginBottom: hp('2%') },
     radioOption: { flexDirection: 'row', alignItems: 'center', gap: wp('2%') },
-    radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#295C59', alignItems: 'center', justifyContent: 'center' },
-    radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#295C59' },
-    radioLabel: { fontSize: wp('3.6%'), color: '#4A4A4A', fontWeight: '500' },
+    radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+    radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.brand },
+    radioLabel: { fontSize: wp('3.6%'), color: colors.textSecondary, fontWeight: '500' },
 
-    actionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: wp('4%'), gap: wp('3%'), marginBottom: hp('0.8%'), elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
-    actionIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#E8F4F3', alignItems: 'center', justifyContent: 'center' },
-    actionLabel: { fontSize: scaleFont(14), fontWeight: '700', color: '#1C2B2A' },
-    actionSub: { fontSize: scaleFont(11), color: '#9BBAB8', marginTop: 2 },
+    actionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 14, padding: wp('4%'), gap: wp('3%'), marginBottom: hp('0.8%'), elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
+    actionIcon: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+    actionLabel: { fontSize: scaleFont(14), fontWeight: '700', color: colors.textPrimary },
+    actionSub: { fontSize: scaleFont(11), color: colors.textMuted, marginTop: 2 },
 
-    saveBtn: { backgroundColor: '#295C59', borderRadius: 14, height: hp('6.5%'), alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#295C59', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, marginTop: hp('2.5%'), marginBottom: hp('1.5%') },
+    saveBtn: { backgroundColor: colors.brand, borderRadius: 14, height: hp('6.5%'), alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#295C59', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, marginTop: hp('2.5%'), marginBottom: hp('1.5%') },
     saveBtnText: { color: '#fff', fontSize: scaleFont(15), fontWeight: '700', letterSpacing: 0.4 },
 
     logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: hp('1.5%') },
-    logoutText: { fontSize: scaleFont(14), fontWeight: '700', color: '#ef4444' },
+    logoutText: { fontSize: scaleFont(14), fontWeight: '700', color: colors.danger },
 
 });

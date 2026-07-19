@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   Modal,
   View,
@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
+import type { ThemeColors } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +22,8 @@ type Props = {
 };
 
 export default function SubmitOverlay({ visible, status, onClear, onClose }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const cardScale = useRef(new Animated.Value(0.85)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -72,7 +76,7 @@ export default function SubmitOverlay({ visible, status, onClear, onClose }: Pro
         <Animated.View style={[styles.card, { transform: [{ scale: cardScale }] }]}>
           {status === 'loading' ? (
             <View style={styles.loadingContent}>
-              <ActivityIndicator size="large" color="#111" />
+              <ActivityIndicator size="large" color={colors.textPrimary} />
               <Text style={styles.loadingText}>Submitting...</Text>
             </View>
           ) : (
@@ -106,7 +110,7 @@ export default function SubmitOverlay({ visible, status, onClear, onClose }: Pro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',
@@ -115,7 +119,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: width * 0.82,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     paddingVertical: 36,
     paddingHorizontal: 28,
@@ -133,7 +137,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#444',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   successContent: {
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#16a34a',
+    backgroundColor: colors.success,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 18,
@@ -158,18 +162,18 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#111',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   successMessage: {
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   clearPrompt: {
     fontSize: 14,
-    color: '#555',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 6,
     marginBottom: 24,
@@ -184,14 +188,14 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#ccc',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   keepBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: colors.textPrimary,
   },
   clearBtn: {
     flex: 1,
