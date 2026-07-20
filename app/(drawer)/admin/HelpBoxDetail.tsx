@@ -25,8 +25,8 @@ const ISSUE_OPTIONS = [
 
 export default function HelpBoxDetail() {
     const { entry } = useLocalSearchParams<{ entry: string }>();
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     let item: any = {};
     try { item = JSON.parse(entry || '{}'); } catch {}
 
@@ -98,7 +98,7 @@ export default function HelpBoxDetail() {
 
             <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color={isDark ? colors.brand : '#fff'} />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
                     <Text style={styles.headerTitle}>
@@ -239,17 +239,18 @@ export default function HelpBoxDetail() {
     );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.background },
 
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.brand,
+        backgroundColor: isDark ? colors.surface : colors.brand,
+        borderBottomWidth: isDark ? 1 : 0, borderBottomColor: colors.divider,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
-    headerTitle: { fontSize: 16, fontWeight: '800', color: '#fff' },
-    headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+    headerTitle: { fontSize: 16, fontWeight: '800', color: isDark ? colors.textPrimary : '#fff' },
+    headerSub: { fontSize: 11, color: isDark ? colors.textMuted : 'rgba(255,255,255,0.7)', marginTop: 2 },
     statusPill: {
         paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
     },

@@ -32,10 +32,11 @@ const Dropdown = ({
   onOpen,
   onClose
 }: Props) => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [isFocus, setIsFocus] = useState(false);
+  const resolvedBorderColor = borderColor === '#E0E0E0' && isDark ? colors.border : borderColor;
 
   // ✅ FIX 1: memoize data
   const data = useMemo(() => {
@@ -97,7 +98,7 @@ const Dropdown = ({
       <LibDropdown
         style={[
           styles.dropdownStyle,
-          { borderColor: isFocus ? 'hsl(142, 71%, 45%)' : borderColor },
+          { borderColor: isFocus ? 'hsl(142, 71%, 45%)' : resolvedBorderColor },
           isFocus && styles.dropdownActiveBackground
         ]}
 
@@ -136,7 +137,7 @@ const Dropdown = ({
 };
 
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: {
     marginBottom: hp('2.5%'),
     position: 'relative',
@@ -151,7 +152,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   dropdownActiveBackground: {
-    backgroundColor: '#F4F7FF', // Subtle background color change when open
+    backgroundColor: isDark ? colors.surfaceMuted : '#F4F7FF', // Subtle background color change when open
   },
   placeholder: {
     fontSize: wp('3.6%'),
@@ -183,10 +184,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.textSecondary,
   },
   selectedRowBackground: {
-    backgroundColor: '#EBF1FF', // Distinct selection row tracking color
+    backgroundColor: isDark ? colors.surfaceMuted : '#EBF1FF', // Distinct selection row tracking color
   },
   selectedRowText: {
-    color: 'hsl(142, 71%, 35%)', // Gives selected items a brand-focused callout color
+    color: isDark ? colors.brand : 'hsl(142, 71%, 35%)', // Gives selected items a brand-focused callout color
     fontWeight: '600',
   },
   requiredAbsolute: {

@@ -31,8 +31,8 @@ interface SendOtpResponse { success: boolean; message?: string }
 interface SetPinResponse { success: boolean; message?: string; fullName?: string }
 
 export default function AdminChangePassword() {
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     const { mode, phone: prefillPhone } = useLocalSearchParams<{ mode?: string; phone?: string }>();
     // 'change' = logged-in user updating PIN (no phone needed)
     // 'reset'  = forgot PIN, phone number required
@@ -189,9 +189,12 @@ export default function AdminChangePassword() {
             <Header4 />
 
             {/* BRAND AREA */}
-            <LinearGradient colors={['#295C59', '#1E4542']} style={styles.brandArea}>
+            <LinearGradient
+                colors={isDark ? [colors.surface, colors.surface] : ['#295C59', '#1E4542']}
+                style={styles.brandArea}
+            >
                 <View style={styles.logoWrapper}>
-                    <Ionicons name="key-outline" size={32} color="#fff" />
+                    <Ionicons name="key-outline" size={32} color={isDark ? colors.brand : '#fff'} />
                 </View>
                 <Text style={styles.brandName}>{isChangePinMode ? 'Change PIN' : 'Reset PIN'}</Text>
                 <Text style={styles.brandTag}>{isChangePinMode ? 'Update your 4-digit login PIN' : 'Choose a new PIN to regain access'}</Text>
@@ -332,10 +335,12 @@ export default function AdminChangePassword() {
     );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: colors.brand,
+        // Matches whatever brandArea renders behind it, so the sliver exposed by
+        // the card's rounded top corners blends in instead of showing a seam.
+        backgroundColor: isDark ? colors.surface : colors.brand,
     },
 
     /* BRAND AREA */
@@ -358,12 +363,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     brandName: {
         fontSize: scaleFont(22),
         fontWeight: '800',
-        color: '#fff',
+        color: isDark ? colors.textPrimary : '#fff',
         letterSpacing: 0.4,
     },
     brandTag: {
         fontSize: scaleFont(12),
-        color: 'rgba(255,255,255,0.7)',
+        color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.7)',
         fontWeight: '400',
         marginTop: 3,
         letterSpacing: 0.4,

@@ -13,8 +13,8 @@ import type { ThemeColors } from '@/theme/colors';
 const { width } = Dimensions.get('window');
 
 const Row = ({ label, value }: { label: string; value: string }) => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -24,8 +24,8 @@ const Row = ({ label, value }: { label: string; value: string }) => {
 };
 
 export default function BookingDetails() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const {
     name,
     number,
@@ -139,12 +139,12 @@ export default function BookingDetails() {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.brand },
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: isDark ? colors.background : colors.brand },
   container: { paddingHorizontal: width * 0.05, paddingBottom: hp('6%') },
   titleArea: { paddingTop: hp('3%'), paddingBottom: hp('2%'), paddingHorizontal: 4 },
-  title: { fontSize: width * 0.065, fontWeight: '800', color: '#fff', marginBottom: 5, letterSpacing: 0.2 },
-  subtitle: { fontSize: width * 0.033, color: 'rgba(255,255,255,0.70)', fontWeight: '400' },
+  title: { fontSize: width * 0.065, fontWeight: '800', color: isDark ? colors.textPrimary : '#fff', marginBottom: 5, letterSpacing: 0.2 },
+  subtitle: { fontSize: width * 0.033, color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.70)', fontWeight: '400' },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 20,
@@ -165,6 +165,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.divider },
   confirmBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: hp('1.8%') },
   confirmBtnText: { color: '#fff', fontSize: wp('4.2%'), fontWeight: '700', letterSpacing: 0.5 },
-  backBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.40)' },
-  backBtnText: { color: 'rgba(255,255,255,0.85)', fontSize: wp('4.2%'), fontWeight: '600' },
+  backBtn: { height: hp('6.5%'), borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: isDark ? colors.border : 'rgba(255,255,255,0.40)' },
+  backBtnText: { color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.85)', fontSize: wp('4.2%'), fontWeight: '600' },
 });

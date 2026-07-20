@@ -25,8 +25,8 @@ const { width } = Dimensions.get('window');
 const scaleFont = (s: number) => (s * width) / 375;
 
 export default function UpdateProfile() {
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [phone, setPhone] = useState('');
@@ -200,8 +200,8 @@ export default function UpdateProfile() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.brand }}>
-                <ActivityIndicator size="large" color="#fff" />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? colors.surface : colors.brand }}>
+                <ActivityIndicator size="large" color={isDark ? colors.brand : '#fff'} />
             </View>
         );
     }
@@ -230,7 +230,7 @@ export default function UpdateProfile() {
             {/* ── HERO ── */}
             <View style={styles.hero}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color={isDark ? colors.brand : '#fff'} />
                 </TouchableOpacity>
                 <Text style={styles.screenTitle}>Update Profile</Text>
 
@@ -429,21 +429,22 @@ const createFieldStyles = (colors: ThemeColors) => StyleSheet.create({
     label: { fontSize: wp('3.6%'), fontWeight: '600', color: colors.textSecondary, marginBottom: 6, paddingLeft: 4 },
 });
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     hero: {
-        backgroundColor: colors.brand,
+        backgroundColor: isDark ? colors.surface : colors.brand,
+        borderBottomWidth: isDark ? 1 : 0, borderBottomColor: colors.divider,
         alignItems: 'center',
         paddingBottom: hp('2.5%'),
         paddingTop: hp('0.5%'),
     },
     backBtn: { position: 'absolute', left: wp('4%'), top: hp('0.5%'), padding: 6 },
-    screenTitle: { fontSize: scaleFont(13), fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginBottom: hp('1.5%'), letterSpacing: 1.2 },
-    avatarWrapper: { width: wp('24%'), height: wp('24%'), borderRadius: wp('12%'), borderWidth: 3, borderColor: 'rgba(255,255,255,0.55)', overflow: 'visible', marginBottom: hp('1.2%'), position: 'relative' },
+    screenTitle: { fontSize: scaleFont(13), fontWeight: '600', color: isDark ? colors.textMuted : 'rgba(255,255,255,0.6)', marginBottom: hp('1.5%'), letterSpacing: 1.2 },
+    avatarWrapper: { width: wp('24%'), height: wp('24%'), borderRadius: wp('12%'), borderWidth: 3, borderColor: isDark ? colors.border : 'rgba(255,255,255,0.55)', overflow: 'visible', marginBottom: hp('1.2%'), position: 'relative' },
     avatar: { width: '100%', height: '100%', borderRadius: wp('12%') },
     avatarPlaceholder: { width: '100%', height: '100%', borderRadius: wp('12%'), backgroundColor: colors.brandDark, alignItems: 'center', justifyContent: 'center' },
     cameraChip: { position: 'absolute', bottom: 0, right: 0, backgroundColor: colors.brand, borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
-    heroName: { fontSize: scaleFont(18), fontWeight: '800', color: '#fff', letterSpacing: 0.3 },
-    heroPhone: { fontSize: scaleFont(12), color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+    heroName: { fontSize: scaleFont(18), fontWeight: '800', color: isDark ? colors.textPrimary : '#fff', letterSpacing: 0.3 },
+    heroPhone: { fontSize: scaleFont(12), color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.65)', marginTop: 2 },
 
     card: { backgroundColor: colors.background, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, flex: 1, paddingHorizontal: wp('5%'), paddingTop: hp('2%') },
 

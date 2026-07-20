@@ -190,8 +190,8 @@ function LinkPicker({ onSelect, styles, colors }: { onSelect: (path: string) => 
 }
 
 export default function AdminRoadBlock() {
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     const [hasAccess, setHasAccess] = useState(false);
     const [tab, setTab] = useState<Tab>('compose');
     const [adminPhone, setAdminPhone] = useState('');
@@ -373,7 +373,7 @@ export default function AdminRoadBlock() {
             <Header4 />
             <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color={isDark ? colors.brand : '#fff'} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Popup Banner</Text>
             </View>
@@ -623,15 +623,16 @@ export default function AdminRoadBlock() {
     );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.brand,
+        backgroundColor: isDark ? colors.surface : colors.brand,
+        borderBottomWidth: isDark ? 1 : 0, borderBottomColor: colors.divider,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
+    headerTitle: { fontSize: 18, fontWeight: '800', color: isDark ? colors.textPrimary : '#fff', flex: 1 },
 
     tabRow: { flexDirection: 'row', backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.divider },
     tabBtn: { flex: 1, alignItems: 'center', paddingVertical: hp('1.6%'), borderBottomWidth: 2, borderBottomColor: 'transparent' },

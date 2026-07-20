@@ -15,9 +15,6 @@ import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import { pushAreaProfessionals } from '../../../api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { invokeEdgeFunction } from '../../../api/functionsClient';
-import StarRating from '@/components/bookings/StarRating';
-import TextArea from '@/components/bookings/TextArea';
-import { getBookingRatings, submitRating, BookingRating } from '@/api/ratings';
 import { useTheme } from '@/context/ThemeContext';
 import type { ThemeColors } from '@/theme/colors';
 
@@ -40,10 +37,6 @@ export default function BookingDetails() {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [confirming, setConfirming] = useState(false);
     const [adminPhone, setAdminPhone] = useState<string | null>(null);
-    const [professionalRating, setProfessionalRating] = useState<BookingRating | null>(null);
-    const [ratingStars, setRatingStars] = useState(0);
-    const [ratingComment, setRatingComment] = useState('');
-    const [submittingRating, setSubmittingRating] = useState(false);
 
     const STATUS_OPTIONS: StatusType[] = ['Completed', 'Pending', 'Cancelled', 'Dispute'];
 
@@ -65,14 +58,6 @@ export default function BookingDetails() {
                         setWorkStatus(found.status);
                         if (found.status.toLowerCase().includes('completed')) setIsLocked(true);
                     }
-                    if (
-                        found.status?.toLowerCase().includes('completed') &&
-                        phone && found.acceptedByPhone &&
-                        normalizePhone(phone) === normalizePhone(found.acceptedByPhone)
-                    ) {
-                        const ratings = await getBookingRatings(found.id);
-                        setProfessionalRating(ratings.professional);
-                    }
                 }
             } catch (error) {
                 console.error('Error loading booking data:', error);
@@ -84,28 +69,6 @@ export default function BookingDetails() {
     }, [id]);
 
     const isMine = !!adminPhone && !!booking?.acceptedByPhone && normalizePhone(adminPhone) === normalizePhone(booking.acceptedByPhone);
-
-    const handleSubmitRating = async () => {
-        if (!booking || ratingStars === 0 || submittingRating || !adminPhone) return;
-        setSubmittingRating(true);
-        try {
-            await submitRating(booking.id, 'professional', adminPhone, booking.phone, ratingStars, ratingComment);
-            setProfessionalRating({
-                id: 0,
-                booking_id: booking.id,
-                rater_role: 'professional',
-                rater_phone: adminPhone,
-                rated_phone: booking.phone,
-                rating: ratingStars,
-                comment: ratingComment || null,
-                created_at: new Date().toISOString(),
-            });
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Could not submit rating.');
-        } finally {
-            setSubmittingRating(false);
-        }
-    };
 
     const handleStatusChange = (newStatus: StatusType) => {
         setWorkStatus(newStatus);
@@ -272,6 +235,21 @@ export default function BookingDetails() {
                                 <Text style={styles.value}>{booking.specialRequests}</Text>
                             </View>
                         ) : null}
+
+                        {booking.completionPhotos?.length > 0 ? (
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Completion Photos</Text>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.completionPhotosRow}
+                                >
+                                    {booking.completionPhotos.map((url: string, i: number) => (
+                                        <Image key={url + i} source={{ uri: url }} style={styles.completionPhotoThumb} />
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        ) : null}
                     </View>
 
                     {/* BOTTOM: status control — pinned to bottom */}
@@ -304,41 +282,6 @@ export default function BookingDetails() {
                                 <Text style={styles.statusLabel}>Work Status</Text>
                                 {isLocked && !isSuperAdmin && (
                                     <Text style={styles.lockedNote}>Completed — cannot be modified.</Text>
-                                )}
-
-                                {isLocked && isMine && (
-                                    <View style={styles.ratingBox}>
-                                        {professionalRating ? (
-                                            <>
-                                                <Text style={styles.ratingLabel}>You rated this customer</Text>
-                                                <StarRating value={professionalRating.rating} readOnly size={26} />
-                                                {professionalRating.comment ? (
-                                                    <Text style={styles.ratingComment}>{professionalRating.comment}</Text>
-                                                ) : null}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Text style={styles.ratingLabel}>Rate the Customer</Text>
-                                                <StarRating value={ratingStars} onChange={setRatingStars} size={28} />
-                                                <TextArea
-                                                    value={ratingComment}
-                                                    onChangeText={setRatingComment}
-                                                    placeholder="Add a comment (optional)"
-                                                    minHeight={70}
-                                                />
-                                                <TouchableOpacity
-                                                    style={[styles.submitBtn, (ratingStars === 0 || submittingRating) && { opacity: 0.5 }]}
-                                                    onPress={handleSubmitRating}
-                                                    disabled={ratingStars === 0 || submittingRating}
-                                                >
-                                                    {submittingRating
-                                                        ? <ActivityIndicator color="#fff" />
-                                                        : <Text style={styles.submitText}>Submit Rating</Text>
-                                                    }
-                                                </TouchableOpacity>
-                                            </>
-                                        )}
-                                    </View>
                                 )}
 
                                 <View style={styles.dropdownWrapper}>
@@ -431,17 +374,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
 
     label: { fontSize: hp('1.55%'), fontWeight: '700', color: colors.textMuted, marginBottom: 3 },
     value: { fontSize: hp('1.65%'), fontWeight: '500', color: colors.textPrimary },
+    completionPhotosRow: { flexDirection: 'row', gap: 8, paddingTop: 4 },
+    completionPhotoThumb: { width: wp('20%'), height: wp('20%'), borderRadius: 10, backgroundColor: colors.surfaceMuted },
 
     statusLabel: { fontSize: hp('2%'), fontWeight: '700', color: colors.textPrimary, marginBottom: hp('0.5%') },
     lockedNote: { fontSize: hp('1.7%'), color: colors.success, fontWeight: '500', marginBottom: hp('0.5%') },
-    ratingBox: {
-        backgroundColor: colors.background,
-        borderRadius: 12,
-        padding: wp('4%'),
-        marginBottom: hp('1.5%'),
-    },
-    ratingLabel: { fontSize: hp('1.8%'), fontWeight: '700', color: colors.textPrimary, marginBottom: hp('0.8%') },
-    ratingComment: { fontSize: hp('1.6%'), color: colors.textPrimary, marginTop: hp('0.5%') },
     pendingNote: { fontSize: hp('1.7%'), color: colors.warning, fontWeight: '500', marginBottom: hp('1%') },
 
     dropdownWrapper: { marginBottom: hp('1%') },

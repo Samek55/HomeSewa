@@ -163,8 +163,8 @@ const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create
     borderWidth: 1.5,
     borderRadius: 12,
     borderStyle: 'dashed',
-    borderColor: '#B2C5FF',       // Elegant layout preview branding theme hue
-    backgroundColor: '#F8FAFC',   // Cream neutral slate backdrop tint
+    borderColor: isDark ? colors.border : '#B2C5FF',
+    backgroundColor: isDark ? colors.surface : '#F8FAFC',
     padding: 16,
     justifyContent: 'center',
   },

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 const STORAGE_KEY = 'hasRequestedStoreReview';
 
@@ -13,10 +14,19 @@ const STORAGE_KEY = 'hasRequestedStoreReview';
 // native dependency), and a static import throws at bundle-evaluation time, before
 // this function's own try/catch could ever guard it. Same pattern already used for
 // react-native-onesignal in app/_layout.tsx for this exact situation.
+//
+// The requireOptionalNativeModule check below is what actually keeps this quiet:
+// expo-store-review's own loader calls the *throwing* requireNativeModule at
+// import time, which also fires its own console.error before our try/catch ever
+// gets a chance to swallow it. Checking the optional (non-throwing) variant first
+// lets us skip importing the package at all when the native module isn't built,
+// so nothing gets logged beyond our own single, deliberate console.log below.
 export async function maybePromptReview(): Promise<void> {
   try {
     const alreadyAsked = await AsyncStorage.getItem(STORAGE_KEY);
     if (alreadyAsked) return;
+
+    if (!requireOptionalNativeModule('ExpoStoreReview')) return;
 
     const StoreReview = require('expo-store-review');
     const available = await StoreReview.isAvailableAsync();

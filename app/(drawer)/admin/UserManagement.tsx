@@ -127,8 +127,8 @@ function CitySelector({ selected, onChange, styles }: { selected: string[]; onCh
 
 export default function UserManagement() {
     const insets = useSafeAreaInsets();
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     const [tab, setTab] = useState<'professionals' | 'customers' | 'admins'>('professionals');
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
@@ -538,7 +538,7 @@ export default function UserManagement() {
             <Header4 />
             <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color={isDark ? colors.brand : '#fff'} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>User Management</Text>
             </View>
@@ -1100,15 +1100,16 @@ export default function UserManagement() {
     );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.background },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.brand,
+        backgroundColor: isDark ? colors.surface : colors.brand,
+        borderBottomWidth: isDark ? 1 : 0, borderBottomColor: colors.divider,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
+    headerTitle: { fontSize: 18, fontWeight: '800', color: isDark ? colors.textPrimary : '#fff', flex: 1 },
     tabs: {
         flexDirection: 'row', backgroundColor: colors.surface,
         borderBottomWidth: 1, borderBottomColor: colors.divider,

@@ -182,7 +182,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     marginBottom: hp('1.5%'),
   },
   sectionTitle: { fontSize: wp('4.4%'), fontWeight: '800', color: colors.textPrimary },
-  seeAll: { fontSize: wp('3.2%'), fontWeight: '600', color: '#295C59' },
+  seeAll: { fontSize: wp('3.2%'), fontWeight: '600', color: colors.brand },
   /* FEATURED CARD */
   featuredCard: {
     width: '100%',

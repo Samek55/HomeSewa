@@ -35,11 +35,12 @@ const DropdownAdd = ({
   maxSelections,
   helperText,
 }: Props) => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>(value);
   const [isFocus, setIsFocus] = useState(false);
+  const resolvedBorderColor = borderColor === '#E0E0E0' && isDark ? colors.border : borderColor;
 
   React.useEffect(() => {
     setSelectedOptions(value);
@@ -75,7 +76,7 @@ const DropdownAdd = ({
     );
   }, [selectedOptions, maxSelections, colors]);
 
-  const activeBorderColor = isFocus ? 'hsl(142, 71%, 45%)' : borderColor;
+  const activeBorderColor = isFocus ? 'hsl(142, 71%, 45%)' : resolvedBorderColor;
 
   return (
     <View style={styles.container}>
@@ -161,7 +162,7 @@ const DropdownAdd = ({
   );
 };
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   container: {
     marginBottom: hp('2.5%'),
     position: 'relative',
@@ -183,7 +184,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderBottomWidth: 0,
   },
   dropdownActiveBackground: {
-    backgroundColor: '#F4F7FF',
+    backgroundColor: isDark ? colors.surfaceMuted : '#F4F7FF',
   },
   helperStrip: {
     borderWidth: 1.5,
@@ -244,7 +245,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F0FE',
+    backgroundColor: isDark ? colors.surfaceMuted : '#E8F0FE',
     paddingHorizontal: wp('2.5%'),
     paddingVertical: hp('0.6%'),
     borderRadius: 20,

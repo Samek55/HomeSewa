@@ -29,8 +29,8 @@ const scaleFont = (size: number) => (size * width) / 375;
 
 
 export default function AdminLogin() {
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [pin, setPin] = useState(['', '', '', '']);
@@ -264,10 +264,12 @@ export default function AdminLogin() {
     );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: colors.brand,
+        // Matches the branding area behind it, so the sliver exposed by the
+        // card's rounded top corners blends in instead of showing a seam.
+        backgroundColor: isDark ? colors.surface : colors.brand,
     },
 
     /* BRANDING */
@@ -293,13 +295,13 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     brandName: {
         fontSize: scaleFont(26),
         fontWeight: '800',
-        color: '#fff',
+        color: isDark ? colors.textPrimary : '#fff',
         letterSpacing: 0.5,
     },
     brandSub: {
         fontSize: scaleFont(12),
         fontWeight: '600',
-        color: 'rgba(255,255,255,0.65)',
+        color: isDark ? colors.textSecondary : 'rgba(255,255,255,0.65)',
         letterSpacing: 2,
     },
 

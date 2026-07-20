@@ -54,8 +54,8 @@ const formatDate = (iso?: string) => {
 
 export default function ProfessionalVerification() {
     const insets = useSafeAreaInsets();
-    const { colors } = useTheme();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const { colors, isDark } = useTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     const [pending, setPending] = useState<Professional[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -221,7 +221,7 @@ export default function ProfessionalVerification() {
             <Header4 />
             <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color={isDark ? colors.brand : '#fff'} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Professional Verification</Text>
                 {pending.length > 0 && (
@@ -437,7 +437,7 @@ const createInfoStyles = (colors: ThemeColors) => StyleSheet.create({
     value: { fontSize: 12, color: colors.textPrimary, fontWeight: '500', flex: 1 },
 });
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.background },
     previewOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
     previewClose: {
@@ -450,11 +450,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     previewImage: { width: wp('100%'), height: hp('90%') },
     headerRow: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.brand,
+        backgroundColor: isDark ? colors.surface : colors.brand,
+        borderBottomWidth: isDark ? 1 : 0, borderBottomColor: colors.divider,
         paddingHorizontal: wp('4%'), paddingVertical: hp('1.5%'), gap: wp('3%'),
     },
     backBtn: { padding: 4 },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: '#fff', flex: 1 },
+    headerTitle: { fontSize: 18, fontWeight: '800', color: isDark ? colors.textPrimary : '#fff', flex: 1 },
     badge: {
         backgroundColor: colors.surface, borderRadius: 20,
         paddingHorizontal: 10, paddingVertical: 4,

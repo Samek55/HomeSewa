@@ -64,9 +64,9 @@ const Button = ({ children, style, textStyle, onPress, disabled }: any) => {
 };
 
 export default function ServiceBookingScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useLanguage();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const scrollRef = useRef<ScrollView>(null);
   const inputGroupY = useRef<number>(0);
   const fieldYPositions = useRef<Partial<Record<string, number>>>({});
@@ -266,7 +266,7 @@ export default function ServiceBookingScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.brand }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? colors.background : colors.brand }}>
       <Header2 />
       <KeyboardAwareScrollView
         ref={scrollRef}
@@ -595,10 +595,10 @@ export default function ServiceBookingScreen() {
   );
 }
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: { backgroundColor: colors.brand, flexGrow: 1, paddingBottom: hp('4%') },
-  formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: colors.brand },
-  title: { fontSize: width * 0.06, fontWeight: '700', color: 'white', paddingLeft: 8, marginBottom: 10 },
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
+  container: { backgroundColor: isDark ? colors.background : colors.brand, flexGrow: 1, paddingBottom: hp('4%') },
+  formContainer: { paddingHorizontal: width * 0.05, paddingTop: height * 0.02, backgroundColor: isDark ? colors.background : colors.brand },
+  title: { fontSize: width * 0.06, fontWeight: '700', color: isDark ? colors.textPrimary : 'white', paddingLeft: 8, marginBottom: 10 },
   inputGroup: { marginTop: height * 0.015, padding: 20, borderRadius: 20, backgroundColor: colors.surface, elevation: 10, marginBottom: height * 0.05 },
   input: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: width * 0.035, height: height * 0.055, marginBottom: height * 0.02, fontSize: width * 0.035, fontWeight: '500', borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.surface },
   inputActive: { borderColor: colors.brand, backgroundColor: colors.surfaceMuted },

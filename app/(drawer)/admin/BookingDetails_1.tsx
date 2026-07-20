@@ -60,7 +60,7 @@ const fetchProfessionalInfo = async (phone: string): Promise<{ name: string; gen
 
 export default function BookingDetails() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
     const [booking, setBooking] = useState<any>(null);
@@ -265,7 +265,10 @@ export default function BookingDetails() {
                                     </Text>
                                 </View>
                                 <View>
-                                    <Image source={LocationPin} style={{ height: 20, width: 20 }} />
+                                    <Image
+                                        source={LocationPin}
+                                        style={{ height: 20, width: 20, tintColor: isDark ? '#fff' : undefined }}
+                                    />
                                 </View>
                             </View>
 

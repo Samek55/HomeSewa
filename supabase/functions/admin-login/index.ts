@@ -1,4 +1,9 @@
-import { compare } from 'https://esm.sh/bcryptjs@2.4.3';
+// bcryptjs (both the esm.sh and npm: specifier forms) fails to boot on this
+// project's Edge Runtime with a bare BOOT_ERROR — bcrypt-ts is a pure-TS
+// implementation that boots fine and produces the same $2a$/$2b$ hash format,
+// so it verifies correctly against pin_hash values written by Postgres'
+// crypt(pin, gen_salt('bf')) in migration 0001_security_hardening.sql.
+import { compare } from 'npm:bcrypt-ts@5';
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { supabaseAdmin, cleanPhone } from '../_shared/supabaseAdmin.ts';
 

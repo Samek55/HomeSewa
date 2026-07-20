@@ -28,8 +28,8 @@ const TextArea: React.FC<TextAreaProps> = ({
   style,
   ...rest
 }) => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [height, setHeight] = useState(minHeight);
   // Internal focus state tracking to switch style configurations seamlessly
   const [isFocused, setIsFocused] = useState(false);
@@ -72,7 +72,7 @@ const TextArea: React.FC<TextAreaProps> = ({
   );
 };
 
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
   input: {
     borderWidth: 1.5,           // Standard premium blueprint outline thickness
     borderRadius: 12,
@@ -87,7 +87,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   inputActive: {
     borderColor: 'hsl(142, 71%, 45%)',     // Global theme focus outline tint
-    backgroundColor: '#F4F7FF', // Soft backdrop selection tint color
+    backgroundColor: isDark ? colors.surfaceMuted : '#F4F7FF', // Soft backdrop selection tint color
   },
 });
 
