@@ -37,7 +37,9 @@ export const fetchBookings = async () => {
       landmark: item.nearest_landmark,
       service: Array.isArray(item.services) ? item.services.join(', ') : '',
       bookingDate: formatDate(item.service_booking_datetime),
+      bookingDateRaw: item.service_booking_datetime,
       startingDate: formatDate(item.starting_date),
+      startingDateRaw: item.starting_date,
       completionDate: formatDate(item.service_completion_date),
       approxDays: (() => {
         const start = Date.parse(item.starting_date);

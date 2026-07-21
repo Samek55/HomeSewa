@@ -240,7 +240,7 @@ function MenuItem({ icon, label, onPress, active, superAdmin, compact: compactPr
             activeOpacity={0.7}
         >
             <View style={[styles.iconBox, active && styles.iconBoxActive, compact && styles.iconBoxCompact]}>
-                <Ionicons name={icon} size={compact ? 20 : 22} color={active ? colors.brand : colors.textSecondary} />
+                <Ionicons name={icon} size={compact ? 17 : 22} color={active ? colors.brand : colors.textSecondary} />
             </View>
             <Text style={[styles.label, active && styles.labelActive, compact && styles.labelCompact]}>{label}</Text>
             {active && <View style={styles.activeBar} />}
@@ -304,7 +304,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     menu: {
         flex: 1,
         paddingHorizontal: 12,
-        paddingVertical: 4,
+        paddingVertical: 2,
         justifyContent: 'space-evenly',
     },
     divider: {
@@ -322,7 +322,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         backgroundColor: colors.surfaceMuted,
     },
     itemCompact: {
-        paddingVertical: 6,
+        paddingVertical: 3,
     },
     iconBox: {
         width: 40,
@@ -337,10 +337,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         backgroundColor: '#C9E8E6',
     },
     iconBoxCompact: {
-        width: 38,
-        height: 38,
-        borderRadius: 10,
-        marginRight: 11,
+        width: 32,
+        height: 32,
+        borderRadius: 9,
+        marginRight: 9,
     },
     label: {
         fontSize: 15,
@@ -353,7 +353,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         fontWeight: '700',
     },
     labelCompact: {
-        fontSize: 14.5,
+        fontSize: 13.5,
     },
     activeBar: {
         width: 3,
@@ -368,7 +368,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.8,
         paddingHorizontal: 10,
-        paddingVertical: 6,
+        paddingVertical: 3,
     },
     themeRow: {
         flexDirection: 'row',

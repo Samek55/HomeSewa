@@ -220,8 +220,10 @@ function RootLayoutContent() {
   }
 
   // Popup banners are a customer-facing promo surface — skip them inside the
-  // admin area so they never interrupt someone doing admin work.
+  // admin area so they never interrupt someone doing admin work, and skip them
+  // during onboarding so they only appear once the user reaches the home page.
   const inAdminArea = segments[0] === '(drawer)' && (segments[1] === 'admin' || segments[1] === 'Admin');
+  const inOnboarding = segments[0] === '(onboarding)';
 
   return (
     <KeyboardProvider>
@@ -231,8 +233,8 @@ function RootLayoutContent() {
             every navigation was unmounting/remounting this and re-triggering its
             fetch-and-show effect, which is why the banner kept reappearing when moving
             between pages. It now stays mounted for the whole app session and just
-            suppresses its own visibility while in the admin area. */}
-        <RoadBlockPopup suppressed={inAdminArea} />
+            suppresses its own visibility while in the admin area or onboarding. */}
+        <RoadBlockPopup suppressed={inAdminArea || inOnboarding} />
       </SafeAreaProvider>
     </KeyboardProvider>
   );

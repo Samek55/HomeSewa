@@ -135,7 +135,7 @@ export default function BookingHistory() {
     const countsByDate = useMemo(() => {
         const counts: Record<string, number> = {};
         bookings.forEach(b => {
-            const ymd = parseToYMD(b.startingDate || b.bookingDate || '');
+            const ymd = parseToYMD(b.startingDateRaw || b.bookingDateRaw || '');
             if (ymd) counts[ymd] = (counts[ymd] || 0) + 1;
         });
         return counts;
@@ -148,7 +148,7 @@ export default function BookingHistory() {
         // (ignore the status filter so completed/cancelled bookings aren't hidden)
         if (selectedDate) {
             return data.filter(item => {
-                const ymd = parseToYMD(item.startingDate || item.bookingDate || '');
+                const ymd = parseToYMD(item.startingDateRaw || item.bookingDateRaw || '');
                 return ymd === selectedDate;
             });
         }

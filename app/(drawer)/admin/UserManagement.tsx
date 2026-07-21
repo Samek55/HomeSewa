@@ -16,6 +16,7 @@ import Header4 from '@/components/Header4Admin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/context/ThemeContext';
 import type { ThemeColors } from '@/theme/colors';
+import { sanitizeNameInput } from '../../../src/utils/sanitizeName';
 
 type Professional = {
     id: number;
@@ -1009,7 +1010,7 @@ export default function UserManagement() {
                             <TextInput
                                 style={styles.formInput}
                                 value={newAdminName}
-                                onChangeText={setNewAdminName}
+                                onChangeText={(value) => setNewAdminName(sanitizeNameInput(value))}
                                 placeholder="Enter full name"
                                 placeholderTextColor={colors.textMuted}
                             />

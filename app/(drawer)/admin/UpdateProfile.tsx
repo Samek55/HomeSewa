@@ -18,6 +18,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { city as CITY_OPTIONS, area as AREA_OPTIONS } from '../../../src/data/Data';
 import { servicesData2 } from '../../../src/data/ServiceData';
 import DropdownAdd from '../../../components/bookings/DropdownAdd';
+import { sanitizeNameInput } from '../../../src/utils/sanitizeName';
 import { useTheme } from '@/context/ThemeContext';
 import type { ThemeColors } from '@/theme/colors';
 
@@ -261,7 +262,7 @@ export default function UpdateProfile() {
                     <TextInput
                         style={[styles.input, activeInput === 'name' && styles.inputActive]}
                         value={fullName}
-                        onChangeText={setFullName}
+                        onChangeText={(value) => setFullName(sanitizeNameInput(value))}
                         placeholder="Enter your Full Name"
                         placeholderTextColor={colors.textMuted}
                         onFocus={() => setActiveInput('name')}

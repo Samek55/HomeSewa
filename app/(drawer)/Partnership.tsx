@@ -15,6 +15,7 @@ import { businessType, city, howduhear, partnershipInterest, services } from '..
 import TextArea from '../../components/bookings/TextArea';
 import SubmitOverlay from '../../components/bookings/SubmitOverlay';
 import countryLogo from '../../assets/images/NEW-Flag_of_Nepal.png';
+import { sanitizeNameInput } from '../../src/utils/sanitizeName';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -262,7 +263,7 @@ export default function PartnershipScreen() {
           <TextInput
             placeholder={activeInput === 'name' ? '' : 'Enter your Full Name'}
             value={name}
-            onChangeText={setName}
+            onChangeText={(value) => setName(sanitizeNameInput(value))}
             onFocus={() => setActiveInput('name')}
             onBlur={() => setActiveInput(null)}
             style={[

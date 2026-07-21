@@ -26,6 +26,7 @@ import CalenderIcon from '../../../assets/icons/booking/calendar.png';
 import TextArea from '../../../components/bookings/TextArea';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import countryLogo from '../../../assets/images/NEW-Flag_of_Nepal.png';
+import { sanitizeNameInput } from '../../../src/utils/sanitizeName';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -285,7 +286,7 @@ export default function ServiceBookingScreen() {
             <TextInput
               placeholder={activeInput === 'name' ? '' : t('book.fullNamePlaceholder')}
               value={name}
-              onChangeText={setName}
+              onChangeText={(value) => setName(sanitizeNameInput(value))}
               onFocus={() => setActiveInput('name')}
               onBlur={() => setActiveInput(null)}
               style={[styles.input, activeInput === 'name' && styles.inputActive]}
