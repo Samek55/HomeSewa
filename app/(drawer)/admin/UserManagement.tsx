@@ -386,8 +386,16 @@ export default function UserManagement() {
 
     const toggleAdmin = async (id: number, currentStatus: string) => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-        const { error } = await supabase.from('admin').update({ status: newStatus }).eq('id', id);
-        if (error) return Alert.alert('Error', error.message);
+        // Server-side now — the admin table's RLS is still USING(true) for the anon
+        // key, so this can't be a direct client write (see toggle-admin-status).
+        const result = await invokeEdgeFunction<{ success: boolean; message?: string }>(
+            'toggle-admin-status',
+            { id, status: newStatus },
+            'Could not update status',
+            { requireSession: true }
+        ).catch((e: any) => ({ success: false, message: e?.message }));
+
+        if (!result.success) return Alert.alert('Error', result.message || 'Could not update status');
         setAdmins(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
     };
 
@@ -400,14 +408,15 @@ export default function UserManagement() {
         if (!editingCitiesAdmin) return;
         setSavingCities(true);
         const cities = editCitiesSelection.length > 0 ? editCitiesSelection : null;
-        const { data: updated, error } = await supabase
-            .from('admin')
-            .update({ allowed_cities: cities })
-            .eq('id', editingCitiesAdmin.id)
-            .select();
+        // Server-side now — see update-admin-cities (same RLS gap as toggle-admin-status).
+        const result = await invokeEdgeFunction<{ success: boolean; message?: string; allowedCities?: string[] | null }>(
+            'update-admin-cities',
+            { id: editingCitiesAdmin.id, allowedCities: cities },
+            'Could not save',
+            { requireSession: true }
+        ).catch((e: any) => ({ success: false, message: e?.message }));
         setSavingCities(false);
-        if (error) return Alert.alert('Error', error.message);
-        if (!updated || updated.length === 0) return Alert.alert('Error', 'No admin record matched.');
+        if (!result.success) return Alert.alert('Error', result.message || 'Could not save');
         setAdmins(prev => prev.map(a => a.id === editingCitiesAdmin.id ? { ...a, allowed_cities: cities } : a));
         setEditingCitiesAdmin(null);
     };
@@ -1027,7 +1036,7 @@ export default function UserManagement() {
                             />
 
                             <Text style={styles.addAdminHint}>
-                                If this phone number already has an account (e.g. a Professional), it'll be upgraded to Admin — name and PIN below are only used when creating a brand-new account.
+                                If this phone number already has an account (e.g. a Professional), it&apos;ll be upgraded to Admin — name and PIN below are only used when creating a brand-new account.
                             </Text>
 
                             <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>4-Digit PIN</Text>
@@ -1044,7 +1053,7 @@ export default function UserManagement() {
 
                             <Text style={[styles.detailLabel, { marginTop: hp('1.8%') }]}>City Access</Text>
                             <Text style={styles.addAdminHint}>
-                                Choose which cities this admin can operate in, or leave "All Cities" for unrestricted access.
+                                Choose which cities this admin can operate in, or leave &quot;All Cities&quot; for unrestricted access.
                             </Text>
                             <CitySelector selected={newAdminCities} onChange={setNewAdminCities} styles={styles} />
 
@@ -1080,7 +1089,7 @@ export default function UserManagement() {
                         <Text style={styles.modalName}>{editingCitiesAdmin?.full_name}</Text>
                         <Text style={[styles.detailLabel, { marginTop: hp('2%') }]}>City Access</Text>
                         <Text style={styles.addAdminHint}>
-                            Choose which cities this admin can operate in, or leave "All Cities" for unrestricted access.
+                            Choose which cities this admin can operate in, or leave &quot;All Cities&quot; for unrestricted access.
                         </Text>
                         <CitySelector selected={editCitiesSelection} onChange={setEditCitiesSelection} styles={styles} />
 

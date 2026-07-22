@@ -22,12 +22,13 @@ import OtpInput from '@/components/bookings/OtpInput';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/context/ThemeContext';
 import type { ThemeColors } from '@/theme/colors';
+import { useResendCooldown } from '@/src/utils/useResendCooldown';
 
 const { width, height } = Dimensions.get('window');
 
 const scaleFont = (size: number) => (size * width) / 375;
 
-interface SendOtpResponse { success: boolean; message?: string }
+interface SendOtpResponse { success: boolean; message?: string; waitSeconds?: number }
 interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function BookingOtp() {
@@ -35,6 +36,7 @@ export default function BookingOtp() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const resendCooldown = useResendCooldown();
 
   const {
     name,
@@ -52,6 +54,8 @@ export default function BookingOtp() {
   } = useLocalSearchParams();
 
   const sendOtp = async () => {
+    if (!resendCooldown.canResend) return;
+    resendCooldown.start();
     try {
       const result = await invokeEdgeFunction<SendOtpResponse>(
         'send-otp',
@@ -59,6 +63,7 @@ export default function BookingOtp() {
         'Could not send verification code. Please try again.'
       );
       if (!result.success) {
+        if (result.waitSeconds) resendCooldown.start(result.waitSeconds);
         Alert.alert('SMS Error', result.message || 'Could not send verification code. Please try again.');
       }
     } catch (err: any) {
@@ -183,12 +188,16 @@ export default function BookingOtp() {
 
           <OtpInput value={otp} onChange={setOtp} containerStyle={styles.otpBox} boxStyle={styles.input} />
 
-          <TouchableOpacity onPress={sendOtp}>
-            <Text style={styles.resendcode}>
-              {`Didn't get code? `}
-              <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
-            </Text>
-          </TouchableOpacity>
+          {resendCooldown.canResend ? (
+            <TouchableOpacity onPress={sendOtp}>
+              <Text style={styles.resendcode}>
+                {`Didn't get code? `}
+                <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.resendcode}>{`Resend code in ${resendCooldown.remaining}s`}</Text>
+          )}
 
           <TouchableOpacity
             style={[styles.submitButton, isSubmitting && { opacity: 0.6 }]}

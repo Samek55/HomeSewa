@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
     Alert, Dimensions, TouchableWithoutFeedback, Keyboard, Image, ScrollView,
@@ -17,10 +17,12 @@ import { invokeEdgeFunction } from '../../../api/functionsClient';
 import { maybePromptReview } from '@/src/utils/storeReview';
 import { useTheme } from '@/context/ThemeContext';
 import type { ThemeColors } from '@/theme/colors';
+import { useResendCooldown } from '@/src/utils/useResendCooldown';
 
 const { width, height } = Dimensions.get('window');
 const scaleFont = (size: number) => (size * width) / 375;
 
+interface SendOtpResponse { success: boolean; message?: string; waitSeconds?: number }
 interface VerifyOtpResponse { verified: boolean; message?: string }
 
 export default function WorkCompletionOTP() {
@@ -31,6 +33,27 @@ export default function WorkCompletionOTP() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [completionPhotos, setCompletionPhotos] = useState<string[]>([]);
+    const resendCooldown = useResendCooldown();
+
+    const sendOtp = async () => {
+        if (!resendCooldown.canResend) return;
+        resendCooldown.start();
+        try {
+            const result = await invokeEdgeFunction<SendOtpResponse>(
+                'send-otp',
+                { phone: String(customerPhone), purpose: 'work-completion', name: String(customerName || '') },
+                'Could not send completion OTP. Please try again.'
+            );
+            if (!result.success) {
+                if (result.waitSeconds) resendCooldown.start(result.waitSeconds);
+                Alert.alert('SMS Error', result.message || 'Could not send completion OTP. Please try again.');
+            }
+        } catch (err: any) {
+            Alert.alert('SMS Error', err?.message || 'Could not send completion OTP. Please try again.');
+        }
+    };
+
+    useEffect(() => { sendOtp(); }, []);
 
     const handleVerify = async () => {
         const entered = otp.join('');
@@ -107,6 +130,17 @@ export default function WorkCompletionOTP() {
 
                     <OtpInput value={otp} onChange={setOtp} containerStyle={styles.otpBox} boxStyle={styles.input} />
 
+                    {resendCooldown.canResend ? (
+                        <TouchableOpacity onPress={sendOtp}>
+                            <Text style={styles.resendText}>
+                                {"Didn't get code? "}
+                                <Text style={{ color: colors.brand, fontWeight: 'bold' }}>Resend Code</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <Text style={styles.resendText}>{`Resend code in ${resendCooldown.remaining}s`}</Text>
+                    )}
+
                     <View style={{ width: '100%' }}>
                         <CompletionPhotosPicker value={completionPhotos} onChange={setCompletionPhotos} />
                     </View>
@@ -163,7 +197,15 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: height * 0.05,
+        marginBottom: height * 0.02,
+    },
+    resendText: {
+        marginBottom: height * 0.03,
+        paddingHorizontal: 20,
+        textAlign: 'center',
+        lineHeight: 22,
+        fontSize: scaleFont(13),
+        color: colors.textSecondary,
     },
     input: {
         width: width * 0.14,

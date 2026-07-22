@@ -17,6 +17,12 @@ import type { ThemeColors } from '@/theme/colors';
 // (confirmLeadUnlock is idempotent — safe to call again with the same pidx).
 type Stage = 'offer' | 'initiating' | 'waiting' | 'recording' | 'success' | 'error' | 'recordFailed';
 
+const POLL_INTERVAL_MS = 4000;
+// Safety net for the "still Pending" / transient-error branches below, which would
+// otherwise poll forever — Khalti's own checkout session eventually expires and
+// flips lookup.status to 'Expired', but that can take a while, so cap it here too.
+const MAX_POLL_MS = 5 * 60_000;
+
 export default function LeadPayment() {
     const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
     const { colors } = useTheme();
@@ -60,23 +66,44 @@ export default function LeadPayment() {
             Linking.openURL(res.payment_url);
             setStage('waiting');
 
+            const pollStartedAt = Date.now();
             pollRef.current = setInterval(async () => {
                 try {
                     const result = await confirmLeadUnlock(bookingId, phoneRef.current, res.pidx);
                     if (result.success) {
                         clearInterval(pollRef.current!);
                         setStage('success');
-                    } else if (result.status === 'Expired' || result.status === 'User canceled') {
+                        return;
+                    }
+                    if (result.status === 'Expired' || result.status === 'User canceled') {
                         clearInterval(pollRef.current!);
                         setErrorMsg('Payment was not completed. Please try again.');
                         setStage('error');
+                        return;
                     }
-                    // Any other status (Pending/Initiated, or a transient lookup error) just
-                    // keeps polling.
+                    // A `status` field only ever accompanies a Khalti lookup that's genuinely
+                    // still pending (Pending/Initiated) — worth continuing to poll silently.
+                    // Its *absence* means confirmLeadUnlock hit a real error instead (lookup
+                    // failed, amount mismatch, DB error, pidx reused) — that won't resolve on
+                    // its own, so stop and let the user manually retry via the recordFailed UI
+                    // rather than polling against it forever.
+                    if (!result.status) {
+                        clearInterval(pollRef.current!);
+                        setErrorMsg(result.error || 'Payment succeeded, but we could not confirm the unlock. Tap Retry — you will not be charged again.');
+                        setStage('recordFailed');
+                        return;
+                    }
                 } catch {
-                    // transient error — keep polling
+                    // transient error calling our own edge function — keep polling, bounded by
+                    // the overall MAX_POLL_MS check below.
                 }
-            }, 4000);
+
+                if (Date.now() - pollStartedAt > MAX_POLL_MS) {
+                    clearInterval(pollRef.current!);
+                    setErrorMsg('This is taking longer than expected. Please try again.');
+                    setStage('error');
+                }
+            }, POLL_INTERVAL_MS);
         } catch (e: any) {
             setErrorMsg(e.message || 'Could not start payment. Please try again.');
             setStage('error');

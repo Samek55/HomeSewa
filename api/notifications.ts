@@ -48,36 +48,13 @@ const sendNotification = async (payload: object, log?: NotificationLog) => {
 };
 
 // Service booking for notifying careers → service providers who serve that specific area and service
-// Service booking for notifying careers → service providers who serve that specific area and service
 export async function notifyProfessionals(service: string, bookingArea: string) {
   try {
     const cleanService = service.trim();
     const cleanArea = bookingArea.trim();
 
-    // -------------------------------------------------------------
-    // 1. DISPATCH TARGETED SMS (Filtered by Role, Service, AND Area)
-    // -------------------------------------------------------------
-    try {
-      await sendNotification({
-        filters: [
-          { field: 'tag', key: 'role', relation: '=', value: 'career' },
-          { field: 'tag', key: 'services', relation: '=', value: cleanService },
-          // No 'area' tag is ever set on a device (only 'city', from working_areas[0] — see
-          // app/_layout.tsx and AdminLogin.tsx), so this used to filter on a tag nobody has.
-          { field: 'tag', key: 'city', relation: '=', value: cleanArea },
-        ],
-        // Omit headings/contents so this profile segment doesn't receive a duplicate push
-        sms_from: "+1234567890", // Must match your OneSignal SMS dashboard config
-        sms_body: `HomeSewa Alert: New "${cleanService}" job is available in ${cleanArea}. Open your app to accept the booking!`,
-      });
-      console.log(`SMS broadcast successfully queued for "${cleanService}" in "${cleanArea}"`);
-    } catch (smsError) {
-      console.log('SMS dispatch sub-routine failed:', smsError);
-    }
-
-    // -------------------------------------------------------------
-    // 2. DISPATCH BROAD PUSH NOTIFICATION (Filtered by Role and Service only)
-    // -------------------------------------------------------------
+    // Push notification (filtered by role and service only — no area filter, since no
+    // 'area' tag is ever set on a device; only 'city', from working_areas[0]).
     try {
       await sendNotification({
         filters: [

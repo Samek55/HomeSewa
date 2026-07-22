@@ -112,7 +112,7 @@ export default function FavoritesScreen() {
 
         <View style={styles.hero}>
           <Text style={styles.heroTitle}>Favorites</Text>
-          <Text style={styles.heroSub}>Professionals you'd like to book again</Text>
+          <Text style={styles.heroSub}>Professionals you&apos;d like to book again</Text>
         </View>
 
         {loading ? (
@@ -133,7 +133,7 @@ export default function FavoritesScreen() {
               <View style={styles.list}>{favorites.map(p => renderCard(p, true))}</View>
             )}
 
-            <Text style={styles.sectionLabel}>People Who've Worked For You</Text>
+            <Text style={styles.sectionLabel}>People Who&apos;ve Worked For You</Text>
             {others.length === 0 ? (
               <Text style={styles.emptySection}>No completed bookings yet.</Text>
             ) : (

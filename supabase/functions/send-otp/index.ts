@@ -7,6 +7,7 @@ import { supabaseAdmin, cleanPhone } from '../_shared/supabaseAdmin.ts';
 // in the database (migration 0012_vault_secret_helper.sql), granted to service_role only.
 const { data: SPARROW_TOKEN } = await supabaseAdmin.rpc('get_vault_secret', { secret_name: 'sparrow_token' });
 const OTP_TTL_MINUTES = 5;
+const RESEND_COOLDOWN_SECONDS = 45;
 
 const sha256 = async (text: string) => {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -46,10 +47,40 @@ Deno.serve(async (req) => {
       personalizedName = account.full_name;
     }
 
+    // Rate-limit sends (including resends) per phone+purpose — with no cooldown at all,
+    // anyone could hammer this endpoint to SMS-bomb an arbitrary Nepali number for free
+    // at the Sparrow SMS account's expense.
+    const { data: existing } = await supabaseAdmin
+      .from('otp_codes')
+      .select('id, created_at')
+      .eq('phone', cleaned)
+      .eq('purpose', purpose)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      const secondsSinceLastSend = (Date.now() - new Date(existing.created_at).getTime()) / 1000;
+      if (secondsSinceLastSend < RESEND_COOLDOWN_SECONDS) {
+        const waitSeconds = Math.ceil(RESEND_COOLDOWN_SECONDS - secondsSinceLastSend);
+        return json({ success: false, message: `Please wait ${waitSeconds}s before requesting another code.`, waitSeconds }, 429);
+      }
+    }
+
     // 4-digit code — matches the 4-box OTP UI used across the app's screens.
     const code = String(Math.floor(1000 + Math.random() * 9000));
     const codeHash = await sha256(code);
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60_000).toISOString();
+
+    // Invalidate the previous code for this phone+purpose first, so resending never
+    // leaves an older row around for verify-otp's "latest row" lookup to conflict with
+    // (previously: typing the first code after a resend burned an attempt against the
+    // new row instead of matching the old one).
+    await supabaseAdmin
+      .from('otp_codes')
+      .delete()
+      .eq('phone', cleaned)
+      .eq('purpose', purpose);
 
     const { error } = await supabaseAdmin
       .from('otp_codes')

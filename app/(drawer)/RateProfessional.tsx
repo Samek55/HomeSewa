@@ -88,7 +88,7 @@ export default function RateProfessionalScreen() {
       return (
         <View style={styles.emptyState}>
           <Ionicons name="time-outline" size={40} color={colors.textMuted} />
-          <Text style={styles.emptyText}>This booking isn't ready to be rated yet.</Text>
+          <Text style={styles.emptyText}>This booking isn&apos;t ready to be rated yet.</Text>
         </View>
       );
     }

@@ -198,10 +198,11 @@ export default function BookingDetails() {
 
                             const bookingService = String(booking?.service || '').split(',')[0].trim();
                             notifyProfessionalsRejected(bookingService, booking?.city || '', adminPhone, String(booking.id), booking?.fullName || '', booking?.area || '').catch(() => {});
+
+                            router.push('/admin/BookingHistory');
                         } catch (error) {
                             console.error('Failed to record lead rejection:', error);
-                        } finally {
-                            router.push('/admin/BookingHistory');
+                            Alert.alert('Error', 'Could not pass on this job. Please try again.');
                         }
                     },
                 },

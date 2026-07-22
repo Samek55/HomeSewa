@@ -14,13 +14,10 @@ import { claimBooking } from '../../../api/helper/updateBookingStatus';
 import { shareBookingPdf } from '../../../api/helper/shareBookingPdf';
 import { pushAreaProfessionals } from '../../../api/notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { invokeEdgeFunction } from '../../../api/functionsClient';
 import { useTheme } from '@/context/ThemeContext';
 import type { ThemeColors } from '@/theme/colors';
 
 const normalizePhone = (phone?: string | null) => (phone || '').replace(/\D/g, '').replace(/^977/, '');
-
-interface SendOtpResponse { success: boolean; message?: string }
 
 type StatusType = 'Completed' | 'Pending' | 'Cancelled' | 'Dispute';
 
@@ -81,13 +78,9 @@ export default function BookingDetails() {
             if (workStatus === 'Completed') {
                 const customerPhone = booking?.phone || '';
                 const customerName = booking?.fullName || 'Customer';
-                try {
-                    await invokeEdgeFunction<SendOtpResponse>(
-                        'send-otp',
-                        { phone: String(customerPhone), purpose: 'work-completion', name: customerName },
-                        'Could not send completion OTP.'
-                    );
-                } catch {}
+                // WorkCompletionOTP sends its own OTP on mount (and can resend on failure) —
+                // same pattern as every other OTP screen, so a failed send here can no longer
+                // be silently swallowed with no recovery path for the professional.
                 router.push({
                     pathname: '/admin/WorkCompletionOTP',
                     params: { customerName, customerPhone, budget: booking.budget || '', bookingId: String(booking.id) },
@@ -261,7 +254,7 @@ export default function BookingDetails() {
                                 <>
                                     <Text style={styles.statusLabel}>Booking Confirmation</Text>
                                     <Text style={styles.pendingNote}>
-                                        This booking hasn't been reviewed yet. Confirming it notifies nearby professionals.
+                                        This booking hasn&apos;t been reviewed yet. Confirming it notifies nearby professionals.
                                     </Text>
                                     <TouchableOpacity
                                         style={[styles.submitBtn, confirming && { opacity: 0.6 }]}

@@ -58,9 +58,16 @@ Deno.serve(async (req) => {
       .insert([{ booking_id: bookingId, professional_phone: cleaned, pidx, amount: lookup.total_amount }]);
 
     if (insertError) {
-      // Unique violation on pidx means this exact payment was already used to unlock a
-      // different booking/phone — never silently succeed in that case.
       if (insertError.code === '23505') {
+        // Two different unique constraints can produce this:
+        // - lead_unlocks_booking_professional_unique (0027): this professional's unlock for
+        //   this booking already exists — a concurrent/retried call raced this one and won.
+        //   The lead is unlocked either way, so this is a success, not an error.
+        // - lead_unlocks_pidx_unique (0001): this exact payment already unlocked a
+        //   *different* booking/phone — that's genuinely suspicious, never silently succeed.
+        if (insertError.message?.includes('lead_unlocks_booking_professional_unique') || insertError.details?.includes('booking_id')) {
+          return json({ success: true, status: 'already_unlocked' });
+        }
         return json({ success: false, error: 'This payment has already been used' }, 409);
       }
       return json({ success: false, error: insertError.message }, 500);
