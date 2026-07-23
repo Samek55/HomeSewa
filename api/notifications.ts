@@ -35,7 +35,12 @@ interface NotificationLog {
   city?: string;
   phone?: string;
 }
-const sendNotification = async (payload: object, log?: NotificationLog) => {
+// requireSession: true for the broad-reach broadcast callers (notifyAll,
+// notifyCustomers, notifyPublic below) — send-notification requires a real
+// super-admin session for those payload shapes, see its isBroadBroadcast
+// check. Every other caller here omits it since they're triggered by
+// customers/professionals/anonymous applicants who never hold a session.
+const sendNotification = async (payload: object, log?: NotificationLog, options?: { requireSession?: boolean }) => {
   if (!ONESIGNAL_APP_ID) {
     console.log('Notification skipped: missing OneSignal config');
     return;
@@ -43,7 +48,8 @@ const sendNotification = async (payload: object, log?: NotificationLog) => {
   await invokeEdgeFunction<{ success: boolean; message?: string }>(
     'send-notification',
     { app_id: ONESIGNAL_APP_ID, ...NOTIFICATION_DEFAULTS, ...payload, _log: log },
-    'Could not send notification'
+    'Could not send notification',
+    options
   );
 };
 
@@ -464,7 +470,7 @@ export async function notifyCustomers(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    }, { title, body: message, screen: '/Home', audience: 'customer_all' });
+    }, { title, body: message, screen: '/Home', audience: 'customer_all' }, { requireSession: true });
     console.log('Customer notification sent:', title);
   } catch (error: any) {
     console.log('Customer notification error:', error?.response?.data || error.message);
@@ -481,7 +487,7 @@ export async function notifyPublic(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    }, { title, body: message, screen: '/Home', audience: 'public_all' });
+    }, { title, body: message, screen: '/Home', audience: 'public_all' }, { requireSession: true });
     console.log('Public notification sent:', title);
   } catch (error: any) {
     console.log('notifyPublic error:', error?.response?.data || error.message);
@@ -497,7 +503,7 @@ export async function notifyAll(title: string, message: string) {
       headings: { en: title },
       contents: { en: message },
       data: { screen: '/Home' },
-    }, { title, body: message, screen: '/Home', audience: 'all' });
+    }, { title, body: message, screen: '/Home', audience: 'all' }, { requireSession: true });
     console.log('Broadcast notification sent:', title);
   } catch (error: any) {
     console.log('Broadcast notification error:', error?.response?.data || error.message);

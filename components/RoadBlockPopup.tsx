@@ -25,7 +25,21 @@ async function resolveViewer(): Promise<RoadBlockViewer> {
     }
 
     const customerPhone = await AsyncStorage.getItem('customerPhone');
-    if (customerPhone) return { role: 'customer' };
+    if (customerPhone) {
+        // Customers have no stored "home city" (the `customers` table only tracks
+        // phone/name — see 0005_fix_customers_rls_trigger.sql), so without this a
+        // city-targeted banner's city filter always no-ops for every customer
+        // (matchesViewer in api/roadBlocks.ts skips the filter when viewer.city is
+        // unset). Their most recent booking's city is the closest available signal.
+        const { data: latestBooking } = await supabase
+            .from('booking')
+            .select('city')
+            .eq('phone', customerPhone)
+            .order('booking_id', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        return { role: 'customer', city: latestBooking?.city || null };
+    }
 
     return { role: 'public' };
 }

@@ -63,6 +63,8 @@ export const fetchBookings = async () => {
         catch { return []; }
       })(),
       acceptedByPhone: item.accepted_by_phone,
+      dealAmount: item.deal_amount,
+      dealNote: item.deal_note,
     }));
   } catch (error) {
     console.log('Fetch Error:', error);

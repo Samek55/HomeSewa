@@ -1,5 +1,25 @@
 import { corsHeaders, json } from '../_shared/cors.ts';
 import { supabaseAdmin } from '../_shared/supabaseAdmin.ts';
+import { verifySession } from '../_shared/session.ts';
+
+// True for payload shapes that can reach a huge, unbounded slice of the user
+// base — `included_segments` (literally everyone) or a bare role filter for
+// 'user'/no-role-tag with no phone narrowing (every customer / every install).
+// These are only ever sent by the admin "Send Notification" screen
+// (notifyAll/notifyCustomers/notifyPublic in api/notifications.ts); every
+// other caller (booking accept/complete, career/partnership forms) always
+// narrows to a specific phone or a small phone list, or targets the 'admin'/
+// 'career' role tag, which stays open — see the comment below on why that
+// narrower set can't be gated the same way without breaking those flows.
+function isBroadBroadcast(payload: Record<string, any>): boolean {
+  if (payload.included_segments) return true;
+  const filters = Array.isArray(payload.filters) ? payload.filters : [];
+  const hasPhoneFilter = filters.some((f: any) => f?.key === 'phone');
+  if (hasPhoneFilter) return false;
+  return filters.some((f: any) =>
+    f?.key === 'role' && (f?.value === 'user' || f?.relation === 'not_exists')
+  );
+}
 
 // This project's account/access-token can't set Edge Function secrets (dashboard/
 // Management API both reject it), so the OneSignal REST API key is stored in
@@ -28,6 +48,17 @@ Deno.serve(async (req) => {
       return json({ success: false, message: 'Missing OneSignal config' }, 500);
     }
     const { _log, ...oneSignalPayload } = await req.json();
+
+    // See isBroadBroadcast above — role=admin/career pushes (booking flow,
+    // partnership/career applications) and phone-narrowed pushes (booking
+    // accept/complete) stay open since their callers never hold a session;
+    // only the truly mass-reach shapes require a real admin login here.
+    if (isBroadBroadcast(oneSignalPayload)) {
+      const session = await verifySession(req);
+      if (!session || session.role !== 'super_admin') {
+        return json({ success: false, message: 'Please log in again.' }, 401);
+      }
+    }
 
     const response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',

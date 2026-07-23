@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { invokeEdgeFunction } from './functionsClient';
 
 export const ROAD_BLOCK_BUTTON_TEXT_OPTIONS = [
   'View More', 'Download Now', 'Install Now', 'Buy Now', 'Learn More',
@@ -121,17 +122,32 @@ export const listRoadBlocks = async (): Promise<RoadBlock[]> => {
   return (data as RoadBlock[]) || [];
 };
 
+// Writes go through road-block-write (session-verified server-side) rather than
+// a direct table write — see 0029_lock_road_blocks_writes.sql for why direct
+// anon writes were closed off.
 export const createRoadBlock = async (input: RoadBlockInput): Promise<void> => {
-  const { error } = await supabase.from('road_blocks').insert([toRow(input)]);
-  if (error) throw error;
+  await invokeEdgeFunction<{ success: boolean; message?: string }>(
+    'road-block-write',
+    { action: 'create', row: toRow(input) },
+    'Could not create this banner',
+    { requireSession: true }
+  );
 };
 
 export const updateRoadBlock = async (id: number, input: RoadBlockInput): Promise<void> => {
-  const { error } = await supabase.from('road_blocks').update(toRow(input)).eq('id', id);
-  if (error) throw error;
+  await invokeEdgeFunction<{ success: boolean; message?: string }>(
+    'road-block-write',
+    { action: 'update', id, row: toRow(input) },
+    'Could not update this banner',
+    { requireSession: true }
+  );
 };
 
 export const setRoadBlockActive = async (id: number, isActive: boolean): Promise<void> => {
-  const { error } = await supabase.from('road_blocks').update({ is_active: isActive }).eq('id', id);
-  if (error) throw error;
+  await invokeEdgeFunction<{ success: boolean; message?: string }>(
+    'road-block-write',
+    { action: 'setActive', id, isActive },
+    'Could not update this banner',
+    { requireSession: true }
+  );
 };

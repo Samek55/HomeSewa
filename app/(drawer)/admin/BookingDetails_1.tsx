@@ -10,6 +10,7 @@ import {
     Modal,
     Alert,
     Linking,
+    TextInput,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
@@ -72,6 +73,11 @@ export default function BookingDetails() {
     const [unlocked, setUnlocked] = useState(false);
     const hasFullAccess = isSuperAdmin || unlocked;
 
+    const [dealModalVisible, setDealModalVisible] = useState(false);
+    const [dealAmount, setDealAmount] = useState('');
+    const [dealNote, setDealNote] = useState('');
+    const [accepting, setAccepting] = useState(false);
+
     useEffect(() => {
         const load = async () => {
             setLoading(true);
@@ -129,8 +135,24 @@ export default function BookingDetails() {
     const goCompletionPrev = () => setCompletionSelectedIndex(i => (i - 1 + completionPhotoUrls.length) % completionPhotoUrls.length);
     const goCompletionNext = () => setCompletionSelectedIndex(i => (i + 1) % completionPhotoUrls.length);
 
+    // Opens the deal-amount prompt; the actual accept only fires once that's confirmed.
+    const openAcceptModal = () => {
+        if (!booking || !hasFullAccess || accepting) return;
+        setDealAmount('');
+        setDealNote('');
+        setDealModalVisible(true);
+    };
+
+    // Ignored while `accepting` is true — the modal is the only thing stopping a second
+    // tap on "Accept This Offer" from firing a duplicate accept while the first is still
+    // in flight, so it can't be dismissed (overlay tap, X button, or hardware back) mid-request.
+    const closeAcceptModal = () => {
+        if (accepting) return;
+        setDealModalVisible(false);
+    };
+
     // Handle Offer Acceptance
-    const handleAcceptOffer = async () => {
+    const handleAcceptOffer = async (amount: number, note: string) => {
         if (!booking || !hasFullAccess) return;
 
         try {
@@ -139,8 +161,14 @@ export default function BookingDetails() {
             // Atomically claim the booking first — without this, two professionals who both
             // open this "New / Open" booking before either changes its status can both accept it.
             // `accepted_by_phone` is recorded here so customer-facing features keyed by phone
-            // (Favorites, ratings) can later look up who actually did the work.
-            const claimed = await claimBooking(String(booking.id), 'New / Open', 'Pending', { accepted_by_phone: adminPhone });
+            // (Favorites, ratings) can later look up who actually did the work. `deal_amount`/
+            // `deal_note` capture the actual negotiated price at accept time — internal only,
+            // separate from the customer's original `budget` range.
+            const claimed = await claimBooking(String(booking.id), 'New / Open', 'Pending', {
+                accepted_by_phone: adminPhone,
+                deal_amount: amount,
+                deal_note: note || null,
+            });
             if (!claimed) {
                 Alert.alert('Already Accepted', 'This booking was just accepted by another professional.');
                 router.replace('/admin/BookingHistory');
@@ -173,6 +201,24 @@ export default function BookingDetails() {
         } catch (error) {
             console.error("Failed to process order acceptance:", error);
             Alert.alert('Error', 'Could not accept this booking. Please try again.');
+        }
+    };
+
+    const handleConfirmDeal = async () => {
+        const amount = Number(dealAmount);
+        if (!dealAmount.trim() || !Number.isFinite(amount) || amount <= 0) {
+            Alert.alert('Enter Deal Amount', 'Please enter the agreed price as a valid positive number.');
+            return;
+        }
+        setAccepting(true);
+        try {
+            // Modal stays open (Confirm disabled, showing "Accepting…") for the whole
+            // request — closing it early would let the user tap "Accept This Offer"
+            // again while claimBooking/notifications/SMS are still in flight.
+            await handleAcceptOffer(amount, dealNote.trim());
+            setDealModalVisible(false);
+        } finally {
+            setAccepting(false);
         }
     };
 
@@ -428,7 +474,7 @@ export default function BookingDetails() {
                                     <>
                                         <TouchableOpacity
                                             style={styles.AcceptButton}
-                                            onPress={handleAcceptOffer}
+                                            onPress={openAcceptModal}
                                         >
                                             <Text style={styles.AcceptText}>Accept This Offer</Text>
                                         </TouchableOpacity>
@@ -457,6 +503,64 @@ export default function BookingDetails() {
                     )}
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            <Modal
+                visible={dealModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={closeAcceptModal}
+            >
+                <TouchableOpacity
+                    style={styles.dealModalOverlay}
+                    activeOpacity={1}
+                    onPress={closeAcceptModal}
+                >
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={{ width: '100%' }}
+                    >
+                        <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+                            <View style={styles.dealModalSheet}>
+                                <View style={styles.dealModalHeader}>
+                                    <Text style={styles.dealModalTitle}>Confirm Deal Terms</Text>
+                                    <TouchableOpacity onPress={closeAcceptModal} disabled={accepting}>
+                                        <Ionicons name="close" size={22} color={accepting ? colors.textMuted : colors.textPrimary} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text style={styles.dealModalLabel}>Deal Amount (NPR)</Text>
+                                <TextInput
+                                    style={styles.dealModalInput}
+                                    placeholder="e.g. 15000"
+                                    placeholderTextColor={colors.textMuted}
+                                    keyboardType="numeric"
+                                    value={dealAmount}
+                                    onChangeText={setDealAmount}
+                                    autoFocus
+                                />
+
+                                <Text style={styles.dealModalLabel}>Note (optional)</Text>
+                                <TextInput
+                                    style={[styles.dealModalInput, styles.dealModalNoteInput]}
+                                    placeholder="Any details about the agreed deal…"
+                                    placeholderTextColor={colors.textMuted}
+                                    multiline
+                                    value={dealNote}
+                                    onChangeText={setDealNote}
+                                />
+
+                                <TouchableOpacity
+                                    style={[styles.AcceptButton, accepting && { opacity: 0.6 }]}
+                                    onPress={handleConfirmDeal}
+                                    disabled={accepting}
+                                >
+                                    <Text style={styles.AcceptText}>{accepting ? 'Accepting…' : 'Confirm & Accept'}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </TouchableOpacity>
+                    </KeyboardAvoidingView>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -703,5 +807,51 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         color: colors.textSecondary,
         marginTop: hp('10%'),
         textAlign: 'center',
+    },
+    dealModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    dealModalSheet: {
+        backgroundColor: colors.surface,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 8,
+        paddingBottom: hp('4%'),
+        paddingHorizontal: wp('5%'),
+    },
+    dealModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: hp('1.8%'),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.divider,
+        marginBottom: hp('1.5%'),
+    },
+    dealModalTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: colors.textPrimary,
+    },
+    dealModalLabel: {
+        fontSize: hp('1.6%'),
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: hp('0.8%'),
+    },
+    dealModalInput: {
+        backgroundColor: colors.background,
+        borderRadius: 12,
+        paddingHorizontal: wp('4%'),
+        paddingVertical: hp('1.4%'),
+        fontSize: 14,
+        color: colors.textPrimary,
+        marginBottom: hp('1.6%'),
+    },
+    dealModalNoteInput: {
+        minHeight: hp('9%'),
+        textAlignVertical: 'top',
     },
 });

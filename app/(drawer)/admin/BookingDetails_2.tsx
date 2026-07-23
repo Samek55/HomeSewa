@@ -198,6 +198,20 @@ export default function BookingDetails() {
                             <Text style={styles.value}>{booking.budget}</Text>
                         </View>
 
+                        {booking.dealAmount != null ? (
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Deal Amount</Text>
+                                <Text style={styles.value}>NPR {Number(booking.dealAmount).toLocaleString('en-IN')}</Text>
+                            </View>
+                        ) : null}
+
+                        {booking.dealNote ? (
+                            <View style={styles.field}>
+                                <Text style={styles.label}>Deal Note</Text>
+                                <Text style={styles.value}>{booking.dealNote}</Text>
+                            </View>
+                        ) : null}
+
                         <View style={styles.field}>
                             <Text style={styles.label}>Booking Date</Text>
                             <Text style={styles.value}>{booking.bookingDate}</Text>
